@@ -3,8 +3,10 @@ import SwiftData
 
 @Model
 final class Pet {
-    var name: String
-    var species: PetSpecies
+    // Default values at the declaration site — required for SwiftData's
+    // CloudKit sync.
+    var name: String = ""
+    var species: PetSpecies = PetSpecies.dog
     var trip: Trip?
 
     init(name: String, species: PetSpecies, trip: Trip? = nil) {

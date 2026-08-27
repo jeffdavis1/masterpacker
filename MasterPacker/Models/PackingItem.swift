@@ -3,10 +3,12 @@ import SwiftData
 
 @Model
 final class PackingItem {
-    var name: String
-    var category: PackingCategory
-    var quantity: Int
-    var isPacked: Bool
+    // Default values at the declaration site — required for SwiftData's
+    // CloudKit sync.
+    var name: String = ""
+    var category: PackingCategory = PackingCategory.misc
+    var quantity: Int = 1
+    var isPacked: Bool = false
     var trip: Trip?
 
     /// Who this item is for. Both nil means it's a shared/household item.

@@ -3,8 +3,10 @@ import SwiftData
 
 @Model
 final class Traveler {
-    var name: String
-    var ageBracket: AgeBracket
+    // Default values at the declaration site — required for SwiftData's
+    // CloudKit sync.
+    var name: String = ""
+    var ageBracket: AgeBracket = AgeBracket.adult
     var trip: Trip?
 
     init(name: String, ageBracket: AgeBracket, trip: Trip? = nil) {

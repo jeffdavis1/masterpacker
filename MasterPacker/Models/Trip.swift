@@ -3,16 +3,20 @@ import SwiftData
 
 @Model
 final class Trip {
-    var name: String
-    var destination: String
-    var startDate: Date
-    var endDate: Date
-    var travelMethod: TravelMethod
-    var notes: String
+    // Every stored property below has a default value at the declaration
+    // site (not just via `init`) — required for SwiftData's CloudKit sync,
+    // which needs to be able to materialize a record without every field
+    // being supplied.
+    var name: String = ""
+    var destination: String = ""
+    var startDate: Date = Date.now
+    var endDate: Date = Date.now
+    var travelMethod: TravelMethod = TravelMethod.car
+    var notes: String = ""
 
     /// Stored as raw strings because SwiftData attributes must be primitive-
     /// codable types; `activities` below bridges this to `Set<Activity>`.
-    var activityRawValues: [String]
+    var activityRawValues: [String] = []
 
     @Relationship(deleteRule: .cascade, inverse: \Traveler.trip)
     var travelers: [Traveler] = []
