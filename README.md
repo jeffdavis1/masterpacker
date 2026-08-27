@@ -22,8 +22,9 @@ package manager setup required.
 
 ```
 MasterPacker/
-├── MasterPackerApp.swift        # App entry point, SwiftData container setup
-├── ContentView.swift            # Root view
+├── MasterPackerApp.swift        # App entry point, SwiftData + CloudKit container setup
+├── ContentView.swift            # Root view — splash screen, then applies app-wide tint/font
+├── DesignSystem.swift           # Shared design tokens (AppTheme) — see Design System below
 ├── Models/
 │   ├── Trip.swift                # Trip SwiftData model (dates, travel method, activities, notes)
 │   ├── Traveler.swift             # Traveler SwiftData model + AgeBracket enum
@@ -33,11 +34,34 @@ MasterPacker/
 │   ├── PackingItem.swift          # PackingItem SwiftData model + PackingCategory enum
 │   └── PackingRulesEngine.swift   # Generates a starter checklist from trip + travelers + pets
 └── Views/
+    ├── SplashScreenView.swift   # Brief branded splash shown on cold launch
     ├── TripListView.swift       # List of trips, entry point for navigation
     ├── AddTripView.swift        # Form to create a trip: basics, activities, travelers, pets
     ├── TripDetailView.swift     # Packing checklist for one trip, grouped by traveler/pet/shared
     └── AddItemView.swift        # Form to add a custom packing item, with assignee picker
 ```
+
+## Design system
+
+Colors, corner radii, and card styling live in `DesignSystem.swift` (the
+`AppTheme` enum), pulled from the app icon — brand blue, navy, cream, and an
+olive "sage" used for packed/success states instead of plain system green.
+
+Most of this applies itself automatically, so **new screens should need
+little to no extra styling code**:
+
+- The `AccentColor` asset is set to the brand blue, so every button, link,
+  toggle, and selected control uses it by default, everywhere, with no code.
+- `ContentView` applies `.tint(AppTheme.brand)` and `.fontDesign(.rounded)`
+  once at the root — every current and future screen, sheet, or navigation
+  push inherits both automatically via the SwiftUI environment.
+- Reach for `AppTheme` explicitly only when you need something the
+  environment doesn't cover — e.g. `AppTheme.sage` for a "packed"/success
+  color, or `.cardStyle()` for a custom card container outside of a
+  List/Form.
+
+When adding a new feature, don't hardcode colors (`.green`, `.blue`, raw hex,
+etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
 
 ## Current features (v1)
 

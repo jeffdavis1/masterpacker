@@ -24,9 +24,11 @@ struct TripListView: View {
                         }
                         .onDelete(perform: deleteTrips)
                     }
+                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("My Trips")
+            .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: Trip.self) { trip in
                 TripDetailView(trip: trip)
             }
@@ -68,6 +70,7 @@ private struct TripRow: View {
             Spacer()
             if !trip.items.isEmpty {
                 ProgressView(value: trip.progress)
+                    .tint(AppTheme.sage)
                     .frame(width: 50)
             }
         }

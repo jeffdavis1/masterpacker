@@ -47,6 +47,7 @@ struct TripDetailView: View {
                         Text("\(trip.packedCount) of \(trip.items.count) packed")
                             .font(.subheadline)
                     }
+                    .tint(AppTheme.sage)
                     Text("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s") · \(trip.destination)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -96,7 +97,7 @@ private struct ItemRow: View {
         } label: {
             HStack {
                 Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.isPacked ? .green : .secondary)
+                    .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
                 Image(systemName: item.category.symbol)
                     .foregroundStyle(.secondary)
                     .frame(width: 20)
