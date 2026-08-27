@@ -58,11 +58,13 @@ MasterPacker/
 
 ## Roadmap
 
-- **Phase 2:** SwiftData + CloudKit private database sync, so a trip follows
-  the signed-in iCloud account across their devices
-- **Phase 3:** CloudKit sharing (`CKShare`) so a trip can be shared/edited
-  with travel companions — needs an iCloud container provisioned via Xcode's
-  Signing & Capabilities (requires a paid Apple Developer Program account)
+- ✅ **Phase 2:** SwiftData + CloudKit private database sync — trips follow
+  the signed-in iCloud account across the user's devices. Requires the
+  Simulator (or device) to actually be signed into an iCloud account under
+  **Settings → [your name]** for sync to do anything; without that, the app
+  still runs fine, it just stays local-only.
+- **Phase 3 (next):** CloudKit sharing (`CKShare`) so a trip can be
+  shared/edited with travel companions
 - Weather-aware suggestions (pull forecast for the destination/dates)
 - Reusable packing templates you can save and reapply
 - Widgets / Live Activities for "days until trip" and packing progress
