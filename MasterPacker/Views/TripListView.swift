@@ -111,7 +111,10 @@ private struct TripRow: View {
 #Preview {
     TripListView()
         .modelContainer(
-            for: [Trip.self, PackingItem.self, Traveler.self, Pet.self, TravelerProfile.self, ProfileItem.self],
+            for: [
+                Trip.self, PackingItem.self, Traveler.self, Pet.self,
+                TravelerProfile.self, ProfileItem.self, CustomCategory.self,
+            ],
             inMemory: true
         )
 }

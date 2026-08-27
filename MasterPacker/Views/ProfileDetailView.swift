@@ -7,6 +7,12 @@ struct ProfileDetailView: View {
     @Query private var allPackingItems: [PackingItem]
     @State private var isAddingCustomItem = false
 
+    /// Suggestion chips tapped but not yet saved — tapping toggles the
+    /// chip's color rather than immediately inserting into "Always Pack",
+    /// so the list above doesn't jump around while browsing suggestions.
+    /// Committed all at once via the Save button.
+    @State private var pendingSuggestions: Set<CommonProfileItems.Suggestion> = []
+
     var body: some View {
         List {
             Section {
@@ -27,7 +33,7 @@ struct ProfileDetailView: View {
                 } else {
                     ForEach(profile.alwaysItems) { item in
                         HStack {
-                            Image(systemName: item.category.symbol)
+                            Image(systemName: item.displaySymbol)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 20)
                             Text(item.name)
@@ -55,16 +61,18 @@ struct ProfileDetailView: View {
 
             if !curatedSuggestions.isEmpty {
                 Section {
-                    SuggestionChipGrid(suggestions: curatedSuggestions, onTap: addSuggestion)
+                    SuggestionChipGrid(suggestions: curatedSuggestions, selected: pendingSuggestions, onToggle: togglePending)
                         .listRowBackground(Color.clear)
                 } header: {
                     Text("Common items")
+                } footer: {
+                    Text("Tap to select, then Save.")
                 }
             }
 
             if !frequentSuggestions.isEmpty {
                 Section {
-                    SuggestionChipGrid(suggestions: frequentSuggestions, onTap: addSuggestion)
+                    SuggestionChipGrid(suggestions: frequentSuggestions, selected: pendingSuggestions, onToggle: togglePending)
                         .listRowBackground(Color.clear)
                 } header: {
                     Text("You often pack these")
@@ -78,6 +86,14 @@ struct ProfileDetailView: View {
         .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationTitle(profile.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(pendingSuggestions.isEmpty ? "Save" : "Save (\(pendingSuggestions.count))") {
+                    commitPending()
+                }
+                .disabled(pendingSuggestions.isEmpty)
+            }
+        }
         .sheet(isPresented: $isAddingCustomItem) {
             AddProfileItemView(profile: profile)
         }
@@ -90,9 +106,20 @@ struct ProfileDetailView: View {
         }
     }
 
-    private func addSuggestion(_ suggestion: CommonProfileItems.Suggestion) {
-        let item = ProfileItem(name: suggestion.name, category: suggestion.category, profile: profile)
-        modelContext.insert(item)
+    private func togglePending(_ suggestion: CommonProfileItems.Suggestion) {
+        if pendingSuggestions.contains(suggestion) {
+            pendingSuggestions.remove(suggestion)
+        } else {
+            pendingSuggestions.insert(suggestion)
+        }
+    }
+
+    private func commitPending() {
+        for suggestion in pendingSuggestions {
+            let item = ProfileItem(name: suggestion.name, categoryName: suggestion.category.rawValue, profile: profile)
+            modelContext.insert(item)
+        }
+        pendingSuggestions.removeAll()
     }
 
     private var existingNames: Set<String> {
@@ -127,23 +154,25 @@ struct ProfileDetailView: View {
 
 private struct SuggestionChipGrid: View {
     let suggestions: [CommonProfileItems.Suggestion]
-    let onTap: (CommonProfileItems.Suggestion) -> Void
+    let selected: Set<CommonProfileItems.Suggestion>
+    let onToggle: (CommonProfileItems.Suggestion) -> Void
 
     private let columns = [GridItem(.adaptive(minimum: 130), spacing: 8)]
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
             ForEach(suggestions) { suggestion in
+                let isSelected = selected.contains(suggestion)
                 Button {
-                    onTap(suggestion)
+                    onToggle(suggestion)
                 } label: {
-                    Label(suggestion.name, systemImage: "plus.circle.fill")
+                    Label(suggestion.name, systemImage: isSelected ? "checkmark.circle.fill" : "plus.circle.fill")
                         .font(.caption)
                         .lineLimit(1)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(AppTheme.brand.opacity(0.12))
-                        .foregroundStyle(AppTheme.brand)
+                        .background(isSelected ? AppTheme.brand : AppTheme.brand.opacity(0.12))
+                        .foregroundStyle(isSelected ? .white : AppTheme.brand)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -159,7 +188,7 @@ private struct SuggestionChipGrid: View {
         ProfileDetailView(profile: profile)
     }
     .modelContainer(
-        for: [TravelerProfile.self, ProfileItem.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
+        for: [TravelerProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
         inMemory: true
     )
 }

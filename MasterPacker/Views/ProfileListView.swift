@@ -7,9 +7,10 @@ struct ProfileListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TravelerProfile.name) private var profiles: [TravelerProfile]
     @State private var isPresentingAddProfile = false
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if profiles.isEmpty {
                     ContentUnavailableView(
@@ -49,7 +50,11 @@ struct ProfileListView: View {
                 }
             }
             .sheet(isPresented: $isPresentingAddProfile) {
-                NewProfileView()
+                // Go straight to the new profile's item list once it's
+                // created, instead of dropping back to this list.
+                NewProfileView { profile in
+                    path.append(profile)
+                }
             }
         }
     }
@@ -89,7 +94,7 @@ private struct ProfileRow: View {
 #Preview {
     ProfileListView()
         .modelContainer(
-            for: [TravelerProfile.self, ProfileItem.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
+            for: [TravelerProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
             inMemory: true
         )
 }

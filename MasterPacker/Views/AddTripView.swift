@@ -20,24 +20,6 @@ struct AddTripView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Trip") {
-                    TextField("Trip name", text: $name)
-                    TextField("Destination", text: $destination)
-                    DatePicker("Start", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
-                    Picker("Travel method", selection: $travelMethod) {
-                        ForEach(TravelMethod.allCases) { method in
-                            Label(method.rawValue, systemImage: method.symbol).tag(method)
-                        }
-                    }
-                }
-
-                Section("Activities") {
-                    ActivityChipGrid(selected: $selectedActivities)
-                    TextField("Notes (e.g. \"visiting grandma\")", text: $notes, axis: .vertical)
-                        .lineLimit(2...4)
-                }
-
                 Section {
                     ForEach($travelers) { $traveler in
                         TravelerRow(draft: $traveler, savedProfiles: savedProfiles) {
@@ -55,6 +37,24 @@ struct AddTripView: View {
                     if !savedProfiles.isEmpty {
                         Text("Tap the person icon to fill a traveler in from a saved profile — their always-pack items come along automatically.")
                     }
+                }
+
+                Section("Trip") {
+                    TextField("Trip name", text: $name)
+                    TextField("Destination", text: $destination)
+                    DatePicker("Start", selection: $startDate, displayedComponents: .date)
+                    DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    Picker("Travel method", selection: $travelMethod) {
+                        ForEach(TravelMethod.allCases) { method in
+                            Label(method.rawValue, systemImage: method.symbol).tag(method)
+                        }
+                    }
+                }
+
+                Section("Activities") {
+                    ActivityChipGrid(selected: $selectedActivities)
+                    TextField("Notes (e.g. \"visiting grandma\")", text: $notes, axis: .vertical)
+                        .lineLimit(2...4)
                 }
 
                 Section("Pets") {
@@ -159,9 +159,12 @@ struct AddTripView: View {
         for (draft, traveler) in zip(travelerDrafts, travelerModels) {
             guard let profile = draft.profile else { continue }
             for profileItem in profile.alwaysItems {
+                // Profile items can use a custom category (text-only, no
+                // matching PackingCategory case); fall back to .misc for
+                // the actual trip item in that case.
                 let item = PackingItem(
                     name: profileItem.name,
-                    category: profileItem.category,
+                    category: PackingCategory(rawValue: profileItem.categoryName) ?? .misc,
                     quantity: profileItem.quantity,
                     trip: trip,
                     traveler: traveler
@@ -293,7 +296,7 @@ private struct ActivityChipGrid: View {
 #Preview {
     AddTripView()
         .modelContainer(
-            for: [Trip.self, PackingItem.self, Traveler.self, Pet.self, TravelerProfile.self, ProfileItem.self],
+            for: [Trip.self, PackingItem.self, Traveler.self, Pet.self, TravelerProfile.self, ProfileItem.self, CustomCategory.self],
             inMemory: true
         )
 }

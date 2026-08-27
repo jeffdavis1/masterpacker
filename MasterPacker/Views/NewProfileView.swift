@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct NewProfileView: View {
+    var onCreate: (TravelerProfile) -> Void
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -36,11 +38,12 @@ struct NewProfileView: View {
     private func save() {
         let profile = TravelerProfile(name: name, ageBracket: ageBracket)
         modelContext.insert(profile)
+        onCreate(profile)
         dismiss()
     }
 }
 
 #Preview {
-    NewProfileView()
+    NewProfileView(onCreate: { _ in })
         .modelContainer(for: [TravelerProfile.self, ProfileItem.self], inMemory: true)
 }
