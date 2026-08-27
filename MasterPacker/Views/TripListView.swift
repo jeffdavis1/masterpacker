@@ -86,6 +86,8 @@ private struct TripRow: View {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary.opacity(0.85))
+                TripWeatherStrip(trip: trip)
+                    .padding(.top, 2)
             }
 
             Spacer(minLength: 8)
@@ -105,6 +107,31 @@ private struct TripRow: View {
         }
         parts.append("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s")")
         return parts.joined(separator: " · ")
+    }
+}
+
+/// Small row of forecast icons for the first few days of a trip. Renders
+/// nothing if the destination can't be geocoded or no forecast is
+/// available yet (e.g. the trip is too far out) — no placeholder/error
+/// state, it just quietly stays empty.
+private struct TripWeatherStrip: View {
+    let trip: Trip
+    @State private var forecasts: [DayForecast] = []
+    @State private var didLoad = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(forecasts) { day in
+                Image(systemName: day.symbolName)
+                    .font(.caption2)
+                    .foregroundStyle(AppTheme.brand)
+            }
+        }
+        .task {
+            guard !didLoad else { return }
+            didLoad = true
+            forecasts = await WeatherService.shared.forecast(destination: trip.destination, startDate: trip.startDate, days: 3)
+        }
     }
 }
 

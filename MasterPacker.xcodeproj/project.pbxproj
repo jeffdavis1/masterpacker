@@ -29,6 +29,7 @@
 		A77AD8C55C88BABD5A7E3170 /* ProfileItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB011B79A7DDDAC9A34160A1 /* ProfileItem.swift */; };
 		F46F299A6CC7C1A1E5ECD393 /* CommonProfileItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4357A909A61DB26BA970117A /* CommonProfileItems.swift */; };
 		88559DC496DC35431670D227 /* CustomCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE331B6F285C7CACF7A3785 /* CustomCategory.swift */; };
+		EA162E777A18B00EA71016ED /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D8A0ED619AF22E1A17C17C /* WeatherService.swift */; };
 		D74F545D56087331C081C280 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76319163FC75AF902D01566 /* TripDetailView.swift */; };
 		E8AE0017D039B5510820EE2E /* AddTripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373564E5B61B02A364226932 /* AddTripView.swift */; };
 /* End PBXBuildFile section */
@@ -59,6 +60,7 @@
 		CB011B79A7DDDAC9A34160A1 /* ProfileItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileItem.swift; sourceTree = "<group>"; };
 		4357A909A61DB26BA970117A /* CommonProfileItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonProfileItems.swift; sourceTree = "<group>"; };
 		1CE331B6F285C7CACF7A3785 /* CustomCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCategory.swift; sourceTree = "<group>"; };
+		76D8A0ED619AF22E1A17C17C /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		C25AA24A6A64E0E2D5EC5DB6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D4F25240B4E950DBDC6BB44A /* Traveler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Traveler.swift; sourceTree = "<group>"; };
 		D76319163FC75AF902D01566 /* TripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailView.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 				CB011B79A7DDDAC9A34160A1 /* ProfileItem.swift */,
 				4357A909A61DB26BA970117A /* CommonProfileItems.swift */,
 				1CE331B6F285C7CACF7A3785 /* CustomCategory.swift */,
+				76D8A0ED619AF22E1A17C17C /* WeatherService.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -232,6 +235,7 @@
 				A77AD8C55C88BABD5A7E3170 /* ProfileItem.swift in Sources */,
 				F46F299A6CC7C1A1E5ECD393 /* CommonProfileItems.swift in Sources */,
 				88559DC496DC35431670D227 /* CustomCategory.swift in Sources */,
+				EA162E777A18B00EA71016ED /* WeatherService.swift in Sources */,
 				6410D3586841C6A9B6BE3B78 /* TripListView.swift in Sources */,
 				E8AE0017D039B5510820EE2E /* AddTripView.swift in Sources */,
 				D74F545D56087331C081C280 /* TripDetailView.swift in Sources */,

@@ -46,6 +46,11 @@ struct TripDetailView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+
+                TripForecastCard(trip: trip)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
 
             ForEach(sections, id: \.label) { section in
@@ -118,6 +123,67 @@ private struct TripProgressHeader: View {
         .padding(.horizontal, 16)
         .padding(.top, 4)
         .padding(.bottom, 8)
+    }
+}
+
+/// Horizontally-scrolling forecast for the trip's dates, shown prominently
+/// right below the progress header. Renders nothing if the destination
+/// can't be geocoded or no forecast is available yet — no error state,
+/// it just quietly stays empty.
+private struct TripForecastCard: View {
+    let trip: Trip
+    @State private var forecasts: [DayForecast] = []
+    @State private var didLoad = false
+
+    var body: some View {
+        Group {
+            if !forecasts.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Forecast", systemImage: "cloud.sun.fill")
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .foregroundStyle(AppTheme.navy)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            ForEach(forecasts) { day in
+                                ForecastDayColumn(day: day)
+                            }
+                        }
+                        .padding(.horizontal, 2)
+                    }
+                }
+                .padding(16)
+                .floatingCard()
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+        }
+        .task {
+            guard !didLoad else { return }
+            didLoad = true
+            forecasts = await WeatherService.shared.forecast(destination: trip.destination, startDate: trip.startDate, days: 7)
+        }
+    }
+}
+
+private struct ForecastDayColumn: View {
+    let day: DayForecast
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(day.date, format: .dateTime.weekday(.abbreviated))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Image(systemName: day.symbolName)
+                .font(.title3)
+                .foregroundStyle(AppTheme.brand)
+            Text("\(Int(day.highTemperature.rounded()))°")
+                .font(.system(.caption, design: .rounded, weight: .bold))
+            Text("\(Int(day.lowTemperature.rounded()))°")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(width: 46)
     }
 }
 
