@@ -23,6 +23,7 @@ final class ProfileItem {
     }
 
     var displaySymbol: String {
-        PackingCategory(rawValue: categoryName)?.symbol ?? "tag"
+        let categorySymbol = PackingCategory(rawValue: categoryName)?.symbol ?? "tag"
+        return PackingIcon.symbol(forName: name, fallback: categorySymbol)
     }
 }

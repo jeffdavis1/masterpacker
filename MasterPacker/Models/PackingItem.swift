@@ -39,6 +39,13 @@ final class PackingItem {
         if let pet { return "\(pet.name) (pet)" }
         return "Shared"
     }
+
+    /// A more specific icon based on the item's name when one matches
+    /// (e.g. "Hiking boots" gets a shoe icon, not the generic clothing
+    /// icon), falling back to the category's icon otherwise.
+    var displaySymbol: String {
+        PackingIcon.symbol(forName: name, fallback: category.symbol)
+    }
 }
 
 enum PackingCategory: String, Codable, CaseIterable, Identifiable {
@@ -63,4 +70,30 @@ enum PackingCategory: String, Codable, CaseIterable, Identifiable {
         case .misc: return "shippingbox"
         }
     }
+}
+
+/// Picks a more specific icon based on an item's name when one matches
+/// (e.g. "Hiking boots" -> a shoe icon), falling back to a category's
+/// default icon otherwise. A modest, high-confidence keyword set — not
+/// exhaustive, but meaningfully more accurate than one icon per category
+/// for clothing items in particular. Shared by `PackingItem` and
+/// `ProfileItem`.
+enum PackingIcon {
+    static func symbol(forName name: String, fallback: String) -> String {
+        let lowercased = name.lowercased()
+        for rule in rules where rule.keywords.contains(where: lowercased.contains) {
+            return rule.symbol
+        }
+        return fallback
+    }
+
+    private static let rules: [(keywords: [String], symbol: String)] = [
+        (["boot", "shoe", "sneaker", "sandal", "flip-flop", "flip flop"], "shoe.2.fill"),
+        (["swimsuit", "swim trunks", "bikini", "swim"], "figure.pool.swim"),
+        (["sunglasses", "goggles"], "eyeglasses"),
+        (["thermal", "snow jacket", "snow pants", "warm hat"], "snowflake"),
+        (["suit", "formal", "dress shoes", "business attire", "tie"], "briefcase.fill"),
+        (["rain jacket", "raincoat", "waterproof"], "umbrella.fill"),
+        (["hiking boots", "hiking"], "figure.hiking"),
+    ]
 }

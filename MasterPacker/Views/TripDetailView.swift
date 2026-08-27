@@ -5,6 +5,7 @@ struct TripDetailView: View {
     @Bindable var trip: Trip
     @Environment(\.modelContext) private var modelContext
     @State private var isPresentingAddItem = false
+    @State private var collapsedSections: Set<String> = []
 
     /// Shared/household items first, then one section per traveler (trip
     /// order), then one section per pet — each sorted by category so the
@@ -55,20 +56,26 @@ struct TripDetailView: View {
 
             ForEach(sections, id: \.label) { section in
                 Section {
-                    ForEach(section.items) { item in
-                        ItemRow(item: item)
-                            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
-                    .onDelete { offsets in
-                        deleteItems(section.items, at: offsets)
+                    if !collapsedSections.contains(section.label) {
+                        ForEach(section.items) { item in
+                            ItemRow(item: item)
+                                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+                        .onDelete { offsets in
+                            deleteItems(section.items, at: offsets)
+                        }
                     }
                 } header: {
-                    Text(section.label.uppercased())
-                        .font(.system(.caption, design: .rounded, weight: .heavy))
-                        .foregroundStyle(.secondary)
-                        .tracking(0.6)
+                    SectionHeaderButton(
+                        label: section.label,
+                        packedCount: section.items.filter(\.isPacked).count,
+                        totalCount: section.items.count,
+                        isCollapsed: collapsedSections.contains(section.label)
+                    ) {
+                        toggleSection(section.label)
+                    }
                 }
             }
         }
@@ -94,6 +101,45 @@ struct TripDetailView: View {
         for index in offsets {
             modelContext.delete(items[index])
         }
+    }
+
+    private func toggleSection(_ label: String) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if collapsedSections.contains(label) {
+                collapsedSections.remove(label)
+            } else {
+                collapsedSections.insert(label)
+            }
+        }
+    }
+}
+
+/// A tappable section header showing who the group is for, its packed
+/// count, and a chevron indicating expanded/collapsed state.
+private struct SectionHeaderButton: View {
+    let label: String
+    let packedCount: Int
+    let totalCount: Int
+    let isCollapsed: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack {
+                Text(label.uppercased())
+                    .font(.system(.caption, design: .rounded, weight: .heavy))
+                    .tracking(0.6)
+                Spacer()
+                Text("\(packedCount)/\(totalCount)")
+                    .font(.system(.caption2, design: .rounded, weight: .bold))
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .rotationEffect(.degrees(isCollapsed ? 0 : 90))
+            }
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -197,7 +243,7 @@ private struct ItemRow: View {
             HStack {
                 Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
-                Image(systemName: item.category.symbol)
+                Image(systemName: item.displaySymbol)
                     .foregroundStyle(.secondary)
                     .frame(width: 20)
                 Text(item.name)

@@ -120,11 +120,16 @@ private struct TripWeatherStrip: View {
     @State private var didLoad = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 10) {
             ForEach(forecasts) { day in
-                Image(systemName: day.symbolName)
-                    .font(.caption2)
-                    .foregroundStyle(AppTheme.brand)
+                VStack(spacing: 1) {
+                    Text(day.date, format: .dateTime.weekday(.abbreviated))
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Image(systemName: day.symbolName)
+                        .font(.caption2)
+                        .foregroundStyle(AppTheme.brand)
+                }
             }
         }
         .task {

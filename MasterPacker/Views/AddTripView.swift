@@ -13,30 +13,38 @@ struct AddTripView: View {
     @State private var travelMethod: TravelMethod = .car
     @State private var selectedActivities: Set<Activity> = []
     @State private var notes = ""
-    @State private var travelers: [TravelerDraft] = [TravelerDraft(name: "Me", ageBracket: .adult)]
+    @State private var selectedProfiles: [TravelerProfile] = []
     @State private var pets: [PetDraft] = []
     @State private var generateSuggestions = true
+    @State private var isPresentingTravelerChooser = false
+    @State private var isPresentingNewProfile = false
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    ForEach($travelers) { $traveler in
-                        TravelerRow(draft: $traveler, savedProfiles: savedProfiles) {
-                            travelers.removeAll { $0.id == traveler.id }
+                    ForEach(selectedProfiles) { profile in
+                        HStack {
+                            Text(profile.name)
+                            Spacer()
+                            Button(role: .destructive) {
+                                selectedProfiles.removeAll { $0.id == profile.id }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     Button {
-                        travelers.append(TravelerDraft(name: "", ageBracket: .adult))
+                        isPresentingTravelerChooser = true
                     } label: {
                         Label("Add traveler", systemImage: "plus")
                     }
                 } header: {
                     Text("Travelers")
                 } footer: {
-                    if !savedProfiles.isEmpty {
-                        Text("Tap the person icon to fill a traveler in from a saved profile — their always-pack items come along automatically.")
-                    }
+                    Text("Their always-pack items come along automatically.")
                 }
 
                 Section("Trip") {
@@ -88,12 +96,31 @@ struct AddTripView: View {
                         .disabled(!isValid)
                 }
             }
+            .confirmationDialog("Add Traveler", isPresented: $isPresentingTravelerChooser, titleVisibility: .visible) {
+                ForEach(availableProfiles) { profile in
+                    Button(profile.name) {
+                        selectedProfiles.append(profile)
+                    }
+                }
+                Button("Create New Traveler") {
+                    isPresentingNewProfile = true
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            .sheet(isPresented: $isPresentingNewProfile) {
+                NewProfileView { profile in
+                    selectedProfiles.append(profile)
+                }
+            }
         }
     }
 
+    private var availableProfiles: [TravelerProfile] {
+        savedProfiles.filter { profile in !selectedProfiles.contains { $0.id == profile.id } }
+    }
+
     private var isValid: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
-            travelers.contains { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
+        !name.trimmingCharacters(in: .whitespaces).isEmpty && !selectedProfiles.isEmpty
     }
 
     private func save() {
@@ -108,9 +135,8 @@ struct AddTripView: View {
         )
         modelContext.insert(trip)
 
-        let travelerDrafts = travelers.filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
-        let travelerModels = travelerDrafts.map { draft -> Traveler in
-            let traveler = Traveler(name: draft.name, ageBracket: draft.ageBracket, trip: trip)
+        let travelerModels = selectedProfiles.map { profile -> Traveler in
+            let traveler = Traveler(name: profile.name, ageBracket: profile.ageBracket, trip: trip)
             modelContext.insert(traveler)
             return traveler
         }
@@ -153,11 +179,10 @@ struct AddTripView: View {
             }
         }
 
-        // Always-pack items from a saved profile aren't gated by the
-        // "generate suggested packing list" toggle above — the whole point
-        // of saving them is that you always want them.
-        for (draft, traveler) in zip(travelerDrafts, travelerModels) {
-            guard let profile = draft.profile else { continue }
+        // Always-pack items from each traveler's saved profile aren't gated
+        // by the "generate suggested packing list" toggle above — the
+        // whole point of saving them is that you always want them.
+        for (profile, traveler) in zip(selectedProfiles, travelerModels) {
             for profileItem in profile.alwaysItems {
                 // Profile items can use a custom category (text-only, no
                 // matching PackingCategory case); fall back to .misc for
@@ -177,67 +202,10 @@ struct AddTripView: View {
     }
 }
 
-private struct TravelerDraft: Identifiable {
-    let id = UUID()
-    var name: String
-    var ageBracket: AgeBracket
-    /// Set when this traveler was filled in from a saved profile — pulls
-    /// that profile's always-pack items into the trip on save. Kept even
-    /// if the name/age are edited afterward, so "based on a profile" still
-    /// applies. Cleared by picking "Custom (no profile)" in the row menu.
-    var profile: TravelerProfile? = nil
-}
-
 private struct PetDraft: Identifiable {
     let id = UUID()
     var name: String
     var species: PetSpecies
-}
-
-private struct TravelerRow: View {
-    @Binding var draft: TravelerDraft
-    let savedProfiles: [TravelerProfile]
-    let onDelete: () -> Void
-
-    var body: some View {
-        HStack {
-            TextField("Name", text: $draft.name)
-            Picker("", selection: $draft.ageBracket) {
-                ForEach(AgeBracket.allCases) { bracket in
-                    Text(bracket.rawValue).tag(bracket)
-                }
-            }
-            .labelsHidden()
-
-            if !savedProfiles.isEmpty {
-                Menu {
-                    ForEach(savedProfiles) { profile in
-                        Button(profile.name) {
-                            draft.name = profile.name
-                            draft.ageBracket = profile.ageBracket
-                            draft.profile = profile
-                        }
-                    }
-                    if draft.profile != nil {
-                        Divider()
-                        Button("Custom (no profile)", role: .destructive) {
-                            draft.profile = nil
-                        }
-                    }
-                } label: {
-                    Image(systemName: draft.profile != nil ? "person.crop.circle.fill" : "person.crop.circle")
-                        .foregroundStyle(draft.profile != nil ? AppTheme.brand : .secondary)
-                }
-                .buttonStyle(.plain)
-            }
-
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
-            }
-            .buttonStyle(.plain)
-        }
-    }
 }
 
 private struct PetRow: View {
