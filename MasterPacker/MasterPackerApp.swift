@@ -9,7 +9,7 @@ struct MasterPackerApp: App {
     /// or ModelContainer init below will throw and the app will refuse to
     /// launch.
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([Trip.self, Traveler.self, Pet.self, PackingItem.self])
+        let schema = Schema([Trip.self, Traveler.self, Pet.self, PackingItem.self, TravelerProfile.self, ProfileItem.self])
         let modelConfiguration = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
 
         do {

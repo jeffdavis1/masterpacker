@@ -5,6 +5,7 @@ struct TripListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.startDate) private var trips: [Trip]
     @State private var isPresentingAddTrip = false
+    @State private var isPresentingProfiles = false
 
     var body: some View {
         NavigationStack {
@@ -38,6 +39,13 @@ struct TripListView: View {
                 TripDetailView(trip: trip)
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isPresentingProfiles = true
+                    } label: {
+                        Label("Saved Travelers", systemImage: "person.crop.circle")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingAddTrip = true
@@ -48,6 +56,9 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingAddTrip) {
                 AddTripView()
+            }
+            .sheet(isPresented: $isPresentingProfiles) {
+                ProfileListView()
             }
         }
     }
@@ -99,5 +110,8 @@ private struct TripRow: View {
 
 #Preview {
     TripListView()
-        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self], inMemory: true)
+        .modelContainer(
+            for: [Trip.self, PackingItem.self, Traveler.self, Pet.self, TravelerProfile.self, ProfileItem.self],
+            inMemory: true
+        )
 }

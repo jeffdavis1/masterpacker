@@ -4,6 +4,7 @@ import SwiftData
 struct AddTripView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \TravelerProfile.name) private var savedProfiles: [TravelerProfile]
 
     @State private var name = ""
     @State private var destination = ""
@@ -37,9 +38,9 @@ struct AddTripView: View {
                         .lineLimit(2...4)
                 }
 
-                Section("Travelers") {
+                Section {
                     ForEach($travelers) { $traveler in
-                        TravelerRow(draft: $traveler) {
+                        TravelerRow(draft: $traveler, savedProfiles: savedProfiles) {
                             travelers.removeAll { $0.id == traveler.id }
                         }
                     }
@@ -47,6 +48,12 @@ struct AddTripView: View {
                         travelers.append(TravelerDraft(name: "", ageBracket: .adult))
                     } label: {
                         Label("Add traveler", systemImage: "plus")
+                    }
+                } header: {
+                    Text("Travelers")
+                } footer: {
+                    if !savedProfiles.isEmpty {
+                        Text("Tap the person icon to fill a traveler in from a saved profile — their always-pack items come along automatically.")
                     }
                 }
 
@@ -101,13 +108,12 @@ struct AddTripView: View {
         )
         modelContext.insert(trip)
 
-        let travelerModels = travelers
-            .filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
-            .map { draft -> Traveler in
-                let traveler = Traveler(name: draft.name, ageBracket: draft.ageBracket, trip: trip)
-                modelContext.insert(traveler)
-                return traveler
-            }
+        let travelerDrafts = travelers.filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
+        let travelerModels = travelerDrafts.map { draft -> Traveler in
+            let traveler = Traveler(name: draft.name, ageBracket: draft.ageBracket, trip: trip)
+            modelContext.insert(traveler)
+            return traveler
+        }
 
         let petModels = pets
             .filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -147,6 +153,23 @@ struct AddTripView: View {
             }
         }
 
+        // Always-pack items from a saved profile aren't gated by the
+        // "generate suggested packing list" toggle above — the whole point
+        // of saving them is that you always want them.
+        for (draft, traveler) in zip(travelerDrafts, travelerModels) {
+            guard let profile = draft.profile else { continue }
+            for profileItem in profile.alwaysItems {
+                let item = PackingItem(
+                    name: profileItem.name,
+                    category: profileItem.category,
+                    quantity: profileItem.quantity,
+                    trip: trip,
+                    traveler: traveler
+                )
+                modelContext.insert(item)
+            }
+        }
+
         dismiss()
     }
 }
@@ -155,6 +178,11 @@ private struct TravelerDraft: Identifiable {
     let id = UUID()
     var name: String
     var ageBracket: AgeBracket
+    /// Set when this traveler was filled in from a saved profile — pulls
+    /// that profile's always-pack items into the trip on save. Kept even
+    /// if the name/age are edited afterward, so "based on a profile" still
+    /// applies. Cleared by picking "Custom (no profile)" in the row menu.
+    var profile: TravelerProfile? = nil
 }
 
 private struct PetDraft: Identifiable {
@@ -165,6 +193,7 @@ private struct PetDraft: Identifiable {
 
 private struct TravelerRow: View {
     @Binding var draft: TravelerDraft
+    let savedProfiles: [TravelerProfile]
     let onDelete: () -> Void
 
     var body: some View {
@@ -176,6 +205,29 @@ private struct TravelerRow: View {
                 }
             }
             .labelsHidden()
+
+            if !savedProfiles.isEmpty {
+                Menu {
+                    ForEach(savedProfiles) { profile in
+                        Button(profile.name) {
+                            draft.name = profile.name
+                            draft.ageBracket = profile.ageBracket
+                            draft.profile = profile
+                        }
+                    }
+                    if draft.profile != nil {
+                        Divider()
+                        Button("Custom (no profile)", role: .destructive) {
+                            draft.profile = nil
+                        }
+                    }
+                } label: {
+                    Image(systemName: draft.profile != nil ? "person.crop.circle.fill" : "person.crop.circle")
+                        .foregroundStyle(draft.profile != nil ? AppTheme.brand : .secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
             Button(role: .destructive, action: onDelete) {
                 Image(systemName: "minus.circle.fill")
                     .foregroundStyle(.red)
@@ -240,5 +292,8 @@ private struct ActivityChipGrid: View {
 
 #Preview {
     AddTripView()
-        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self], inMemory: true)
+        .modelContainer(
+            for: [Trip.self, PackingItem.self, Traveler.self, Pet.self, TravelerProfile.self, ProfileItem.self],
+            inMemory: true
+        )
 }
