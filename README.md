@@ -63,8 +63,29 @@ MasterPacker/
   Simulator (or device) to actually be signed into an iCloud account under
   **Settings → [your name]** for sync to do anything; without that, the app
   still runs fine, it just stays local-only.
-- **Phase 3 (next):** CloudKit sharing (`CKShare`) so a trip can be
-  shared/edited with travel companions
-- Weather-aware suggestions (pull forecast for the destination/dates)
+- **Phase 3 (deferred):** CloudKit sharing (`CKShare`) so a trip can be
+  shared/edited with travel companions. Higher-risk/less-common API surface
+  than Phase 2 (needs an `AppDelegate` hook for accepting invite links, and
+  real testing needs two Apple IDs/devices bouncing an invite back and
+  forth) — picking this back up after the backlog below.
+
+### Backlog (not yet started, no particular priority order)
+
+- Launch splash screen
+- Visual polish — a real color palette / design system instead of default
+  SwiftUI styling
+- Weather forecast integration for the destination/dates, feeding into
+  packing suggestions (e.g. rain in the forecast → add a rain jacket)
+- **Traveler profiles**: a reusable person (not tied to one trip) with an
+  "always pack" list (e.g. contact solution, specific medications) that
+  auto-seeds every new trip they're added to. Needs a data model change —
+  `Traveler` is currently trip-scoped, would need to become
+  profile-scoped with per-trip instances referencing a profile
+- **Pet profiles**: same idea for pets — reusable defaults (food bowl,
+  water bowl, treats, waste bags, medications) that auto-populate whenever
+  that pet is added to a trip
+- Map view with pins for every past/future trip destination (needs
+  geocoding the destination text into coordinates)
 - Reusable packing templates you can save and reapply
 - Widgets / Live Activities for "days until trip" and packing progress
+- (more to come)
