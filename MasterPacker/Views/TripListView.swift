@@ -21,12 +21,17 @@ struct TripListView: View {
                             NavigationLink(value: trip) {
                                 TripRow(trip: trip)
                             }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                         }
                         .onDelete(perform: deleteTrips)
                     }
-                    .listStyle(.insetGrouped)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
+            .background(AppTheme.screenGradient.ignoresSafeArea())
             .navigationTitle("My Trips")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: Trip.self) { trip in
@@ -58,23 +63,28 @@ private struct TripRow: View {
     let trip: Trip
 
     var body: some View {
-        HStack {
-            Image(systemName: trip.travelMethod.symbol)
-                .foregroundStyle(.tint)
-                .frame(width: 28)
-            VStack(alignment: .leading) {
-                Text(trip.name).font(.headline)
-                Text(trip.destination).font(.subheadline).foregroundStyle(.secondary)
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+        HStack(spacing: 13) {
+            IconBadge(systemImage: trip.travelMethod.symbol)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(trip.name)
+                    .font(.system(.headline, design: .rounded))
+                Text(trip.destination)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary.opacity(0.85))
             }
-            Spacer()
+
+            Spacer(minLength: 8)
+
             if !trip.items.isEmpty {
-                ProgressView(value: trip.progress)
-                    .tint(AppTheme.sage)
-                    .frame(width: 50)
+                ProgressRing(progress: trip.progress)
             }
         }
-        .padding(.vertical, 4)
+        .padding(14)
+        .floatingCard()
     }
 
     private var subtitle: String {
@@ -82,6 +92,7 @@ private struct TripRow: View {
         if !trip.pets.isEmpty {
             parts.append("\(trip.pets.count) pet\(trip.pets.count == 1 ? "" : "s")")
         }
+        parts.append("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s")")
         return parts.joined(separator: " · ")
     }
 }

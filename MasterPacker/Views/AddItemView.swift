@@ -31,6 +31,8 @@ struct AddItemView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.screenGradient.ignoresSafeArea())
             .navigationTitle("New Item")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -42,30 +42,34 @@ struct TripDetailView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    ProgressView(value: trip.progress) {
-                        Text("\(trip.packedCount) of \(trip.items.count) packed")
-                            .font(.subheadline)
-                    }
-                    .tint(AppTheme.sage)
-                    Text("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s") · \(trip.destination)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
+                TripProgressHeader(trip: trip)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
 
             ForEach(sections, id: \.label) { section in
-                Section(section.label) {
+                Section {
                     ForEach(section.items) { item in
                         ItemRow(item: item)
+                            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
                     .onDelete { offsets in
                         deleteItems(section.items, at: offsets)
                     }
+                } header: {
+                    Text(section.label.uppercased())
+                        .font(.system(.caption, design: .rounded, weight: .heavy))
+                        .foregroundStyle(.secondary)
+                        .tracking(0.6)
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationTitle(trip.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -85,6 +89,35 @@ struct TripDetailView: View {
         for index in offsets {
             modelContext.delete(items[index])
         }
+    }
+}
+
+private struct TripProgressHeader: View {
+    let trip: Trip
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(trip.name)
+                .font(.system(.title2, design: .rounded, weight: .bold))
+                .foregroundStyle(.white)
+
+            Text("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s") · \(trip.destination)")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.8))
+
+            ProgressBar(progress: trip.progress)
+
+            Text("\(trip.packedCount) of \(trip.items.count) packed")
+                .font(.system(.caption, design: .rounded, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .padding(18)
+        .background(AppTheme.brandGradient)
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadius + 4, style: .continuous))
+        .shadow(color: AppTheme.navy.opacity(0.25), radius: 16, y: 10)
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
     }
 }
 
@@ -113,5 +146,8 @@ private struct ItemRow: View {
             }
         }
         .buttonStyle(.plain)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .floatingCard(radius: AppTheme.cornerRadius - 2)
     }
 }

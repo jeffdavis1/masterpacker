@@ -69,6 +69,8 @@ struct AddTripView: View {
                     Text("Adds a starter checklist based on travelers, activities, and trip length. You can edit it afterward.")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.screenGradient.ignoresSafeArea())
             .navigationTitle("New Trip")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -34,6 +34,23 @@ enum AppTheme {
 
     static let cornerRadius: CGFloat = 14
     static let cardPadding: CGFloat = 12
+
+    // MARK: - Gradients
+
+    /// The soft gradient wash used behind full-screen List/Form content
+    /// instead of plain white — approved visual direction "Option A".
+    static var screenGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color(hex: 0xEAF1FD), Color(hex: 0xF7F4EC), cream],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    /// Diagonal brand gradient used for icon badges and header cards.
+    static var brandGradient: LinearGradient {
+        LinearGradient(colors: [brand, navy], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
 }
 
 extension Color {
@@ -64,5 +81,88 @@ private struct CardBackground: ViewModifier {
 extension View {
     func cardStyle() -> some View {
         modifier(CardBackground())
+    }
+}
+
+/// A solid white floating card with a soft brand-tinted shadow — used for
+/// list rows sitting on `AppTheme.screenGradient`. Prefer this over
+/// `cardStyle()` when the row needs to read crisply against the gradient
+/// background rather than blend into it.
+private struct FloatingCard: ViewModifier {
+    var radius: CGFloat = AppTheme.cornerRadius
+
+    func body(content: Content) -> some View {
+        content
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(color: AppTheme.navy.opacity(0.12), radius: 14, y: 8)
+    }
+}
+
+extension View {
+    func floatingCard(radius: CGFloat = AppTheme.cornerRadius) -> some View {
+        modifier(FloatingCard(radius: radius))
+    }
+}
+
+/// A colored rounded-square badge showing a symbol — e.g. the travel-method
+/// icon on a trip row.
+struct IconBadge: View {
+    let systemImage: String
+    var size: CGFloat = 44
+    var cornerRadius: CGFloat = 14
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(AppTheme.brandGradient)
+            .frame(width: size, height: size)
+            .overlay(
+                Image(systemName: systemImage)
+                    .font(.system(size: size * 0.42, weight: .semibold))
+                    .foregroundStyle(.white)
+            )
+            .shadow(color: AppTheme.brand.opacity(0.35), radius: 8, y: 4)
+    }
+}
+
+/// A small circular percent-complete indicator (e.g. packing progress on a
+/// trip row). Use `ProgressBar` for a full-width bar instead.
+struct ProgressRing: View {
+    let progress: Double
+    var lineWidth: CGFloat = 4
+    var diameter: CGFloat = 34
+    var color: Color = AppTheme.sage
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.18), lineWidth: lineWidth)
+            Circle()
+                .trim(from: 0, to: max(0.02, min(1, progress)))
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: diameter, height: diameter)
+    }
+}
+
+/// A full-width progress bar with a custom track/fill — used on the trip
+/// detail header card.
+struct ProgressBar: View {
+    let progress: Double
+    var trackColor: Color = .white.opacity(0.22)
+    var fillColor: Color = AppTheme.sage.opacity(0.85)
+    var height: CGFloat = 8
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(trackColor)
+                Capsule()
+                    .fill(fillColor)
+                    .frame(width: geo.size.width * max(0.02, min(1, progress)))
+            }
+        }
+        .frame(height: height)
     }
 }
