@@ -18,14 +18,17 @@ final class Trip {
     /// codable types; `activities` below bridges this to `Set<Activity>`.
     var activityRawValues: [String] = []
 
+    // CloudKit requires every to-many relationship to be Optional (not just
+    // have a default). These are kept private and exposed below as
+    // non-optional computed properties so the rest of the app is unaffected.
     @Relationship(deleteRule: .cascade, inverse: \Traveler.trip)
-    var travelers: [Traveler] = []
+    private var travelersStorage: [Traveler]? = []
 
     @Relationship(deleteRule: .cascade, inverse: \Pet.trip)
-    var pets: [Pet] = []
+    private var petsStorage: [Pet]? = []
 
     @Relationship(deleteRule: .cascade, inverse: \PackingItem.trip)
-    var items: [PackingItem] = []
+    private var itemsStorage: [PackingItem]? = []
 
     init(
         name: String,
@@ -48,6 +51,21 @@ final class Trip {
     var activities: Set<Activity> {
         get { Set(activityRawValues.compactMap(Activity.init(rawValue:))) }
         set { activityRawValues = newValue.map(\.rawValue) }
+    }
+
+    var travelers: [Traveler] {
+        get { travelersStorage ?? [] }
+        set { travelersStorage = newValue }
+    }
+
+    var pets: [Pet] {
+        get { petsStorage ?? [] }
+        set { petsStorage = newValue }
+    }
+
+    var items: [PackingItem] {
+        get { itemsStorage ?? [] }
+        set { itemsStorage = newValue }
     }
 
     /// Trip length in whole days, inclusive of both start and end dates.

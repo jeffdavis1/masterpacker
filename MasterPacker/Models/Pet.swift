@@ -9,6 +9,12 @@ final class Pet {
     var species: PetSpecies = PetSpecies.dog
     var trip: Trip?
 
+    // Gives PackingItem.pet a declared inverse — CloudKit requires every
+    // relationship to have one. Optional, per CloudKit's requirement that
+    // all to-many relationships be Optional.
+    @Relationship(inverse: \PackingItem.pet)
+    var packingItems: [PackingItem]? = []
+
     init(name: String, species: PetSpecies, trip: Trip? = nil) {
         self.name = name
         self.species = species

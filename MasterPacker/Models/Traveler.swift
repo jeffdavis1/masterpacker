@@ -9,6 +9,12 @@ final class Traveler {
     var ageBracket: AgeBracket = AgeBracket.adult
     var trip: Trip?
 
+    // Gives PackingItem.traveler a declared inverse — CloudKit requires
+    // every relationship to have one. Optional, per CloudKit's requirement
+    // that all to-many relationships be Optional.
+    @Relationship(inverse: \PackingItem.traveler)
+    var packingItems: [PackingItem]? = []
+
     init(name: String, ageBracket: AgeBracket, trip: Trip? = nil) {
         self.name = name
         self.ageBracket = ageBracket
