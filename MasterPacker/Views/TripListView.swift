@@ -57,12 +57,13 @@ private struct TripRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: trip.tripType.symbol)
+            Image(systemName: trip.travelMethod.symbol)
                 .foregroundStyle(.tint)
                 .frame(width: 28)
             VStack(alignment: .leading) {
                 Text(trip.name).font(.headline)
                 Text(trip.destination).font(.subheadline).foregroundStyle(.secondary)
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
             if !trip.items.isEmpty {
@@ -72,9 +73,17 @@ private struct TripRow: View {
         }
         .padding(.vertical, 4)
     }
+
+    private var subtitle: String {
+        var parts = ["\(trip.travelers.count) traveler\(trip.travelers.count == 1 ? "" : "s")"]
+        if !trip.pets.isEmpty {
+            parts.append("\(trip.pets.count) pet\(trip.pets.count == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: " · ")
+    }
 }
 
 #Preview {
     TripListView()
-        .modelContainer(for: [Trip.self, PackingItem.self], inMemory: true)
+        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self], inMemory: true)
 }

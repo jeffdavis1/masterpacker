@@ -11,7 +11,11 @@
 		7BC98E4A879ECC550BA074B2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620FDBCAB506ED42E6E22314 /* ContentView.swift */; };
 		6B547671E1619B1E9CE45A41 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70541B1AD346B7FD891E405E /* Trip.swift */; };
 		1D462128AAAB5F6510333E94 /* PackingItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BD4940700936872CE97FF4 /* PackingItem.swift */; };
-		86B26A94EB6C4ECCE2CB7C69 /* PackingTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA9CCA06D61EF382938C70B /* PackingTemplate.swift */; };
+		86B26A94EB6C4ECCE2CB7C69 /* PackingRulesEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA9CCA06D61EF382938C70B /* PackingRulesEngine.swift */; };
+		00C6DEE7C2AC6D2BDE99782D /* Traveler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F25240B4E950DBDC6BB44A /* Traveler.swift */; };
+		074ACA1044236520B57A0A55 /* Pet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE87966B57A366920A15FF0 /* Pet.swift */; };
+		7E0C16F701701F57C427F863 /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E321AF525F903CB2AA1905 /* Activity.swift */; };
+		8DACB12FE50E19E79B416F2D /* TravelMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9ACBE4821F48738058145AA /* TravelMethod.swift */; };
 		6410D3586841C6A9B6BE3B78 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5028B2482F31F599C04F93 /* TripListView.swift */; };
 		E8AE0017D039B5510820EE2E /* AddTripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373564E5B61B02A364226932 /* AddTripView.swift */; };
 		D74F545D56087331C081C280 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76319163FC75AF902D01566 /* TripDetailView.swift */; };
@@ -25,7 +29,11 @@
 		620FDBCAB506ED42E6E22314 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		70541B1AD346B7FD891E405E /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		16BD4940700936872CE97FF4 /* PackingItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackingItem.swift; sourceTree = "<group>"; };
-		1AA9CCA06D61EF382938C70B /* PackingTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackingTemplate.swift; sourceTree = "<group>"; };
+		1AA9CCA06D61EF382938C70B /* PackingRulesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackingRulesEngine.swift; sourceTree = "<group>"; };
+		D4F25240B4E950DBDC6BB44A /* Traveler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Traveler.swift; sourceTree = "<group>"; };
+		1EE87966B57A366920A15FF0 /* Pet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pet.swift; sourceTree = "<group>"; };
+		07E321AF525F903CB2AA1905 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
+		B9ACBE4821F48738058145AA /* TravelMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelMethod.swift; sourceTree = "<group>"; };
 		4B5028B2482F31F599C04F93 /* TripListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListView.swift; sourceTree = "<group>"; };
 		373564E5B61B02A364226932 /* AddTripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTripView.swift; sourceTree = "<group>"; };
 		D76319163FC75AF902D01566 /* TripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailView.swift; sourceTree = "<group>"; };
@@ -80,6 +88,10 @@
 				70541B1AD346B7FD891E405E,
 				16BD4940700936872CE97FF4,
 				1AA9CCA06D61EF382938C70B,
+				D4F25240B4E950DBDC6BB44A /* Traveler.swift */,
+				1EE87966B57A366920A15FF0 /* Pet.swift */,
+				07E321AF525F903CB2AA1905 /* Activity.swift */,
+				B9ACBE4821F48738058145AA /* TravelMethod.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -176,7 +188,11 @@
 				7BC98E4A879ECC550BA074B2 /* ContentView.swift in Sources */,
 				6B547671E1619B1E9CE45A41 /* Trip.swift in Sources */,
 				1D462128AAAB5F6510333E94 /* PackingItem.swift in Sources */,
-				86B26A94EB6C4ECCE2CB7C69 /* PackingTemplate.swift in Sources */,
+				86B26A94EB6C4ECCE2CB7C69 /* PackingRulesEngine.swift in Sources */,
+				00C6DEE7C2AC6D2BDE99782D /* Traveler.swift in Sources */,
+				074ACA1044236520B57A0A55 /* Pet.swift in Sources */,
+				7E0C16F701701F57C427F863 /* Activity.swift in Sources */,
+				8DACB12FE50E19E79B416F2D /* TravelMethod.swift in Sources */,
 				6410D3586841C6A9B6BE3B78 /* TripListView.swift in Sources */,
 				E8AE0017D039B5510820EE2E /* AddTripView.swift in Sources */,
 				D74F545D56087331C081C280 /* TripDetailView.swift in Sources */,

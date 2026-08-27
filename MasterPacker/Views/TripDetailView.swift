@@ -6,10 +6,37 @@ struct TripDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isPresentingAddItem = false
 
-    private var groupedItems: [(category: PackingCategory, items: [PackingItem])] {
-        Dictionary(grouping: trip.items, by: \.category)
-            .sorted { $0.key.rawValue < $1.key.rawValue }
-            .map { (category: $0.key, items: $0.value) }
+    /// Shared/household items first, then one section per traveler (trip
+    /// order), then one section per pet — each sorted by category so the
+    /// list reads predictably.
+    private var sections: [(label: String, items: [PackingItem])] {
+        var result: [(String, [PackingItem])] = []
+
+        let shared = trip.items.filter { $0.traveler == nil && $0.pet == nil }
+        if !shared.isEmpty {
+            result.append(("Shared", sorted(shared)))
+        }
+        for traveler in trip.travelers {
+            let items = trip.items.filter { $0.traveler == traveler }
+            if !items.isEmpty {
+                result.append((traveler.name, sorted(items)))
+            }
+        }
+        for pet in trip.pets {
+            let items = trip.items.filter { $0.pet == pet }
+            if !items.isEmpty {
+                result.append(("\(pet.name) (pet)", sorted(items)))
+            }
+        }
+        return result
+    }
+
+    private func sorted(_ items: [PackingItem]) -> [PackingItem] {
+        items.sorted { lhs, rhs in
+            lhs.category.rawValue == rhs.category.rawValue
+                ? lhs.name < rhs.name
+                : lhs.category.rawValue < rhs.category.rawValue
+        }
     }
 
     var body: some View {
@@ -27,13 +54,13 @@ struct TripDetailView: View {
                 .padding(.vertical, 4)
             }
 
-            ForEach(groupedItems, id: \.category) { group in
-                Section(group.category.rawValue) {
-                    ForEach(group.items) { item in
+            ForEach(sections, id: \.label) { section in
+                Section(section.label) {
+                    ForEach(section.items) { item in
                         ItemRow(item: item)
                     }
                     .onDelete { offsets in
-                        deleteItems(group.items, at: offsets)
+                        deleteItems(section.items, at: offsets)
                     }
                 }
             }
@@ -70,6 +97,9 @@ private struct ItemRow: View {
             HStack {
                 Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.isPacked ? .green : .secondary)
+                Image(systemName: item.category.symbol)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
                 Text(item.name)
                     .strikethrough(item.isPacked)
                     .foregroundStyle(item.isPacked ? .secondary : .primary)

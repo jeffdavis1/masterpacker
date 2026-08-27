@@ -7,7 +7,18 @@ final class Trip {
     var destination: String
     var startDate: Date
     var endDate: Date
-    var tripType: TripType
+    var travelMethod: TravelMethod
+    var notes: String
+
+    /// Stored as raw strings because SwiftData attributes must be primitive-
+    /// codable types; `activities` below bridges this to `Set<Activity>`.
+    var activityRawValues: [String]
+
+    @Relationship(deleteRule: .cascade, inverse: \Traveler.trip)
+    var travelers: [Traveler] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Pet.trip)
+    var pets: [Pet] = []
 
     @Relationship(deleteRule: .cascade, inverse: \PackingItem.trip)
     var items: [PackingItem] = []
@@ -17,13 +28,22 @@ final class Trip {
         destination: String,
         startDate: Date,
         endDate: Date,
-        tripType: TripType = .general
+        travelMethod: TravelMethod = .car,
+        activities: Set<Activity> = [],
+        notes: String = ""
     ) {
         self.name = name
         self.destination = destination
         self.startDate = startDate
         self.endDate = endDate
-        self.tripType = tripType
+        self.travelMethod = travelMethod
+        self.activityRawValues = activities.map(\.rawValue)
+        self.notes = notes
+    }
+
+    var activities: Set<Activity> {
+        get { Set(activityRawValues.compactMap(Activity.init(rawValue:))) }
+        set { activityRawValues = newValue.map(\.rawValue) }
     }
 
     /// Trip length in whole days, inclusive of both start and end dates.
@@ -38,27 +58,5 @@ final class Trip {
 
     var progress: Double {
         items.isEmpty ? 0 : Double(packedCount) / Double(items.count)
-    }
-}
-
-enum TripType: String, Codable, CaseIterable, Identifiable {
-    case general = "General"
-    case beach = "Beach"
-    case cityBreak = "City Break"
-    case hiking = "Hiking / Outdoors"
-    case business = "Business"
-    case coldWeather = "Cold Weather"
-
-    var id: String { rawValue }
-
-    var symbol: String {
-        switch self {
-        case .general: return "airplane"
-        case .beach: return "beach.umbrella"
-        case .cityBreak: return "building.2"
-        case .hiking: return "figure.hiking"
-        case .business: return "briefcase"
-        case .coldWeather: return "snowflake"
-        }
     }
 }

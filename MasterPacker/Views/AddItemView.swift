@@ -9,6 +9,7 @@ struct AddItemView: View {
     @State private var name = ""
     @State private var category: PackingCategory = .misc
     @State private var quantity = 1
+    @State private var assignee: AssigneeOption = .shared
 
     var body: some View {
         NavigationStack {
@@ -20,6 +21,15 @@ struct AddItemView: View {
                     }
                 }
                 Stepper("Quantity: \(quantity)", value: $quantity, in: 1...20)
+                Picker("Assign to", selection: $assignee) {
+                    Text("Shared / Household").tag(AssigneeOption.shared)
+                    ForEach(trip.travelers) { traveler in
+                        Text(traveler.name).tag(AssigneeOption.traveler(traveler))
+                    }
+                    ForEach(trip.pets) { pet in
+                        Text("\(pet.name) (pet)").tag(AssigneeOption.pet(pet))
+                    }
+                }
             }
             .navigationTitle("New Item")
             .toolbar {
@@ -35,14 +45,34 @@ struct AddItemView: View {
     }
 
     private func save() {
-        let item = PackingItem(name: name, category: category, quantity: quantity, trip: trip)
+        let traveler: Traveler?
+        let pet: Pet?
+        switch assignee {
+        case .shared:
+            traveler = nil
+            pet = nil
+        case .traveler(let t):
+            traveler = t
+            pet = nil
+        case .pet(let p):
+            traveler = nil
+            pet = p
+        }
+
+        let item = PackingItem(name: name, category: category, quantity: quantity, trip: trip, traveler: traveler, pet: pet)
         modelContext.insert(item)
         dismiss()
     }
 }
 
+enum AssigneeOption: Hashable {
+    case shared
+    case traveler(Traveler)
+    case pet(Pet)
+}
+
 #Preview {
     let trip = Trip(name: "Preview Trip", destination: "Somewhere", startDate: .now, endDate: .now)
     return AddItemView(trip: trip)
-        .modelContainer(for: [Trip.self, PackingItem.self], inMemory: true)
+        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self], inMemory: true)
 }

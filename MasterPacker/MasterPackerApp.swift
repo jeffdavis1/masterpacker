@@ -7,6 +7,6 @@ struct MasterPackerApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [Trip.self, PackingItem.self])
+        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self])
     }
 }

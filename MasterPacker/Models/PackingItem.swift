@@ -9,18 +9,33 @@ final class PackingItem {
     var isPacked: Bool
     var trip: Trip?
 
+    /// Who this item is for. Both nil means it's a shared/household item.
+    var traveler: Traveler?
+    var pet: Pet?
+
     init(
         name: String,
         category: PackingCategory,
         quantity: Int = 1,
         isPacked: Bool = false,
-        trip: Trip? = nil
+        trip: Trip? = nil,
+        traveler: Traveler? = nil,
+        pet: Pet? = nil
     ) {
         self.name = name
         self.category = category
         self.quantity = quantity
         self.isPacked = isPacked
         self.trip = trip
+        self.traveler = traveler
+        self.pet = pet
+    }
+
+    /// Display label for the section this item belongs in.
+    var assigneeLabel: String {
+        if let traveler { return traveler.name }
+        if let pet { return "\(pet.name) (pet)" }
+        return "Shared"
     }
 }
 
@@ -30,6 +45,7 @@ enum PackingCategory: String, Codable, CaseIterable, Identifiable {
     case electronics = "Electronics"
     case documents = "Documents"
     case gear = "Gear"
+    case petSupplies = "Pet Supplies"
     case misc = "Miscellaneous"
 
     var id: String { rawValue }
@@ -41,6 +57,7 @@ enum PackingCategory: String, Codable, CaseIterable, Identifiable {
         case .electronics: return "bolt"
         case .documents: return "doc.text"
         case .gear: return "backpack"
+        case .petSupplies: return "pawprint"
         case .misc: return "shippingbox"
         }
     }
