@@ -19,8 +19,8 @@ struct ContentView: View {
         .tint(AppTheme.brand)
         .fontDesign(.rounded)
         .task {
-            try? await Task.sleep(for: .seconds(1.1))
-            withAnimation(.easeOut(duration: 0.4)) {
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation(.easeOut(duration: 0.5)) {
                 isShowingSplash = false
             }
         }
