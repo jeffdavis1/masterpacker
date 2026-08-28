@@ -1,34 +1,64 @@
 import SwiftUI
 import SwiftData
 
-/// Entry point for saved traveler profiles — presented as a sheet from
-/// `TripListView`.
+/// Entry point for saved traveler and pet profiles — presented as a sheet
+/// from `TripListView`.
 struct ProfileListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \TravelerProfile.name) private var profiles: [TravelerProfile]
+    @Query(sort: \TravelerProfile.name) private var travelerProfiles: [TravelerProfile]
+    @Query(sort: \PetProfile.name) private var petProfiles: [PetProfile]
     @State private var isPresentingAddProfile = false
+    @State private var isPresentingAddPetProfile = false
     @State private var path = NavigationPath()
 
     var body: some View {
         NavigationStack(path: $path) {
             Group {
-                if profiles.isEmpty {
+                if travelerProfiles.isEmpty && petProfiles.isEmpty {
                     ContentUnavailableView(
-                        "No saved travelers",
+                        "No saved travelers or pets",
                         systemImage: "person.crop.circle.badge.plus",
-                        description: Text("Save a traveler's always-pack list once, then reuse it on any trip.")
+                        description: Text("Save someone's always-pack list once, then reuse it on any trip.")
                     )
                 } else {
                     List {
-                        ForEach(profiles) { profile in
-                            NavigationLink(value: profile) {
-                                ProfileRow(profile: profile)
+                        if !travelerProfiles.isEmpty {
+                            Section("Travelers") {
+                                ForEach(travelerProfiles) { profile in
+                                    NavigationLink(value: profile) {
+                                        ProfileRow(
+                                            name: profile.name,
+                                            subtitle: profile.ageBracket.rawValue,
+                                            symbol: profile.ageBracket.symbol,
+                                            itemCount: profile.alwaysItems.count
+                                        )
+                                    }
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                }
+                                .onDelete(perform: deleteTravelerProfiles)
                             }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                         }
-                        .onDelete(perform: deleteProfiles)
+
+                        if !petProfiles.isEmpty {
+                            Section("Pets") {
+                                ForEach(petProfiles) { profile in
+                                    NavigationLink(value: profile) {
+                                        ProfileRow(
+                                            name: profile.name,
+                                            subtitle: profile.species.rawValue,
+                                            symbol: profile.species.symbol,
+                                            itemCount: profile.alwaysItems.count
+                                        )
+                                    }
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                }
+                                .onDelete(perform: deletePetProfiles)
+                            }
+                        }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -40,12 +70,24 @@ struct ProfileListView: View {
             .navigationDestination(for: TravelerProfile.self) { profile in
                 ProfileDetailView(profile: profile)
             }
+            .navigationDestination(for: PetProfile.self) { profile in
+                PetProfileDetailView(profile: profile)
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isPresentingAddProfile = true
+                    Menu {
+                        Button {
+                            isPresentingAddProfile = true
+                        } label: {
+                            Label("Add Traveler", systemImage: "person.crop.circle")
+                        }
+                        Button {
+                            isPresentingAddPetProfile = true
+                        } label: {
+                            Label("Add Pet", systemImage: "pawprint")
+                        }
                     } label: {
-                        Label("Add Traveler Profile", systemImage: "plus")
+                        Label("Add", systemImage: "plus")
                     }
                 }
             }
@@ -56,30 +98,44 @@ struct ProfileListView: View {
                     path.append(profile)
                 }
             }
+            .sheet(isPresented: $isPresentingAddPetProfile) {
+                NewPetProfileView { profile in
+                    path.append(profile)
+                }
+            }
         }
     }
 
-    private func deleteProfiles(at offsets: IndexSet) {
+    private func deleteTravelerProfiles(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(profiles[index])
+            modelContext.delete(travelerProfiles[index])
+        }
+    }
+
+    private func deletePetProfiles(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(petProfiles[index])
         }
     }
 }
 
 private struct ProfileRow: View {
-    let profile: TravelerProfile
+    let name: String
+    let subtitle: String
+    let symbol: String
+    let itemCount: Int
 
     var body: some View {
         HStack(spacing: 13) {
-            IconBadge(systemImage: profile.ageBracket.symbol)
+            IconBadge(systemImage: symbol)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(profile.name)
+                Text(name)
                     .font(.system(.headline, design: .rounded))
-                Text(profile.ageBracket.rawValue)
+                Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("\(profile.alwaysItems.count) always-pack item\(profile.alwaysItems.count == 1 ? "" : "s")")
+                Text("\(itemCount) always-pack item\(itemCount == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundStyle(.secondary.opacity(0.85))
             }
@@ -94,7 +150,10 @@ private struct ProfileRow: View {
 #Preview {
     ProfileListView()
         .modelContainer(
-            for: [TravelerProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
+            for: [
+                TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+                Trip.self, Traveler.self, Pet.self, PackingItem.self,
+            ],
             inMemory: true
         )
 }

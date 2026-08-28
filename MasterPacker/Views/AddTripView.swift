@@ -13,9 +13,10 @@ struct AddTripView: View {
     @State private var selectedActivities: Set<Activity> = []
     @State private var notes = ""
     @State private var selectedProfiles: [TravelerProfile] = []
-    @State private var pets: [PetDraft] = []
+    @State private var selectedPetProfiles: [PetProfile] = []
     @State private var generateSuggestions = true
     @State private var isPresentingTravelerChooser = false
+    @State private var isPresentingPetChooser = false
 
     var body: some View {
         NavigationStack {
@@ -63,17 +64,29 @@ struct AddTripView: View {
                         .lineLimit(2...4)
                 }
 
-                Section("Pets") {
-                    ForEach($pets) { $pet in
-                        PetRow(draft: $pet) {
-                            pets.removeAll { $0.id == pet.id }
+                Section {
+                    ForEach(selectedPetProfiles) { profile in
+                        HStack {
+                            Text(profile.name)
+                            Spacer()
+                            Button(role: .destructive) {
+                                selectedPetProfiles.removeAll { $0.id == profile.id }
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     Button {
-                        pets.append(PetDraft(name: "", species: .dog))
+                        isPresentingPetChooser = true
                     } label: {
                         Label("Add pet", systemImage: "plus")
                     }
+                } header: {
+                    Text("Pets")
+                } footer: {
+                    Text("Their always-pack items come along automatically.")
                 }
 
                 Section {
@@ -96,6 +109,9 @@ struct AddTripView: View {
             }
             .sheet(isPresented: $isPresentingTravelerChooser) {
                 TravelerChooserView(selectedProfiles: $selectedProfiles)
+            }
+            .sheet(isPresented: $isPresentingPetChooser) {
+                PetChooserView(selectedProfiles: $selectedPetProfiles)
             }
         }
     }
@@ -122,13 +138,11 @@ struct AddTripView: View {
             return traveler
         }
 
-        let petModels = pets
-            .filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty }
-            .map { draft -> Pet in
-                let pet = Pet(name: draft.name, species: draft.species, trip: trip)
-                modelContext.insert(pet)
-                return pet
-            }
+        let petModels = selectedPetProfiles.map { profile -> Pet in
+            let pet = Pet(name: profile.name, species: profile.species, trip: trip)
+            modelContext.insert(pet)
+            return pet
+        }
 
         trip.travelers = travelerModels
         trip.pets = petModels
@@ -160,8 +174,8 @@ struct AddTripView: View {
             }
         }
 
-        // Always-pack items from each traveler's saved profile aren't gated
-        // by the "generate suggested packing list" toggle above — the
+        // Always-pack items from each traveler's/pet's saved profile aren't
+        // gated by the "generate suggested packing list" toggle above — the
         // whole point of saving them is that you always want them.
         for (profile, traveler) in zip(selectedProfiles, travelerModels) {
             for profileItem in profile.alwaysItems {
@@ -174,6 +188,19 @@ struct AddTripView: View {
                     quantity: profileItem.quantity,
                     trip: trip,
                     traveler: traveler
+                )
+                modelContext.insert(item)
+            }
+        }
+
+        for (profile, pet) in zip(selectedPetProfiles, petModels) {
+            for profileItem in profile.alwaysItems {
+                let item = PackingItem(
+                    name: profileItem.name,
+                    category: PackingCategory(rawValue: profileItem.categoryName) ?? .misc,
+                    quantity: profileItem.quantity,
+                    trip: trip,
+                    pet: pet
                 )
                 modelContext.insert(item)
             }
@@ -263,30 +290,80 @@ private struct TravelerChooserView: View {
     }
 }
 
-private struct PetDraft: Identifiable {
-    let id = UUID()
-    var name: String
-    var species: PetSpecies
-}
-
-private struct PetRow: View {
-    @Binding var draft: PetDraft
-    let onDelete: () -> Void
+/// Same as TravelerChooserView, but for saved pets.
+private struct PetChooserView: View {
+    @Binding var selectedProfiles: [PetProfile]
+    @Query(sort: \PetProfile.name) private var savedProfiles: [PetProfile]
+    @Environment(\.dismiss) private var dismiss
+    @State private var isPresentingNewProfile = false
 
     var body: some View {
-        HStack {
-            TextField("Pet name", text: $draft.name)
-            Picker("", selection: $draft.species) {
-                ForEach(PetSpecies.allCases) { species in
-                    Label(species.rawValue, systemImage: species.symbol).tag(species)
+        NavigationStack {
+            Group {
+                if savedProfiles.isEmpty {
+                    ContentUnavailableView(
+                        "No saved pets yet",
+                        systemImage: "pawprint",
+                        description: Text("Create one to add them to this trip.")
+                    )
+                } else {
+                    List {
+                        ForEach(savedProfiles) { profile in
+                            Button {
+                                toggle(profile)
+                            } label: {
+                                HStack {
+                                    Text(profile.name)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    if isSelected(profile) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(AppTheme.brand)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                            }
+                            .listRowBackground(Color.white)
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
                 }
             }
-            .labelsHidden()
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "minus.circle.fill")
-                    .foregroundStyle(.red)
+            .background(AppTheme.screenGradient.ignoresSafeArea())
+            .navigationTitle("Add Pets")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isPresentingNewProfile = true
+                    } label: {
+                        Label("Create New Pet", systemImage: "plus")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
             }
-            .buttonStyle(.plain)
+            .sheet(isPresented: $isPresentingNewProfile) {
+                NewPetProfileView { profile in
+                    if !isSelected(profile) {
+                        selectedProfiles.append(profile)
+                    }
+                }
+            }
+        }
+    }
+
+    private func isSelected(_ profile: PetProfile) -> Bool {
+        selectedProfiles.contains { $0.id == profile.id }
+    }
+
+    private func toggle(_ profile: PetProfile) {
+        if isSelected(profile) {
+            selectedProfiles.removeAll { $0.id == profile.id }
+        } else {
+            selectedProfiles.append(profile)
         }
     }
 }
@@ -325,7 +402,10 @@ private struct ActivityChipGrid: View {
 #Preview {
     AddTripView()
         .modelContainer(
-            for: [Trip.self, PackingItem.self, Traveler.self, Pet.self, TravelerProfile.self, ProfileItem.self, CustomCategory.self],
+            for: [
+                Trip.self, PackingItem.self, Traveler.self, Pet.self,
+                TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+            ],
             inMemory: true
         )
 }

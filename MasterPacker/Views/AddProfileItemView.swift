@@ -2,7 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct AddProfileItemView: View {
-    let profile: TravelerProfile
+    var profile: TravelerProfile?
+    var petProfile: PetProfile?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \CustomCategory.name) private var customCategories: [CustomCategory]
@@ -58,7 +59,13 @@ struct AddProfileItemView: View {
     }
 
     private func save() {
-        let item = ProfileItem(name: name, categoryName: categoryName, quantity: quantity, profile: profile)
+        let item = ProfileItem(
+            name: name,
+            categoryName: categoryName,
+            quantity: quantity,
+            profile: profile,
+            petProfile: petProfile
+        )
         modelContext.insert(item)
         dismiss()
     }
@@ -81,5 +88,5 @@ struct AddProfileItemView: View {
 #Preview {
     let profile = TravelerProfile(name: "Preview")
     return AddProfileItemView(profile: profile)
-        .modelContainer(for: [TravelerProfile.self, ProfileItem.self, CustomCategory.self], inMemory: true)
+        .modelContainer(for: [TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self], inMemory: true)
 }

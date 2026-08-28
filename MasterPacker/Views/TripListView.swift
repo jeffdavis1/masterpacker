@@ -145,7 +145,7 @@ private struct TripWeatherStrip: View {
         .modelContainer(
             for: [
                 Trip.self, PackingItem.self, Traveler.self, Pet.self,
-                TravelerProfile.self, ProfileItem.self, CustomCategory.self,
+                TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
             ],
             inMemory: true
         )

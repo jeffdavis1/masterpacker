@@ -1,28 +1,28 @@
 import SwiftUI
 import SwiftData
 
-struct NewProfileView: View {
-    var onCreate: (TravelerProfile) -> Void
+struct NewPetProfileView: View {
+    var onCreate: (PetProfile) -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
-    @State private var ageBracket: AgeBracket = .adult
+    @State private var species: PetSpecies = .dog
 
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Name", text: $name)
-                Picker("Age bracket", selection: $ageBracket) {
-                    ForEach(AgeBracket.allCases) { bracket in
-                        Text(bracket.rawValue).tag(bracket)
+                TextField("Pet name", text: $name)
+                Picker("Species", selection: $species) {
+                    ForEach(PetSpecies.allCases) { species in
+                        Label(species.rawValue, systemImage: species.symbol).tag(species)
                     }
                 }
             }
             .scrollContentBackground(.hidden)
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("New Traveler Profile")
+            .navigationTitle("New Pet Profile")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -36,7 +36,7 @@ struct NewProfileView: View {
     }
 
     private func save() {
-        let profile = TravelerProfile(name: name, ageBracket: ageBracket)
+        let profile = PetProfile(name: name, species: species)
         modelContext.insert(profile)
         onCreate(profile)
         dismiss()
@@ -44,6 +44,6 @@ struct NewProfileView: View {
 }
 
 #Preview {
-    NewProfileView(onCreate: { _ in })
-        .modelContainer(for: [TravelerProfile.self, PetProfile.self, ProfileItem.self], inMemory: true)
+    NewPetProfileView(onCreate: { _ in })
+        .modelContainer(for: [PetProfile.self, TravelerProfile.self, ProfileItem.self], inMemory: true)
 }
