@@ -40,7 +40,7 @@ struct ApplyTemplateView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
-                            .listRowBackground(Color.white)
+                            .listRowBackground(AppTheme.cardSurface)
                         }
                     }
                     .listStyle(.insetGrouped)

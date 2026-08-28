@@ -22,7 +22,7 @@ struct ProfileDetailView: View {
                     }
                 }
             }
-            .listRowBackground(Color.white)
+            .listRowBackground(AppTheme.cardSurface)
 
             Section {
                 if profile.alwaysItems.isEmpty {
@@ -44,7 +44,7 @@ struct ProfileDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .listRowBackground(Color.white)
+                        .listRowBackground(AppTheme.cardSurface)
                     }
                     .onDelete(perform: deleteItems)
                 }
@@ -54,7 +54,7 @@ struct ProfileDetailView: View {
                 } label: {
                     Label("Add custom item", systemImage: "plus")
                 }
-                .listRowBackground(Color.white)
+                .listRowBackground(AppTheme.cardSurface)
             } header: {
                 Text("Always Pack")
             }

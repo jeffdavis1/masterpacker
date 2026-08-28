@@ -21,7 +21,7 @@ struct PetProfileDetailView: View {
                     }
                 }
             }
-            .listRowBackground(Color.white)
+            .listRowBackground(AppTheme.cardSurface)
 
             Section {
                 if profile.alwaysItems.isEmpty {
@@ -43,7 +43,7 @@ struct PetProfileDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .listRowBackground(Color.white)
+                        .listRowBackground(AppTheme.cardSurface)
                     }
                     .onDelete(perform: deleteItems)
                 }
@@ -53,7 +53,7 @@ struct PetProfileDetailView: View {
                 } label: {
                     Label("Add custom item", systemImage: "plus")
                 }
-                .listRowBackground(Color.white)
+                .listRowBackground(AppTheme.cardSurface)
             } header: {
                 Text("Always Pack")
             }

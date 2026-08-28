@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Shared design tokens for MasterPacker, pulled from the app icon (a blue
 /// suitcase scene with a navy case, cream label, and olive toiletry bag).
@@ -30,6 +31,13 @@ enum AppTheme {
     /// on-brand rather than generic.
     static let sage = Color(hex: 0x6E7A4E)
 
+    /// Card/row surface — solid white in light mode, a dark elevated
+    /// navy-gray in dark mode. Used by `floatingCard()` and any
+    /// `.listRowBackground` that needs to sit crisply on `screenGradient`
+    /// rather than blend into it (the whole point of these surfaces is
+    /// contrast against the gradient, so this must track appearance).
+    static let cardSurface = Color.adaptive(light: 0xFFFFFF, dark: 0x1E2433)
+
     // MARK: - Layout
 
     static let cornerRadius: CGFloat = 14
@@ -39,15 +47,26 @@ enum AppTheme {
 
     /// The soft gradient wash used behind full-screen List/Form content
     /// instead of plain white — approved visual direction "Option A".
+    /// Adapts to a dark navy-to-near-black wash in dark mode rather than
+    /// staying fixed-light, since a fixed light background combined with
+    /// system text colors flipping to white in dark mode made text
+    /// unreadable.
     static var screenGradient: LinearGradient {
         LinearGradient(
-            colors: [Color(hex: 0xEAF1FD), Color(hex: 0xF7F4EC), cream],
+            colors: [
+                Color.adaptive(light: 0xEAF1FD, dark: 0x0E1526),
+                Color.adaptive(light: 0xF7F4EC, dark: 0x171E30),
+                Color.adaptive(light: 0xF4EFE2, dark: 0x1E1B15),
+            ],
             startPoint: .top,
             endPoint: .bottom
         )
     }
 
     /// Diagonal brand gradient used for icon badges and header cards.
+    /// Deliberately fixed (not appearance-adaptive) — it's always paired
+    /// with white text/icons on top, so it reads correctly in both modes
+    /// without needing to change.
     static var brandGradient: LinearGradient {
         LinearGradient(colors: [brand, navy], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
@@ -63,6 +82,19 @@ extension Color {
             blue: Double(hex & 0xFF) / 255,
             opacity: opacity
         )
+    }
+
+    /// An appearance-adaptive color, switching between a light and dark hex
+    /// value based on the system's current light/dark mode — there's no
+    /// SwiftUI-native way to do this for a hand-picked hex color (only for
+    /// Asset Catalog color sets), so this bridges through `UIColor`'s
+    /// dynamic-provider initializer instead.
+    static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(Color(hex: dark))
+                : UIColor(Color(hex: light))
+        })
     }
 }
 
@@ -84,16 +116,17 @@ extension View {
     }
 }
 
-/// A solid white floating card with a soft brand-tinted shadow — used for
-/// list rows sitting on `AppTheme.screenGradient`. Prefer this over
-/// `cardStyle()` when the row needs to read crisply against the gradient
-/// background rather than blend into it.
+/// A solid floating card (white in light mode, dark elevated surface in
+/// dark mode) with a soft brand-tinted shadow — used for list rows sitting
+/// on `AppTheme.screenGradient`. Prefer this over `cardStyle()` when the
+/// row needs to read crisply against the gradient background rather than
+/// blend into it.
 private struct FloatingCard: ViewModifier {
     var radius: CGFloat = AppTheme.cornerRadius
 
     func body(content: Content) -> some View {
         content
-            .background(Color.white)
+            .background(AppTheme.cardSurface)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .shadow(color: AppTheme.navy.opacity(0.12), radius: 14, y: 8)
     }

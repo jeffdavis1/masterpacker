@@ -246,7 +246,7 @@ private struct TripForecastCard: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Forecast", systemImage: "cloud.sun.fill")
                         .font(.system(.subheadline, design: .rounded, weight: .bold))
-                        .foregroundStyle(AppTheme.navy)
+                        .foregroundStyle(.primary)
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 16) {

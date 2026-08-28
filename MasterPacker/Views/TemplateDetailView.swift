@@ -27,7 +27,7 @@ struct TemplateDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .listRowBackground(Color.white)
+                    .listRowBackground(AppTheme.cardSurface)
                 }
                 .onDelete(perform: deleteItems)
             }
@@ -37,7 +37,7 @@ struct TemplateDetailView: View {
             } label: {
                 Label("Add item", systemImage: "plus")
             }
-            .listRowBackground(Color.white)
+            .listRowBackground(AppTheme.cardSurface)
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)

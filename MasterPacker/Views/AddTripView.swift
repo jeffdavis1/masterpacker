@@ -290,7 +290,7 @@ private struct TravelerChooserView: View {
                                     }
                                 }
                             }
-                            .listRowBackground(Color.white)
+                            .listRowBackground(AppTheme.cardSurface)
                         }
                     }
                     .listStyle(.insetGrouped)
@@ -368,7 +368,7 @@ private struct PetChooserView: View {
                                     }
                                 }
                             }
-                            .listRowBackground(Color.white)
+                            .listRowBackground(AppTheme.cardSurface)
                         }
                     }
                     .listStyle(.insetGrouped)
