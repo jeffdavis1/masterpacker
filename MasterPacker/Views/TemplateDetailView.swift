@@ -38,6 +38,17 @@ struct TemplateDetailView: View {
                 Label("Add item", systemImage: "plus")
             }
             .listRowBackground(AppTheme.cardSurface)
+
+            if !curatedSuggestions.isEmpty {
+                Section {
+                    SuggestionChipGrid(suggestions: curatedSuggestions, selected: [], onToggle: addSuggestion)
+                        .listRowBackground(Color.clear)
+                } header: {
+                    Text("Suggested items")
+                } footer: {
+                    Text("A few things almost everyone packs — tap to add.")
+                }
+            }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
@@ -54,6 +65,19 @@ struct TemplateDetailView: View {
         for index in offsets {
             modelContext.delete(items[index])
         }
+    }
+
+    private var curatedSuggestions: [CommonProfileItems.Suggestion] {
+        let existingNames = Set(template.items.map { $0.name.lowercased() })
+        return CommonProfileItems.all.filter { !existingNames.contains($0.name.lowercased()) }
+    }
+
+    /// Tapping a suggestion adds it straight to the bag — no separate
+    /// pending/Save step, since once added it naturally drops out of
+    /// curatedSuggestions above and the chip just disappears.
+    private func addSuggestion(_ suggestion: CommonProfileItems.Suggestion) {
+        let item = TemplateItem(name: suggestion.name, category: suggestion.category, template: template)
+        modelContext.insert(item)
     }
 }
 

@@ -24,6 +24,18 @@ struct AddTripView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Trip") {
+                    TextField("Trip name", text: $name)
+                    DestinationField(destination: $destination)
+                    QuickDateField(label: "Start", date: $startDate)
+                    QuickDateField(label: "End", date: $endDate, minimumDate: startDate)
+                    Picker("Travel method", selection: $travelMethod) {
+                        ForEach(TravelMethod.allCases) { method in
+                            Label(method.rawValue, systemImage: method.symbol).tag(method)
+                        }
+                    }
+                }
+
                 Section {
                     ForEach(selectedProfiles) { profile in
                         HStack {
@@ -47,18 +59,6 @@ struct AddTripView: View {
                     Text("Travelers")
                 } footer: {
                     Text("Their always-pack items come along automatically.")
-                }
-
-                Section("Trip") {
-                    TextField("Trip name", text: $name)
-                    DestinationField(destination: $destination)
-                    DatePicker("Start", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
-                    Picker("Travel method", selection: $travelMethod) {
-                        ForEach(TravelMethod.allCases) { method in
-                            Label(method.rawValue, systemImage: method.symbol).tag(method)
-                        }
-                    }
                 }
 
                 Section("Activities") {
@@ -96,9 +96,9 @@ struct AddTripView: View {
                     Section {
                         TemplateChipGrid(templates: savedTemplates, selected: $selectedTemplates)
                     } header: {
-                        Text("Apply Templates")
+                        Text("From My Bag")
                     } footer: {
-                        Text("Adds each selected template's items to this trip's shared list.")
+                        Text("Adds each selected bag's items to this trip's shared list.")
                     }
                 }
 
@@ -409,6 +409,48 @@ private struct PetChooserView: View {
             selectedProfiles.removeAll { $0.id == profile.id }
         } else {
             selectedProfiles.append(profile)
+        }
+    }
+}
+
+/// A date field that reads as a normal Form row (label + formatted date)
+/// but opens a `.graphical` calendar in a popover on tap and dismisses
+/// itself the instant a date is picked — unlike the stock compact
+/// DatePicker, whose popover otherwise stays open until the user taps
+/// elsewhere to close it. Shared by AddTripView and EditTripView.
+struct QuickDateField: View {
+    let label: String
+    @Binding var date: Date
+    var minimumDate: Date?
+    @State private var isPresented = false
+
+    var body: some View {
+        Button {
+            isPresented = true
+        } label: {
+            HStack {
+                Text(label).foregroundStyle(.primary)
+                Spacer()
+                Text(date, style: .date).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $isPresented) {
+            Group {
+                if let minimumDate {
+                    DatePicker(label, selection: $date, in: minimumDate..., displayedComponents: .date)
+                } else {
+                    DatePicker(label, selection: $date, displayedComponents: .date)
+                }
+            }
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+            .padding()
+            .frame(minWidth: 320, minHeight: 360)
+            .presentationCompactAdaptation(.popover)
+            .onChange(of: date) {
+                isPresented = false
+            }
         }
     }
 }

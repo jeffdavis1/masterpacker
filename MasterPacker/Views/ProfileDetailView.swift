@@ -16,15 +16,6 @@ struct ProfileDetailView: View {
     var body: some View {
         List {
             Section {
-                Picker("Age bracket", selection: $profile.ageBracket) {
-                    ForEach(AgeBracket.allCases) { bracket in
-                        Text(bracket.rawValue).tag(bracket)
-                    }
-                }
-            }
-            .listRowBackground(AppTheme.cardSurface)
-
-            Section {
                 if profile.alwaysItems.isEmpty {
                     Text("No always-pack items yet — add some below.")
                         .font(.footnote)
@@ -152,8 +143,9 @@ struct ProfileDetailView: View {
     }
 }
 
-/// Not private — reused by PetProfileDetailView, which shows the same kind
-/// of suggestion chips for pet profiles.
+/// Not private — reused by PetProfileDetailView (pet profiles) and
+/// TemplateDetailView (My Bag), which show the same kind of suggestion
+/// chips.
 struct SuggestionChipGrid: View {
     let suggestions: [CommonProfileItems.Suggestion]
     let selected: Set<CommonProfileItems.Suggestion>

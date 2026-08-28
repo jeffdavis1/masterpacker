@@ -138,7 +138,7 @@ struct TripDetailView: View {
                     Button {
                         isPresentingApplyTemplate = true
                     } label: {
-                        Label("Apply Template", systemImage: "list.bullet.clipboard")
+                        Label("Add from My Bag", systemImage: "bag")
                     }
                 } label: {
                     Label("Add", systemImage: "plus")

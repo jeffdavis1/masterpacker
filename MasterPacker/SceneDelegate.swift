@@ -15,7 +15,6 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
     /// Warm case: the app is already running when the share link is
     /// tapped.
     func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
-        print("🔵 [Sharing] windowScene(_:userDidAcceptCloudKitShareWith:) fired (warm start). container=\(cloudKitShareMetadata.containerIdentifier)")
         Task { @MainActor in
             await TripSharingService.shared.acceptIncomingShare(metadata: cloudKitShareMetadata)
         }
@@ -28,7 +27,6 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
     /// was being tested — so this path matters as much as the warm one.
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let metadata = connectionOptions.cloudKitShareMetadata else { return }
-        print("🔵 [Sharing] scene(_:willConnectTo:options:) has cloudKitShareMetadata (cold start). container=\(metadata.containerIdentifier)")
         Task { @MainActor in
             await TripSharingService.shared.acceptIncomingShare(metadata: metadata)
         }

@@ -160,6 +160,10 @@ struct IconBadge: View {
 
 /// A small circular percent-complete indicator (e.g. packing progress on a
 /// trip row). Use `ProgressBar` for a full-width bar instead.
+/// A ring showing packing progress. Carries a small bag icon at its
+/// center — without it, a bare ring reads ambiguously as any kind of
+/// progress or countdown (trip cards also show a "days until" badge
+/// nearby, so the two need to be visually distinct at a glance).
 struct ProgressRing: View {
     let progress: Double
     var lineWidth: CGFloat = 4
@@ -174,6 +178,9 @@ struct ProgressRing: View {
                 .trim(from: 0, to: max(0.02, min(1, progress)))
                 .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+            Image(systemName: "bag.fill")
+                .font(.system(size: diameter * 0.32))
+                .foregroundStyle(color)
         }
         .frame(width: diameter, height: diameter)
     }

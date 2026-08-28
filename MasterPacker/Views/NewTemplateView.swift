@@ -12,11 +12,11 @@ struct NewTemplateView: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Template name (e.g. \"Camping Essentials\")", text: $name)
+                TextField("Bag name (e.g. \"Camping Essentials\")", text: $name)
             }
             .scrollContentBackground(.hidden)
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("New Template")
+            .navigationTitle("New Bag")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

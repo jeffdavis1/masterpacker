@@ -52,7 +52,7 @@ struct TripListView: View {
                         Button {
                             isPresentingTemplates = true
                         } label: {
-                            Label("Packing Templates", systemImage: "list.bullet.clipboard")
+                            Label("My Bag", systemImage: "bag")
                         }
                         Button {
                             isPresentingMap = true
@@ -115,6 +115,9 @@ private struct TripRow: View {
                 Text(trip.destination)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                Text(dateRangeText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary.opacity(0.85))
@@ -124,8 +127,13 @@ private struct TripRow: View {
 
             Spacer(minLength: 8)
 
-            if !trip.items.isEmpty {
-                ProgressRing(progress: trip.progress)
+            VStack(spacing: 8) {
+                if let daysUntilStart {
+                    DaysUntilBadge(days: daysUntilStart)
+                }
+                if !trip.items.isEmpty {
+                    ProgressRing(progress: trip.progress)
+                }
             }
         }
         .padding(14)
@@ -139,6 +147,52 @@ private struct TripRow: View {
         }
         parts.append("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s")")
         return parts.joined(separator: " · ")
+    }
+
+    private var dateRangeText: String {
+        let sameYear = Calendar.current.isDate(trip.startDate, equalTo: trip.endDate, toGranularity: .year)
+        let start = trip.startDate.formatted(.dateTime.month(.abbreviated).day())
+        let end = sameYear
+            ? trip.endDate.formatted(.dateTime.month(.abbreviated).day())
+            : trip.endDate.formatted(.dateTime.month(.abbreviated).day().year())
+        return "\(start) – \(end)"
+    }
+
+    /// Days until the trip starts, or nil once the trip is underway/over
+    /// — a countdown stops being meaningful at that point, so the badge
+    /// just doesn't show rather than displaying a stale/negative number.
+    private var daysUntilStart: Int? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let start = calendar.startOfDay(for: trip.startDate)
+        let end = calendar.startOfDay(for: trip.endDate)
+        guard today <= end else { return nil }
+        return max(0, calendar.dateComponents([.day], from: today, to: start).day ?? 0)
+    }
+}
+
+/// A small "N days" countdown badge — deliberately distinct from
+/// ProgressRing (a labeled pill vs. a bag-icon ring) so the two can't be
+/// mistaken for each other on the same card.
+private struct DaysUntilBadge: View {
+    let days: Int
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(days == 0 ? "Today" : "\(days)")
+                .font(.system(days == 0 ? .caption : .title3, design: .rounded, weight: .heavy))
+            if days != 0 {
+                Text(days == 1 ? "day" : "days")
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .textCase(.uppercase)
+            }
+        }
+        .foregroundStyle(AppTheme.brand)
+        .frame(minWidth: 38)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(AppTheme.brand.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 

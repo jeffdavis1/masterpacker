@@ -30,8 +30,8 @@ struct EditTripView: View {
                 Section("Trip") {
                     TextField("Trip name", text: $name)
                     DestinationField(destination: $destination)
-                    DatePicker("Start", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
+                    QuickDateField(label: "Start", date: $startDate)
+                    QuickDateField(label: "End", date: $endDate, minimumDate: startDate)
                     Picker("Travel method", selection: $travelMethod) {
                         ForEach(TravelMethod.allCases) { method in
                             Label(method.rawValue, systemImage: method.symbol).tag(method)

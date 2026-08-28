@@ -16,9 +16,9 @@ struct ApplyTemplateView: View {
             Group {
                 if templates.isEmpty {
                     ContentUnavailableView(
-                        "No saved templates",
-                        systemImage: "list.bullet.clipboard",
-                        description: Text("Save a reusable packing list from the Packing Templates screen first.")
+                        "No bags yet",
+                        systemImage: "bag",
+                        description: Text("Save a reusable packing list from My Bag first.")
                     )
                 } else {
                     List {
@@ -48,7 +48,7 @@ struct ApplyTemplateView: View {
                 }
             }
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("Apply Template")
+            .navigationTitle("Add from My Bag")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

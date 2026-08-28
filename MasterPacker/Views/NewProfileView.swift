@@ -8,17 +8,11 @@ struct NewProfileView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
-    @State private var ageBracket: AgeBracket = .adult
 
     var body: some View {
         NavigationStack {
             Form {
                 TextField("Name", text: $name)
-                Picker("Age bracket", selection: $ageBracket) {
-                    ForEach(AgeBracket.allCases) { bracket in
-                        Text(bracket.rawValue).tag(bracket)
-                    }
-                }
             }
             .scrollContentBackground(.hidden)
             .background(AppTheme.screenGradient.ignoresSafeArea())
@@ -36,7 +30,10 @@ struct NewProfileView: View {
     }
 
     private func save() {
-        let profile = TravelerProfile(name: name, ageBracket: ageBracket)
+        // ageBracket defaults to .adult (see TravelerProfile's init) — no
+        // longer surfaced as a picker here; still used behind the scenes
+        // by PackingRulesEngine's suggestion logic.
+        let profile = TravelerProfile(name: name)
         modelContext.insert(profile)
         onCreate(profile)
         dismiss()

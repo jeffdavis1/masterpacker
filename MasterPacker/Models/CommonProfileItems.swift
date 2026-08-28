@@ -1,7 +1,8 @@
 import Foundation
 
 /// A curated, near-universal set of "always pack" items shown as tappable
-/// suggestions when building a traveler profile. Deterministic and offline,
+/// suggestions when building a traveler profile or a saved bag
+/// (`PackingTemplate`, in `TemplateDetailView`). Deterministic and offline,
 /// same approach as `PackingRulesEngine`.
 enum CommonProfileItems {
     struct Suggestion: Identifiable, Hashable {

@@ -64,7 +64,6 @@ final class TripSharingService: ObservableObject {
     func shareTrip(_ trip: Trip) async throws -> CKShare {
         let database = container.privateCloudDatabase
         let key = storageKey(for: trip.id)
-        print("🔵 [Sharing] shareTrip key for \(trip.name): \(key)")
 
         if let existingLink = loadLink(key: key) {
             let zoneID = CKRecordZone.ID(zoneName: existingLink.zoneName, ownerName: CKCurrentUserDefaultName)
@@ -268,21 +267,11 @@ final class TripSharingService: ObservableObject {
     /// isPacked changes on the owner's own copy, so a participant sees the
     /// change on their next refresh without needing a full re-share.
     func syncItemPackedIfShared(_ item: PackingItem) async {
-        guard let trip = item.trip else {
-            print("🔴 [Sharing] syncItemPackedIfShared: item has no trip")
-            return
-        }
+        guard let trip = item.trip else { return }
         let tripKey = storageKey(for: trip.id)
-        guard let link = loadLink(key: tripKey) else {
-            let storedLinkKeys = UserDefaults.standard.dictionaryRepresentation().keys.filter { $0.hasPrefix("sharedTripLink.") }
-            print("🔵 [Sharing] syncItemPackedIfShared key for \(trip.name): \(tripKey) — trip isn't shared, skipping. All stored link keys: \(Array(storedLinkKeys))")
-            return
-        }
+        guard let link = loadLink(key: tripKey) else { return }
         let itemKey = storageKey(for: item.id)
-        guard let recordName = link.itemRecordNames[itemKey] else {
-            print("🔴 [Sharing] syncItemPackedIfShared: item \(item.name) has no record in the link (added after last share/sync?) — tap Share again to catch it up")
-            return
-        }
+        guard let recordName = link.itemRecordNames[itemKey] else { return }
 
         let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
         let recordID = CKRecord.ID(recordName: recordName, zoneID: zoneID)
@@ -292,9 +281,9 @@ final class TripSharingService: ObservableObject {
             let record = try await database.record(for: recordID)
             record[SharedItemField.isPacked] = item.isPacked ? 1 : 0
             _ = try await database.save(record)
-            print("🔵 [Sharing] syncItemPackedIfShared: pushed \(item.name) isPacked=\(item.isPacked) to \(recordName)")
         } catch {
-            print("🔴 [Sharing] syncItemPackedIfShared FAILED for \(item.name): \(error)")
+            // Not surfaced to the UI — the owner can always tap "Share"
+            // again to fully catch up if a push happens to fail.
         }
     }
 
@@ -306,12 +295,10 @@ final class TripSharingService: ObservableObject {
     func acceptIncomingShare(metadata: CKShare.Metadata) async {
         let shareContainer = CKContainer(identifier: metadata.containerIdentifier)
         do {
-            let acceptedShare = try await shareContainer.accept(metadata)
-            print("🔵 [Sharing] accept(metadata:) succeeded. share.recordID=\(acceptedShare.recordID)")
+            _ = try await shareContainer.accept(metadata)
             await refreshSharedTrips()
         } catch {
-            // TEMP diagnostic — was silently swallowed before.
-            print("🔴 [Sharing] accept(metadata:) FAILED: \(error)")
+            // Nothing further to do — the share simply won't show up.
         }
     }
 
@@ -320,12 +307,10 @@ final class TripSharingService: ObservableObject {
     /// refresh) when only the "shared to me" side needs updating.
     func refreshSharedTrips() async {
         do {
-            let trips = try await fetchSharedTrips()
-            print("🔵 [Sharing] refreshSharedTrips found \(trips.count) trip(s)")
-            sharedTrips = trips
+            sharedTrips = try await fetchSharedTrips()
         } catch {
-            // TEMP diagnostic — was silently swallowed before.
-            print("🔴 [Sharing] fetchSharedTrips FAILED: \(error)")
+            // Leaves sharedTrips as whatever it was before — the next
+            // refresh (pull-to-refresh or push) will catch up.
         }
     }
 
@@ -357,20 +342,14 @@ final class TripSharingService: ObservableObject {
     /// checkbox toggle would only ever update that satellite copy and
     /// never actually reach the owner.
     private func reconcileOwnedSharedTrips() async {
-        guard let modelContainer else {
-            print("🔴 [Sharing] reconcileOwnedSharedTrips: modelContainer never configured")
-            return
-        }
+        guard let modelContainer else { return }
         let context = modelContainer.mainContext
         guard let trips = try? context.fetch(FetchDescriptor<Trip>()) else { return }
 
-        var ownedSharedCount = 0
         for trip in trips {
             guard let link = loadLink(key: storageKey(for: trip.id)) else { continue }
-            ownedSharedCount += 1
             await reconcileItems(for: trip, link: link)
         }
-        print("🔵 [Sharing] reconcileOwnedSharedTrips: checked \(trips.count) local trip(s), \(ownedSharedCount) owned+shared")
     }
 
     private func reconcileItems(for trip: Trip, link: SharedTripLink) async {
@@ -379,7 +358,6 @@ final class TripSharingService: ObservableObject {
         do {
             itemRecords = try await queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: container.privateCloudDatabase)
         } catch {
-            print("🔴 [Sharing] reconcileItems FAILED to query \(trip.name)'s items: \(error)")
             return
         }
 
@@ -389,7 +367,6 @@ final class TripSharingService: ObservableObject {
         // already loaded, so a simple linear match is enough here.
         let keyByRecordName = Dictionary(uniqueKeysWithValues: link.itemRecordNames.map { ($1, $0) })
 
-        var changedCount = 0
         for record in itemRecords {
             guard let itemKey = keyByRecordName[record.recordID.recordName] else { continue }
             guard let localItem = trip.items.first(where: { storageKey(for: $0.id) == itemKey }) else { continue }
@@ -397,16 +374,13 @@ final class TripSharingService: ObservableObject {
             let remoteIsPacked = (record[SharedItemField.isPacked] as? Int ?? 0) != 0
             if localItem.isPacked != remoteIsPacked {
                 localItem.isPacked = remoteIsPacked
-                changedCount += 1
             }
         }
-        print("🔵 [Sharing] reconcileItems for \(trip.name): fetched \(itemRecords.count) remote item(s), \(changedCount) updated locally")
     }
 
     private func fetchSharedTrips() async throws -> [RemoteTrip] {
         let database = container.sharedCloudDatabase
         let zones = try await database.allRecordZones()
-        print("🔵 [Sharing] sharedCloudDatabase.allRecordZones() returned \(zones.count) zone(s): \(zones.map { $0.zoneID.zoneName })")
 
         // Self-healing: re-asserting this here (rather than only at
         // accept-time) means a lapsed or never-created subscription gets
@@ -417,15 +391,8 @@ final class TripSharingService: ObservableObject {
 
         var trips: [RemoteTrip] = []
         for zone in zones {
-            do {
-                if let trip = try await fetchRemoteTrip(in: zone.zoneID, database: database) {
-                    trips.append(trip)
-                } else {
-                    print("🔴 [Sharing] zone \(zone.zoneID.zoneName) has no SharedTrip record")
-                }
-            } catch {
-                // TEMP diagnostic — was silently swallowed before.
-                print("🔴 [Sharing] fetchRemoteTrip FAILED for zone \(zone.zoneID.zoneName): \(error)")
+            if let trip = try? await fetchRemoteTrip(in: zone.zoneID, database: database) {
+                trips.append(trip)
             }
         }
         return trips
@@ -445,15 +412,7 @@ final class TripSharingService: ObservableObject {
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true // silent — no banner, just wakes the app
         subscription.notificationInfo = notificationInfo
-        do {
-            _ = try await database.save(subscription)
-            print("🔵 [Sharing] ensureZoneSubscription: saved for zone \(zoneID.zoneName), scope=\(database.databaseScope.rawValue)")
-        } catch {
-            // TEMP diagnostic — was silently swallowed via try? before,
-            // which is exactly the kind of failure that would explain a
-            // push never arriving with zero trace of why.
-            print("🔴 [Sharing] ensureZoneSubscription FAILED for zone \(zoneID.zoneName), scope=\(database.databaseScope.rawValue): \(error)")
-        }
+        _ = try? await database.save(subscription)
     }
 
     /// The participant-side equivalent of ensureZoneSubscription. Confirmed
@@ -475,12 +434,7 @@ final class TripSharingService: ObservableObject {
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true // silent — no banner, just wakes the app
         subscription.notificationInfo = notificationInfo
-        do {
-            _ = try await container.sharedCloudDatabase.save(subscription)
-            print("🔵 [Sharing] ensureSharedDatabaseSubscription: saved")
-        } catch {
-            print("🔴 [Sharing] ensureSharedDatabaseSubscription FAILED: \(error)")
-        }
+        _ = try? await container.sharedCloudDatabase.save(subscription)
     }
 
     private func fetchRemoteTrip(in zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> RemoteTrip? {
@@ -550,9 +504,10 @@ final class TripSharingService: ObservableObject {
             let record = try await database.record(for: item.recordID)
             record[SharedItemField.isPacked] = isPacked ? 1 : 0
             _ = try await database.save(record)
-            print("🔵 [Sharing] setRemoteItemPacked: pushed \(item.name) isPacked=\(isPacked) to \(item.recordID.recordName)")
         } catch {
-            print("🔴 [Sharing] setRemoteItemPacked FAILED for \(item.name): \(error)")
+            // The optimistic in-memory update above already reflects the
+            // tap; a failed push just means it'll look stale to the owner
+            // until the next successful sync.
         }
     }
 

@@ -15,9 +15,9 @@ struct TemplateListView: View {
             Group {
                 if templates.isEmpty {
                     ContentUnavailableView(
-                        "No saved templates",
-                        systemImage: "list.bullet.clipboard",
-                        description: Text("Save a reusable packing list once, then apply it to any trip.")
+                        "No bags yet",
+                        systemImage: "bag",
+                        description: Text("Save a reusable packing list once, then add it to any trip.")
                     )
                 } else {
                     List {
@@ -36,7 +36,7 @@ struct TemplateListView: View {
                 }
             }
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("Packing Templates")
+            .navigationTitle("My Bag")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: PackingTemplate.self) { template in
                 TemplateDetailView(template: template)
@@ -49,7 +49,7 @@ struct TemplateListView: View {
                     Button {
                         isPresentingAddTemplate = true
                     } label: {
-                        Label("Add Template", systemImage: "plus")
+                        Label("New Bag", systemImage: "plus")
                     }
                 }
             }
@@ -75,7 +75,7 @@ private struct TemplateRow: View {
 
     var body: some View {
         HStack(spacing: 13) {
-            IconBadge(systemImage: "list.bullet.clipboard")
+            IconBadge(systemImage: "bag")
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(template.name)

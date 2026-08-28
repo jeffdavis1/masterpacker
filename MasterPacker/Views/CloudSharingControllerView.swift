@@ -30,14 +30,8 @@ struct CloudSharingPresenter: UIViewControllerRepresentable {
                 Task { @MainActor in
                     do {
                         let share = try await TripSharingService.shared.shareTrip(trip)
-                        // TEMP diagnostic — chasing "recipient never gets a
-                        // working invite." This is the exact share/URL
-                        // being handed to UICloudSharingController; if
-                        // .url is nil here, that's the smoking gun.
-                        print("🔵 [Sharing] preparationHandler completing with share.url=\(String(describing: share.url)) recordID=\(share.recordID)")
                         completion(share, CKContainer.default(), nil)
                     } catch {
-                        print("🔴 [Sharing] preparationHandler shareTrip FAILED: \(error)")
                         completion(nil, nil, error)
                     }
                 }
@@ -66,14 +60,9 @@ struct CloudSharingPresenter: UIViewControllerRepresentable {
         }
 
         func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: Error) {
-            // TEMP diagnostic — was silently swallowed before; this can
-            // fire even after the preparationHandler already succeeded,
-            // if something later in the save/publish flow fails.
-            print("🔴 [Sharing] cloudSharingController failedToSaveShareWithError: \(error)")
-        }
-
-        func cloudSharingControllerDidSaveShare(_ csc: UICloudSharingController) {
-            print("🔵 [Sharing] cloudSharingControllerDidSaveShare. share.url=\(String(describing: csc.share?.url))")
+            // Not surfaced to the UI — this can fire even after the
+            // preparationHandler already succeeded, if something later in
+            // the save/publish flow fails.
         }
 
         func itemTitle(for csc: UICloudSharingController) -> String? {

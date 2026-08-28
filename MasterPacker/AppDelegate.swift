@@ -35,24 +35,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        print("🔵 [Sharing] didReceiveRemoteNotification fired: \(userInfo)")
         Task { @MainActor in
             await TripSharingService.shared.handleRemoteNotification(userInfo: userInfo)
             completionHandler(.newData)
         }
-    }
-
-    // TEMP diagnostics — registerForRemoteNotifications() above had no
-    // visibility into whether it actually succeeded on a given device.
-    // If this device never logs a token, no push (including CloudKit's
-    // silent zone-change pushes) can ever reach it, regardless of
-    // whether the CloudKit-side subscription itself is fine.
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-        print("🔵 [Sharing] didRegisterForRemoteNotificationsWithDeviceToken: \(token)")
-    }
-
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("🔴 [Sharing] didFailToRegisterForRemoteNotificationsWithError: \(error)")
     }
 }
