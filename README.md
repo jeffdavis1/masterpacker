@@ -90,7 +90,10 @@ etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
   support custom user-defined categories alongside the built-in ones.
   Suggested "always pack" items come from a curated common list plus items
   you've actually packed on 2+ past trips.
-- Add pets (dog/cat/other) — pulls in pet-specific supplies
+- Add pets (dog/cat/other) — pulls in pet-specific supplies. Like
+  travelers, pets are saved profiles too — reusable, multi-select,
+  with their own "always pack" list and suggestions (food/water
+  bowls, leash, waste bags, crate, vet records, ...)
 - Auto-generated starter packing list, scaled by trip length, travel method,
   activities, and each traveler's age bracket (e.g. a beach trip never gets
   boots suggested, because no activity chip that calls for boots was picked)
@@ -132,12 +135,11 @@ out, so trips further out than that just show nothing yet — that's expected.
 
 ### Backlog (not yet started, no particular priority order)
 
-- **Pet profiles**: same idea as traveler profiles but for pets — reusable
-  defaults (food bowl, water bowl, treats, waste bags, medications) that
-  auto-populate whenever that pet is added to a trip
-- Map view with pins for every past/future trip destination (destinations
-  already resolve to coordinates via the autocomplete picker, so this is
-  mostly a MapKit `Map` view + pin annotations away)
+- Map view with pins for every past/future trip destination. Note:
+  `Trip.destination` is just a validated place-name string, not stored
+  coordinates — the picker only produces clean text, so this still
+  needs to geocode each trip's destination (same `CLGeocoder` approach
+  `WeatherService` already uses) to place pins
 - Reusable packing templates you can save and reapply at the *trip* level
   (distinct from traveler profiles, which are per-person)
 - Widgets / Live Activities for "days until trip" and packing progress —
