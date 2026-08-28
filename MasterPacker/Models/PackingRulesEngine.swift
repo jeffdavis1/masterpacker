@@ -83,8 +83,16 @@ enum PackingRulesEngine {
             add("Underwear", .clothing, days + 1)
             add("Socks", .clothing, days + 1)
             add("T-shirts / tops", .clothing, max(2, days))
-            add("Pants / shorts", .clothing, days / 2 + 1)
-            add("Pajamas", .clothing, 1)
+            // Pants and shorts used to be one combined "Pants / shorts"
+            // item — split so each is its own trackable checklist row.
+            // Quantities are each roughly half the old combined total,
+            // so the overall bottoms count for a given trip length is
+            // unchanged, just spread across two clearer items.
+            add("Pants", .clothing, max(1, days / 4 + 1))
+            add("Shorts", .clothing, max(1, days / 4 + 1))
+            // A week+ trip usually means pajamas actually need a change,
+            // not just a single pair worn the whole time.
+            add("Pajamas", .clothing, days > 6 ? 2 : 1)
             add("Toothbrush", .toiletries, 1)
         }
 

@@ -95,9 +95,33 @@ enum PackingIcon {
         (["boot", "shoe", "sneaker", "sandal", "flip-flop", "flip flop"], "shoe.2.fill"),
         (["swimsuit", "swim trunks", "bikini", "swim"], "figure.pool.swim"),
         (["sunglasses", "goggles"], "eyeglasses"),
-        (["thermal", "snow jacket", "snow pants", "warm hat"], "snowflake"),
-        (["suit", "formal", "dress shoes", "business attire", "tie"], "briefcase.fill"),
-        (["rain jacket", "raincoat", "waterproof"], "umbrella.fill"),
-        (["hiking boots", "hiking"], "figure.hiking"),
+        // "dress shoes" deliberately isn't listed below (unreachable —
+        // "shoe" above already catches it first, correctly, since dress
+        // shoes are still shoes).
+        (["suit", "formal", "business attire", "tie"], "briefcase.fill"),
+        // Sleepwear used to fall through to the generic tshirt icon,
+        // indistinguishable from actual shirts — the most-cited example
+        // of the icon-accuracy problem this rework fixes.
+        (["pajama", "pyjama", "sleepwear", "nightgown"], "moon.zzz.fill"),
+        // "umbrella" on its own used to miss this rule entirely (only
+        // "rain jacket"/"raincoat"/"waterproof" matched), so the actual
+        // generated "Umbrella" weather item never got its own icon.
+        (["rain jacket", "raincoat", "waterproof", "umbrella"], "umbrella.fill"),
+        // Cold-weather gear — snow jacket/pants matched here before, but
+        // "warm jacket" (the actual generated weather-item name) and
+        // "gloves" fell through to generic tshirt; grouped together
+        // since they're all the same kind of gear.
+        (["thermal", "snow jacket", "snow pants", "warm jacket", "warm hat", "glove"], "snowflake"),
+        // "hiking boots" isn't listed here (unreachable — "boot" above
+        // already catches it first, and shoe.2.fill is a fine icon for
+        // them too); "hiking" alone still catches other hiking gear.
+        (["hiking"], "figure.hiking"),
+        (["sunscreen"], "sun.max.fill"),
+        (["first aid"], "cross.case.fill"),
+        (["laptop"], "laptopcomputer"),
+        (["sleeping bag"], "bed.double.fill"),
+        (["headlamp", "flashlight"], "flashlight.on.fill"),
+        (["tent"], "tent.fill"),
+        (["camp stove"], "flame.fill"),
     ]
 }
