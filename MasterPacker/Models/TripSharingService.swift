@@ -126,7 +126,7 @@ final class TripSharingService: ObservableObject {
         share[CKShare.SystemFieldKey.title] = trip.name
         recordsToSave.append(share)
 
-        _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
+        let saveResult = try await database.modifyRecords(saving: recordsToSave, deleting: [])
 
         saveLink(
             SharedTripLink(
@@ -141,7 +141,21 @@ final class TripSharingService: ObservableObject {
 
         await ensureZoneSubscription(zoneID: zoneID, database: database)
 
-        return share
+        // Critical: modifyRecords(saving:deleting:) does NOT mutate the
+        // CKShare instance we passed in — it only returns an updated copy
+        // in its result dictionary. The share we constructed locally has
+        // no .url yet, so handing IT to UICloudSharingController produces
+        // an invite link that doesn't actually resolve to a real share
+        // (this was the bug behind "tapped the link, app just opened with
+        // no accept prompt, share never showed up"). Must return the
+        // server-saved copy instead.
+        guard let savedResult = saveResult.saveResults[share.recordID],
+              let savedRecord = try? savedResult.get(),
+              let savedShare = savedRecord as? CKShare
+        else {
+            return share
+        }
+        return savedShare
     }
 
     /// Pushes an updated snapshot to CloudKit if this trip is already
