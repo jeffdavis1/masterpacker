@@ -155,6 +155,7 @@ struct TripDetailView: View {
         for index in offsets {
             modelContext.delete(items[index])
         }
+        Task { await TripSharingService.shared.resyncIfShared(trip) }
     }
 
     private func toggleSection(_ label: String) {

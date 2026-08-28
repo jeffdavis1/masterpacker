@@ -63,6 +63,7 @@ struct AddItemView: View {
 
         let item = PackingItem(name: name, category: category, quantity: quantity, trip: trip, traveler: traveler, pet: pet)
         modelContext.insert(item)
+        Task { await TripSharingService.shared.resyncIfShared(trip) }
         dismiss()
     }
 }

@@ -53,18 +53,14 @@ final class TripSharingService: ObservableObject {
     /// Creates this trip's CloudKit share on first call, pushing a full
     /// snapshot of its travelers/pets/items as plain CKRecords in a
     /// dedicated zone. On a later call for an already-shared trip, this
-    /// re-syncs instead: existing records get their fields refreshed and
-    /// any traveler/pet/item added since the last share is pushed as a
-    /// new record — so tapping "Share" again doubles as "push my latest
-    /// changes." Either way, returns the CKShare ready for
-    /// UICloudSharingController.
-    ///
-    /// Known gap: only field values on already-shared records and newly
-    /// added travelers/pets/items are synced this way — a renamed trip or
-    /// deleted traveler won't (yet) be reflected until this is genuinely
-    /// re-architected with proper incremental sync. Item packed/unpacked
-    /// state syncs live on every toggle (see syncItemPackedIfShared),
-    /// independent of this.
+    /// re-syncs instead — same underlying logic as resyncIfShared, which
+    /// is what actually keeps a shared trip's edits flowing automatically
+    /// (trip field changes, items added/deleted) without the user needing
+    /// to tap "Share" again for every edit; this function tapping into
+    /// the same path just means the button still works as a manual
+    /// "push now" too. Either way, returns the CKShare ready for
+    /// UICloudSharingController. Item packed/unpacked state syncs
+    /// separately, live on every toggle (see syncItemPackedIfShared).
     func shareTrip(_ trip: Trip) async throws -> CKShare {
         let database = container.privateCloudDatabase
         let key = storageKey(for: trip.persistentModelID)
@@ -148,9 +144,26 @@ final class TripSharingService: ObservableObject {
         return share
     }
 
+    /// Pushes an updated snapshot to CloudKit if this trip is already
+    /// shared — silently does nothing otherwise (this never starts a new
+    /// share; that only happens via the explicit "Share Trip" button).
+    /// Item packed state has its own live path (syncItemPackedIfShared) —
+    /// call this after anything else that should reach the other side:
+    /// trip field edits, items added, items deleted.
+    func resyncIfShared(_ trip: Trip) async {
+        let key = storageKey(for: trip.persistentModelID)
+        guard let link = loadLink(key: key) else { return }
+        let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
+        let tripRecordID = CKRecord.ID(recordName: link.tripRecordName, zoneID: zoneID)
+        try? await resyncSnapshot(trip, zoneID: zoneID, tripRecordID: tripRecordID, link: link, key: key, database: container.privateCloudDatabase)
+    }
+
     /// Re-shares an already-shared trip: refreshes the trip record's own
-    /// fields, and pushes a new record for any traveler/pet/item that
-    /// doesn't have one yet (added since the last share/sync).
+    /// fields, pushes a new record for any traveler/pet/item that doesn't
+    /// have one yet (added since the last share/sync), and deletes the
+    /// CKRecord for anything the old link knew about that's gone now
+    /// (deleted locally since the last sync) — so participants don't keep
+    /// seeing stale items that no longer exist.
     private func resyncSnapshot(
         _ trip: Trip,
         zoneID: CKRecordZone.ID,
@@ -160,47 +173,34 @@ final class TripSharingService: ObservableObject {
         database: CKDatabase
     ) async throws {
         var recordsToSave: [CKRecord] = [SharedRecordBuilder.tripRecord(trip, recordID: tripRecordID)]
-        var travelerRecordNames = link.travelerRecordNames
-        var petRecordNames = link.petRecordNames
-        var itemRecordNames = link.itemRecordNames
+        var travelerRecordNames: [String: String] = [:]
+        var petRecordNames: [String: String] = [:]
+        var itemRecordNames: [String: String] = [:]
 
         var travelerRecordIDByKey: [String: CKRecord.ID] = [:]
         for traveler in trip.travelers {
             let travelerKey = storageKey(for: traveler.persistentModelID)
-            let recordID: CKRecord.ID
-            if let existingName = link.travelerRecordNames[travelerKey] {
-                recordID = CKRecord.ID(recordName: existingName, zoneID: zoneID)
-            } else {
-                recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-                travelerRecordNames[travelerKey] = recordID.recordName
-            }
+            let recordID = link.travelerRecordNames[travelerKey].map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
+                ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             recordsToSave.append(SharedRecordBuilder.travelerRecord(traveler, recordID: recordID, tripRecordID: tripRecordID))
+            travelerRecordNames[travelerKey] = recordID.recordName
             travelerRecordIDByKey[travelerKey] = recordID
         }
 
         var petRecordIDByKey: [String: CKRecord.ID] = [:]
         for pet in trip.pets {
             let petKey = storageKey(for: pet.persistentModelID)
-            let recordID: CKRecord.ID
-            if let existingName = link.petRecordNames[petKey] {
-                recordID = CKRecord.ID(recordName: existingName, zoneID: zoneID)
-            } else {
-                recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-                petRecordNames[petKey] = recordID.recordName
-            }
+            let recordID = link.petRecordNames[petKey].map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
+                ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             recordsToSave.append(SharedRecordBuilder.petRecord(pet, recordID: recordID, tripRecordID: tripRecordID))
+            petRecordNames[petKey] = recordID.recordName
             petRecordIDByKey[petKey] = recordID
         }
 
         for item in trip.items {
             let itemKey = storageKey(for: item.persistentModelID)
-            let recordID: CKRecord.ID
-            if let existingName = link.itemRecordNames[itemKey] {
-                recordID = CKRecord.ID(recordName: existingName, zoneID: zoneID)
-            } else {
-                recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-                itemRecordNames[itemKey] = recordID.recordName
-            }
+            let recordID = link.itemRecordNames[itemKey].map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
+                ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             let travelerRecordName = item.traveler.flatMap { travelerRecordIDByKey[storageKey(for: $0.persistentModelID)] }?.recordName
             let petRecordName = item.pet.flatMap { petRecordIDByKey[storageKey(for: $0.persistentModelID)] }?.recordName
             recordsToSave.append(SharedRecordBuilder.itemRecord(
@@ -210,9 +210,21 @@ final class TripSharingService: ObservableObject {
                 travelerRecordName: travelerRecordName,
                 petRecordName: petRecordName
             ))
+            itemRecordNames[itemKey] = recordID.recordName
         }
 
-        _ = try await database.modifyRecords(saving: recordsToSave, deleting: [])
+        var recordIDsToDelete: [CKRecord.ID] = []
+        for (oldKey, oldName) in link.travelerRecordNames where travelerRecordNames[oldKey] == nil {
+            recordIDsToDelete.append(CKRecord.ID(recordName: oldName, zoneID: zoneID))
+        }
+        for (oldKey, oldName) in link.petRecordNames where petRecordNames[oldKey] == nil {
+            recordIDsToDelete.append(CKRecord.ID(recordName: oldName, zoneID: zoneID))
+        }
+        for (oldKey, oldName) in link.itemRecordNames where itemRecordNames[oldKey] == nil {
+            recordIDsToDelete.append(CKRecord.ID(recordName: oldName, zoneID: zoneID))
+        }
+
+        _ = try await database.modifyRecords(saving: recordsToSave, deleting: recordIDsToDelete)
 
         saveLink(
             SharedTripLink(

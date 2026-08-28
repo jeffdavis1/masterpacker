@@ -72,6 +72,7 @@ struct EditTripView: View {
         }
         Task {
             await NotificationManager.shared.scheduleTripReminders(for: trip)
+            await TripSharingService.shared.resyncIfShared(trip)
         }
 
         dismiss()
