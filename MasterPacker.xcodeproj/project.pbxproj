@@ -49,6 +49,7 @@
 		B05B13C8451BD170CDDB486C /* SharedTripsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7277AD1098A99EF4F33AA3A9 /* SharedTripsListView.swift */; };
 		642EA7EC0A4BAF470C103661 /* SharedTripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F137B16996BEC3610ADA3689 /* SharedTripDetailView.swift */; };
 		86E3AC0621C5015DD62D7700 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEFDDFB630D169341E45AC3B /* AppDelegate.swift */; };
+		88E88992E27516D6A7C022A5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985E7E070372A8B4F20FFB1F /* SceneDelegate.swift */; };
 		B6BB222ED03CCAA18EA3542C /* CloudSharingRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D323752A0A3BC0D691396FF /* CloudSharingRecords.swift */; };
 		07F61C49BAB508171B43D1C3 /* TripSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103DAD5C7D76416917811B57 /* TripSharingService.swift */; };
 		0352E66B56A0BB8F85457871 /* CloudSharingControllerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */; };
@@ -103,6 +104,7 @@
 		7277AD1098A99EF4F33AA3A9 /* SharedTripsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTripsListView.swift; sourceTree = "<group>"; };
 		F137B16996BEC3610ADA3689 /* SharedTripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTripDetailView.swift; sourceTree = "<group>"; };
 		BEFDDFB630D169341E45AC3B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		985E7E070372A8B4F20FFB1F /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		1D323752A0A3BC0D691396FF /* CloudSharingRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSharingRecords.swift; sourceTree = "<group>"; };
 		103DAD5C7D76416917811B57 /* TripSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSharingService.swift; sourceTree = "<group>"; };
 		BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSharingControllerView.swift; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 				31D76C12613F60BADD41492E /* MasterPackerApp.swift */,
 				620FDBCAB506ED42E6E22314 /* ContentView.swift */,
 				BEFDDFB630D169341E45AC3B /* AppDelegate.swift */,
+				985E7E070372A8B4F20FFB1F /* SceneDelegate.swift */,
 				DAF19A8569A446A0A2FD38B4 /* DesignSystem.swift */,
 				155842F409CD5C51A4E79855 /* Models */,
 				0BDF574CBC29DD3A21C0EE03 /* Views */,
@@ -314,6 +317,7 @@
 				B05B13C8451BD170CDDB486C /* SharedTripsListView.swift in Sources */,
 				642EA7EC0A4BAF470C103661 /* SharedTripDetailView.swift in Sources */,
 				86E3AC0621C5015DD62D7700 /* AppDelegate.swift in Sources */,
+				88E88992E27516D6A7C022A5 /* SceneDelegate.swift in Sources */,
 				B6BB222ED03CCAA18EA3542C /* CloudSharingRecords.swift in Sources */,
 				07F61C49BAB508171B43D1C3 /* TripSharingService.swift in Sources */,
 				0352E66B56A0BB8F85457871 /* CloudSharingControllerView.swift in Sources */,

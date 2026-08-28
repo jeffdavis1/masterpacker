@@ -1,11 +1,12 @@
 import UIKit
 import CloudKit
 
-/// Small UIKit bridge for CloudKit sharing — SwiftUI's App lifecycle has
-/// no direct hook for "the user just tapped Accept on an incoming share
-/// invite" or "a silent push arrived," so this exists solely to catch
-/// those two callbacks and hand them off to TripSharingService. Nothing
-/// else in the app goes through this.
+/// Small UIKit bridge for things SwiftUI's App lifecycle has no direct
+/// hook for. CloudKit share acceptance itself is NOT handled here — for
+/// a scene-based app (which every SwiftUI App-lifecycle app is), iOS
+/// delivers that to SceneDelegate instead (see SceneDelegate.swift for
+/// why). This class still needs to exist for remote-notification
+/// registration and for pointing iOS at that custom scene delegate.
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Needed for CloudKit's zone-change subscriptions (see
@@ -16,15 +17,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    func application(_ application: UIApplication, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
-        // TEMP diagnostic logging while chasing the "share never shows up
-        // on the recipient" bug — remove once resolved. Confirms whether
-        // this callback fires at all, which is the very first thing that
-        // has to happen for any of this to work.
-        print("🔵 [Sharing] userDidAcceptCloudKitShareWith fired. container=\(cloudKitShareMetadata.containerIdentifier) rootRecordID=\(String(describing: cloudKitShareMetadata.hierarchicalRootRecordID))")
-        Task { @MainActor in
-            await TripSharingService.shared.acceptIncomingShare(metadata: cloudKitShareMetadata)
-        }
+    /// Points iOS at SceneDelegate for scene-level callbacks — required
+    /// for windowScene(_:userDidAcceptCloudKitShareWith:) and
+    /// scene(_:willConnectTo:options:) to ever be called at all.
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
     }
 
     func application(
