@@ -148,9 +148,7 @@ struct TripDetailView: View {
         .sheet(isPresented: $isPresentingApplyTemplate) {
             ApplyTemplateView(trip: trip)
         }
-        .sheet(isPresented: $isPresentingShareSheet) {
-            CloudSharingControllerView(trip: trip)
-        }
+        .background(CloudSharingPresenter(trip: trip, isPresented: $isPresentingShareSheet))
     }
 
     private func deleteItems(_ items: [PackingItem], at offsets: IndexSet) {
