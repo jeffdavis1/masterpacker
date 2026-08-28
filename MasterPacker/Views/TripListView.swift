@@ -8,6 +8,7 @@ struct TripListView: View {
     @State private var isPresentingProfiles = false
     @State private var isPresentingMap = false
     @State private var isPresentingTemplates = false
+    @State private var isPresentingSharedTrips = false
 
     var body: some View {
         NavigationStack {
@@ -58,6 +59,11 @@ struct TripListView: View {
                         } label: {
                             Label("Trip Map", systemImage: "map")
                         }
+                        Button {
+                            isPresentingSharedTrips = true
+                        } label: {
+                            Label("Shared With Me", systemImage: "person.2")
+                        }
                     } label: {
                         Label("More", systemImage: "ellipsis.circle")
                     }
@@ -81,6 +87,9 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingTemplates) {
                 TemplateListView()
+            }
+            .sheet(isPresented: $isPresentingSharedTrips) {
+                SharedTripsListView()
             }
         }
     }

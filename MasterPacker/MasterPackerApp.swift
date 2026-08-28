@@ -4,6 +4,11 @@ import BackgroundTasks
 
 @main
 struct MasterPackerApp: App {
+    // Only reason for an AppDelegate at all — catches the system callback
+    // fired when someone accepts an incoming trip-share invite. See
+    // AppDelegate.swift.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     /// Backed by CloudKit's private database — trips follow the signed-in
     /// iCloud account across the user's devices. Requires the iCloud +
     /// CloudKit capability (see MasterPacker.entitlements) to be present,

@@ -340,6 +340,10 @@ private struct ItemRow: View {
     var body: some View {
         Button {
             item.isPacked.toggle()
+            // No-ops if this item's trip isn't shared — cheap to call
+            // unconditionally so a shared trip's participant sees the
+            // change on their next refresh without a full re-share.
+            Task { await TripSharingService.shared.syncItemPackedIfShared(item) }
         } label: {
             HStack {
                 Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
