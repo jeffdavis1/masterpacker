@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		00C6DEE7C2AC6D2BDE99782D /* Traveler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F25240B4E950DBDC6BB44A /* Traveler.swift */; };
+		4EE7AAA453CF1DC6CC5A71F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C25AA24A6A64E0E2D5EC5DB6 /* Assets.xcassets */; };
+		5DCF9A4D2223123201C9A438 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC6629E1BC017F7D1A0506E /* AddItemView.swift */; };
+		EF1E2DA5CEC7F7F359DB3ABA /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B91A9DD3FF6A5590DF8E2EB /* SplashScreenView.swift */; };
 		0352E66B56A0BB8F85457871 /* CloudSharingControllerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */; };
 		0544AEB5F91100A168364E41 /* TemplateItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D8091FDE99682428E6578CE /* TemplateItem.swift */; };
 		074ACA1044236520B57A0A55 /* Pet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE87966B57A366920A15FF0 /* Pet.swift */; };
@@ -250,6 +253,9 @@
 			dependencies = (
 			);
 			name = MasterPacker;
+			packageProductDependencies = (
+				2E3AA605304229F500360261 /* FirebaseAnalytics */,
+			);
 			productName = MasterPacker;
 			productReference = 8E186E08EC962C6824D4940F /* MasterPacker.app */;
 			productType = "com.apple.product-type.application";
