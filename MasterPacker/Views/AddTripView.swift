@@ -19,6 +19,7 @@ struct AddTripView: View {
     @State private var generateSuggestions = true
     @State private var isPresentingTravelerChooser = false
     @State private var isPresentingPetChooser = false
+    @State private var isSaving = false
 
     var body: some View {
         NavigationStack {
@@ -104,7 +105,7 @@ struct AddTripView: View {
                 Section {
                     Toggle("Generate suggested packing list", isOn: $generateSuggestions)
                 } footer: {
-                    Text("Adds a starter checklist based on travelers, activities, and trip length. You can edit it afterward.")
+                    Text("Adds a starter checklist based on travelers, activities, trip length, and the destination's forecast. You can edit it afterward.")
                 }
             }
             .scrollContentBackground(.hidden)
@@ -115,8 +116,12 @@ struct AddTripView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .disabled(!isValid)
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") { Task { await save() } }
+                            .disabled(!isValid)
+                    }
                 }
             }
             .sheet(isPresented: $isPresentingTravelerChooser) {
@@ -132,7 +137,10 @@ struct AddTripView: View {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !selectedProfiles.isEmpty
     }
 
-    private func save() {
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+
         let trip = Trip(
             name: name,
             destination: destination,
@@ -160,7 +168,12 @@ struct AddTripView: View {
         trip.pets = petModels
 
         if generateSuggestions {
-            for generated in PackingRulesEngine.generate(for: trip) {
+            let forecast = await WeatherService.shared.forecast(
+                destination: trip.destination,
+                startDate: trip.startDate,
+                days: min(trip.durationInDays, 16)
+            )
+            for generated in PackingRulesEngine.generate(for: trip, weatherForecast: forecast) {
                 let traveler: Traveler?
                 let pet: Pet?
                 switch generated.assignee {

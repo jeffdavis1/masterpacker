@@ -18,12 +18,23 @@ enum PackingRulesEngine {
         }
     }
 
-    static func generate(for trip: Trip) -> [GeneratedItem] {
+    static func generate(for trip: Trip, weatherForecast: [DayForecast] = []) -> [GeneratedItem] {
         let days = trip.durationInDays
         var items: [GeneratedItem] = []
 
         for traveler in trip.travelers {
-            items += travelerItems(traveler: traveler, days: days, activities: trip.activities, travelMethod: trip.travelMethod)
+            var travelerGenerated = travelerItems(traveler: traveler, days: days, activities: trip.activities, travelMethod: trip.travelMethod)
+
+            // Only add a weather-suggested item if its name isn't already
+            // covered by an activity-based item (e.g. hiking already adds
+            // "Rain jacket") — avoids literal duplicates.
+            let existingNames = Set(travelerGenerated.map { $0.name.lowercased() })
+            for weatherItem in weatherItems(forecast: weatherForecast, traveler: traveler) {
+                if !existingNames.contains(weatherItem.name.lowercased()) {
+                    travelerGenerated.append(weatherItem)
+                }
+            }
+            items += travelerGenerated
         }
 
         items += sharedItems(trip: trip, days: days)
@@ -154,6 +165,45 @@ enum PackingRulesEngine {
                 item("Day bag", .gear, 1),
             ]
         }
+    }
+
+    // MARK: - Weather
+
+    /// Extra items suggested by the destination's forecast — e.g. a rain
+    /// jacket if rain is expected, or a warm layer if it'll be cold.
+    /// `forecast` may be empty (destination not yet geocodable, offline,
+    /// etc.) in which case this quietly returns nothing.
+    private static func weatherItems(forecast: [DayForecast], traveler: Traveler) -> [GeneratedItem] {
+        guard !forecast.isEmpty, traveler.ageBracket != .infant else { return [] }
+
+        func item(_ name: String, _ category: PackingCategory, _ quantity: Int) -> GeneratedItem {
+            GeneratedItem(name: name, category: category, quantity: quantity, assignee: .traveler(traveler))
+        }
+
+        let rainCodes: Set<Int> = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]
+        let snowCodes: Set<Int> = [71, 73, 75, 77, 85, 86]
+
+        let willRain = forecast.contains { rainCodes.contains($0.weatherCode) }
+        let willSnow = forecast.contains { snowCodes.contains($0.weatherCode) }
+        let lowestLow = forecast.map(\.lowTemperature).min() ?? 100
+        let highestHigh = forecast.map(\.highTemperature).max() ?? 0
+
+        var items: [GeneratedItem] = []
+        if willRain {
+            items.append(item("Rain jacket", .clothing, 1))
+            items.append(item("Umbrella", .gear, 1))
+        }
+        if willSnow {
+            items.append(item("Snow boots", .clothing, 1))
+        }
+        if lowestLow < 45 {
+            items.append(item("Warm jacket", .clothing, 1))
+            items.append(item("Gloves", .clothing, 1))
+        }
+        if highestHigh > 85 {
+            items.append(item("Sunscreen", .toiletries, 1))
+        }
+        return items
     }
 
     // MARK: - Shared / household
