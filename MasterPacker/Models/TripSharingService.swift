@@ -408,12 +408,15 @@ final class TripSharingService: ObservableObject {
         let zones = try await database.allRecordZones()
         print("🔵 [Sharing] sharedCloudDatabase.allRecordZones() returned \(zones.count) zone(s): \(zones.map { $0.zoneID.zoneName })")
 
+        // Self-healing: re-asserting this here (rather than only at
+        // accept-time) means a lapsed or never-created subscription gets
+        // fixed on the next refresh automatically. One call covers every
+        // shared zone — see ensureSharedDatabaseSubscription's doc comment
+        // for why this can't be done per-zone like the owner's side does.
+        await ensureSharedDatabaseSubscription()
+
         var trips: [RemoteTrip] = []
         for zone in zones {
-            // Self-healing: re-asserting the subscription here (rather
-            // than only at accept-time) means a lapsed or never-created
-            // subscription gets fixed on the next refresh automatically.
-            await ensureZoneSubscription(zoneID: zone.zoneID, database: database)
             do {
                 if let trip = try await fetchRemoteTrip(in: zone.zoneID, database: database) {
                     trips.append(trip)
@@ -429,10 +432,13 @@ final class TripSharingService: ObservableObject {
     }
 
     /// Creates (or refreshes) a silent push subscription for a shared
-    /// zone, so a change anyone makes in it — owner or participant —
-    /// wakes every other device that's subscribed. Saving a subscription
-    /// with an ID that already exists just updates it, so this is safe
-    /// to call repeatedly rather than needing separate "have I already
+    /// zone in the *owner's* private database, so a participant's edit
+    /// wakes the owner. Private-database only — CloudKit rejects a
+    /// per-zone CKRecordZoneSubscription in the shared database (see
+    /// ensureSharedDatabaseSubscription below, which is what the
+    /// participant side uses instead). Saving a subscription with an ID
+    /// that already exists just updates it, so this is safe to call
+    /// repeatedly rather than needing separate "have I already
     /// subscribed" bookkeeping.
     private func ensureZoneSubscription(zoneID: CKRecordZone.ID, database: CKDatabase) async {
         let subscription = CKRecordZoneSubscription(zoneID: zoneID, subscriptionID: "zoneChanges.\(zoneID.zoneName)")
@@ -447,6 +453,33 @@ final class TripSharingService: ObservableObject {
             // which is exactly the kind of failure that would explain a
             // push never arriving with zero trace of why.
             print("🔴 [Sharing] ensureZoneSubscription FAILED for zone \(zoneID.zoneName), scope=\(database.databaseScope.rawValue): \(error)")
+        }
+    }
+
+    /// The participant-side equivalent of ensureZoneSubscription. Confirmed
+    /// via a captured CKError that CloudKit rejects a per-zone
+    /// CKRecordZoneSubscription in the shared database outright: "Subscription
+    /// evaluation type not allowed in shared database" — that's the actual
+    /// root cause behind owner-edits never live-pushing to a participant
+    /// (the reverse direction worked because the owner's zone-scoped
+    /// subscription lives in their *private* database, where it's allowed).
+    /// A CKDatabaseSubscription is the supported mechanism for the shared
+    /// database instead: one subscription, fires for a change in *any*
+    /// zone shared to this device. handleRemoteNotification already does a
+    /// full resync regardless of which zone the push names, so a single
+    /// database-wide subscription is all this side needs — no per-zone
+    /// loop required. Saving with an ID that already exists just updates
+    /// it, so safe to call on every refresh.
+    private func ensureSharedDatabaseSubscription() async {
+        let subscription = CKDatabaseSubscription(subscriptionID: "sharedDatabaseChanges")
+        let notificationInfo = CKSubscription.NotificationInfo()
+        notificationInfo.shouldSendContentAvailable = true // silent — no banner, just wakes the app
+        subscription.notificationInfo = notificationInfo
+        do {
+            _ = try await container.sharedCloudDatabase.save(subscription)
+            print("🔵 [Sharing] ensureSharedDatabaseSubscription: saved")
+        } catch {
+            print("🔴 [Sharing] ensureSharedDatabaseSubscription FAILED: \(error)")
         }
     }
 
