@@ -26,19 +26,31 @@ MasterPacker/
 ├── ContentView.swift            # Root view — splash screen, then applies app-wide tint/font
 ├── DesignSystem.swift           # Shared design tokens (AppTheme) — see Design System below
 ├── Models/
-│   ├── Trip.swift                # Trip SwiftData model (dates, travel method, activities, notes)
-│   ├── Traveler.swift             # Traveler SwiftData model + AgeBracket enum
-│   ├── Pet.swift                  # Pet SwiftData model + PetSpecies enum
-│   ├── Activity.swift             # Activity chip enum (Beach, Hiking, Business, ...)
-│   ├── TravelMethod.swift         # TravelMethod enum (Car, Plane, Train, Other)
-│   ├── PackingItem.swift          # PackingItem SwiftData model + PackingCategory enum
-│   └── PackingRulesEngine.swift   # Generates a starter checklist from trip + travelers + pets
+│   ├── Trip.swift                       # Trip SwiftData model (dates, travel method, activities, notes)
+│   ├── Traveler.swift                    # Traveler SwiftData model + AgeBracket enum
+│   ├── Pet.swift                         # Pet SwiftData model + PetSpecies enum
+│   ├── Activity.swift                    # Activity chip enum (Beach, Hiking, Business, ...)
+│   ├── TravelMethod.swift                # TravelMethod enum (Car, Plane, Train, Other)
+│   ├── PackingItem.swift                 # PackingItem model + PackingCategory enum + PackingIcon resolver
+│   ├── PackingRulesEngine.swift          # Generates a starter checklist from trip + travelers + pets
+│   ├── TravelerProfile.swift             # Reusable saved-person profile
+│   ├── ProfileItem.swift                 # A profile's "always pack" item
+│   ├── CustomCategory.swift              # User-defined categories, scoped to profile items
+│   ├── CommonProfileItems.swift          # Curated common-item suggestions for profiles
+│   ├── WeatherService.swift              # Geocoding + Open-Meteo forecast fetching/caching
+│   └── DestinationSearchCompleter.swift  # MKLocalSearchCompleter wrapper for destination autocomplete
 └── Views/
-    ├── SplashScreenView.swift   # Brief branded splash shown on cold launch
-    ├── TripListView.swift       # List of trips, entry point for navigation
-    ├── AddTripView.swift        # Form to create a trip: basics, activities, travelers, pets
-    ├── TripDetailView.swift     # Packing checklist for one trip, grouped by traveler/pet/shared
-    └── AddItemView.swift        # Form to add a custom packing item, with assignee picker
+    ├── SplashScreenView.swift    # Brief branded splash shown on cold launch
+    ├── DestinationField.swift    # Reusable destination text field + autocomplete dropdown
+    ├── TripListView.swift        # List of trips, entry point for navigation
+    ├── AddTripView.swift         # Form to create a trip: travelers, basics, activities, pets
+    ├── EditTripView.swift        # Edit an existing trip's basics
+    ├── TripDetailView.swift      # Packing checklist for one trip, grouped by traveler/pet/shared
+    ├── AddItemView.swift         # Form to add a custom packing item, with assignee picker
+    ├── ProfileListView.swift     # Saved traveler profiles, entry point (person icon on trip list)
+    ├── NewProfileView.swift      # Create a new saved profile
+    ├── ProfileDetailView.swift   # Edit a profile's always-pack list + suggestions
+    └── AddProfileItemView.swift  # Add a custom item to a profile, incl. custom categories
 ```
 
 ## Design system
@@ -65,20 +77,45 @@ etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
 
 ## Current features (v1)
 
-- Create trips: name, destination, dates, travel method (car/plane/train/other)
+- Create trips: name, destination (live autocomplete via MapKit — pick a
+  real place, not free text), dates, travel method (car/plane/train/other)
 - Select activities via chips (Beach, Hiking, Skiing, Business, Camping, ...) + free-text notes
+- Edit an existing trip's name/destination/dates/travel method after creation
 - Add travelers with age brackets (Infant/Toddler/Child/Tween-Teen/Adult/Senior)
   — each bracket changes what gets suggested (e.g. diapers for infants, no
   business attire for young kids)
+- **Saved traveler profiles**: save a person once (name, age bracket, an
+  "always pack" list) and reuse them on any future trip — pick one or more
+  from a multi-select picker, or create a new one on the spot. Profiles
+  support custom user-defined categories alongside the built-in ones.
+  Suggested "always pack" items come from a curated common list plus items
+  you've actually packed on 2+ past trips.
 - Add pets (dog/cat/other) — pulls in pet-specific supplies
 - Auto-generated starter packing list, scaled by trip length, travel method,
   activities, and each traveler's age bracket (e.g. a beach trip never gets
   boots suggested, because no activity chip that calls for boots was picked)
 - Packing list grouped by who it's for: Shared/household, then each
-  traveler, then each pet
-- Check items off as you pack; per-trip progress bar
+  traveler, then each pet — each group's header shows a packed/total count
+  and can be collapsed/expanded
+- Check items off as you pack; per-trip and per-group progress
+- Smarter item icons — e.g. "Hiking boots" gets a shoe icon rather than the
+  generic clothing icon, resolved from the item's name
+- Weather forecast: icons for the first 3 days on each trip tile, a full
+  7-day forecast card prominently on the trip detail page (Open-Meteo, no
+  API key — see Weather below)
 - Add custom items (with category + assignee), delete trips/items
-- All data persisted locally on-device via SwiftData
+- Branded splash screen and a consistent visual design system (see below)
+- All data synced across the signed-in iCloud account's devices via
+  SwiftData + CloudKit (falls back to local-only if not signed into iCloud)
+
+## Weather
+
+`WeatherService` (in `Models/`) resolves a trip's destination via
+`CLGeocoder`, then fetches a forecast from Open-Meteo — free, no API key,
+plain HTTPS. Deliberately not persisted to SwiftData (short-lived,
+destination-derived, doesn't need to sync); results are cached in memory
+per destination/date-range for the session. Forecasts only exist ~16 days
+out, so trips further out than that just show nothing yet — that's expected.
 
 ## Roadmap
 
@@ -95,21 +132,20 @@ etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
 
 ### Backlog (not yet started, no particular priority order)
 
-- Launch splash screen
-- Visual polish — a real color palette / design system instead of default
-  SwiftUI styling
-- Weather forecast integration for the destination/dates, feeding into
-  packing suggestions (e.g. rain in the forecast → add a rain jacket)
-- **Traveler profiles**: a reusable person (not tied to one trip) with an
-  "always pack" list (e.g. contact solution, specific medications) that
-  auto-seeds every new trip they're added to. Needs a data model change —
-  `Traveler` is currently trip-scoped, would need to become
-  profile-scoped with per-trip instances referencing a profile
-- **Pet profiles**: same idea for pets — reusable defaults (food bowl,
-  water bowl, treats, waste bags, medications) that auto-populate whenever
-  that pet is added to a trip
-- Map view with pins for every past/future trip destination (needs
-  geocoding the destination text into coordinates)
-- Reusable packing templates you can save and reapply
-- Widgets / Live Activities for "days until trip" and packing progress
+- **Pet profiles**: same idea as traveler profiles but for pets — reusable
+  defaults (food bowl, water bowl, treats, waste bags, medications) that
+  auto-populate whenever that pet is added to a trip
+- Map view with pins for every past/future trip destination (destinations
+  already resolve to coordinates via the autocomplete picker, so this is
+  mostly a MapKit `Map` view + pin annotations away)
+- Reusable packing templates you can save and reapply at the *trip* level
+  (distinct from traveler profiles, which are per-person)
+- Widgets / Live Activities for "days until trip" and packing progress —
+  meaningfully bigger lift than most items here: needs a separate Widget
+  Extension Xcode target with its own Info.plist and an App Group
+  entitlement to share data with the main app, similar in kind (though
+  probably not degree) to the iCloud capability setup that gave us trouble
+- Weather-aware packing suggestions — e.g. rain in the forecast adds a rain
+  jacket to the generated list (today weather is shown but doesn't feed
+  back into `PackingRulesEngine`)
 - (more to come)
