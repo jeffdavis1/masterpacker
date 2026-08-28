@@ -63,7 +63,7 @@ final class TripSharingService: ObservableObject {
     /// separately, live on every toggle (see syncItemPackedIfShared).
     func shareTrip(_ trip: Trip) async throws -> CKShare {
         let database = container.privateCloudDatabase
-        let key = storageKey(for: trip.persistentModelID)
+        let key = storageKey(for: trip.id)
         print("🔵 [Sharing] shareTrip key for \(trip.name): \(key)")
 
         if let existingLink = loadLink(key: key) {
@@ -92,7 +92,7 @@ final class TripSharingService: ObservableObject {
 
         var travelerRecordIDByKey: [String: CKRecord.ID] = [:]
         for traveler in trip.travelers {
-            let travelerKey = storageKey(for: traveler.persistentModelID)
+            let travelerKey = storageKey(for: traveler.id)
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             recordsToSave.append(SharedRecordBuilder.travelerRecord(traveler, recordID: recordID, tripRecordID: tripRecordID))
             travelerRecordNames[travelerKey] = recordID.recordName
@@ -101,7 +101,7 @@ final class TripSharingService: ObservableObject {
 
         var petRecordIDByKey: [String: CKRecord.ID] = [:]
         for pet in trip.pets {
-            let petKey = storageKey(for: pet.persistentModelID)
+            let petKey = storageKey(for: pet.id)
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             recordsToSave.append(SharedRecordBuilder.petRecord(pet, recordID: recordID, tripRecordID: tripRecordID))
             petRecordNames[petKey] = recordID.recordName
@@ -109,10 +109,10 @@ final class TripSharingService: ObservableObject {
         }
 
         for item in trip.items {
-            let itemKey = storageKey(for: item.persistentModelID)
+            let itemKey = storageKey(for: item.id)
             let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-            let travelerRecordName = item.traveler.flatMap { travelerRecordIDByKey[storageKey(for: $0.persistentModelID)] }?.recordName
-            let petRecordName = item.pet.flatMap { petRecordIDByKey[storageKey(for: $0.persistentModelID)] }?.recordName
+            let travelerRecordName = item.traveler.flatMap { travelerRecordIDByKey[storageKey(for: $0.id)] }?.recordName
+            let petRecordName = item.pet.flatMap { petRecordIDByKey[storageKey(for: $0.id)] }?.recordName
             recordsToSave.append(SharedRecordBuilder.itemRecord(
                 item,
                 recordID: recordID,
@@ -166,7 +166,7 @@ final class TripSharingService: ObservableObject {
     /// call this after anything else that should reach the other side:
     /// trip field edits, items added, items deleted.
     func resyncIfShared(_ trip: Trip) async {
-        let key = storageKey(for: trip.persistentModelID)
+        let key = storageKey(for: trip.id)
         guard let link = loadLink(key: key) else { return }
         let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
         let tripRecordID = CKRecord.ID(recordName: link.tripRecordName, zoneID: zoneID)
@@ -194,7 +194,7 @@ final class TripSharingService: ObservableObject {
 
         var travelerRecordIDByKey: [String: CKRecord.ID] = [:]
         for traveler in trip.travelers {
-            let travelerKey = storageKey(for: traveler.persistentModelID)
+            let travelerKey = storageKey(for: traveler.id)
             let recordID = link.travelerRecordNames[travelerKey].map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
                 ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             recordsToSave.append(SharedRecordBuilder.travelerRecord(traveler, recordID: recordID, tripRecordID: tripRecordID))
@@ -204,7 +204,7 @@ final class TripSharingService: ObservableObject {
 
         var petRecordIDByKey: [String: CKRecord.ID] = [:]
         for pet in trip.pets {
-            let petKey = storageKey(for: pet.persistentModelID)
+            let petKey = storageKey(for: pet.id)
             let recordID = link.petRecordNames[petKey].map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
                 ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
             recordsToSave.append(SharedRecordBuilder.petRecord(pet, recordID: recordID, tripRecordID: tripRecordID))
@@ -213,11 +213,11 @@ final class TripSharingService: ObservableObject {
         }
 
         for item in trip.items {
-            let itemKey = storageKey(for: item.persistentModelID)
+            let itemKey = storageKey(for: item.id)
             let recordID = link.itemRecordNames[itemKey].map { CKRecord.ID(recordName: $0, zoneID: zoneID) }
                 ?? CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
-            let travelerRecordName = item.traveler.flatMap { travelerRecordIDByKey[storageKey(for: $0.persistentModelID)] }?.recordName
-            let petRecordName = item.pet.flatMap { petRecordIDByKey[storageKey(for: $0.persistentModelID)] }?.recordName
+            let travelerRecordName = item.traveler.flatMap { travelerRecordIDByKey[storageKey(for: $0.id)] }?.recordName
+            let petRecordName = item.pet.flatMap { petRecordIDByKey[storageKey(for: $0.id)] }?.recordName
             recordsToSave.append(SharedRecordBuilder.itemRecord(
                 item,
                 recordID: recordID,
@@ -272,13 +272,13 @@ final class TripSharingService: ObservableObject {
             print("🔴 [Sharing] syncItemPackedIfShared: item has no trip")
             return
         }
-        let tripKey = storageKey(for: trip.persistentModelID)
+        let tripKey = storageKey(for: trip.id)
         guard let link = loadLink(key: tripKey) else {
             let storedLinkKeys = UserDefaults.standard.dictionaryRepresentation().keys.filter { $0.hasPrefix("sharedTripLink.") }
             print("🔵 [Sharing] syncItemPackedIfShared key for \(trip.name): \(tripKey) — trip isn't shared, skipping. All stored link keys: \(Array(storedLinkKeys))")
             return
         }
-        let itemKey = storageKey(for: item.persistentModelID)
+        let itemKey = storageKey(for: item.id)
         guard let recordName = link.itemRecordNames[itemKey] else {
             print("🔴 [Sharing] syncItemPackedIfShared: item \(item.name) has no record in the link (added after last share/sync?) — tap Share again to catch it up")
             return
@@ -366,7 +366,7 @@ final class TripSharingService: ObservableObject {
 
         var ownedSharedCount = 0
         for trip in trips {
-            guard let link = loadLink(key: storageKey(for: trip.persistentModelID)) else { continue }
+            guard let link = loadLink(key: storageKey(for: trip.id)) else { continue }
             ownedSharedCount += 1
             await reconcileItems(for: trip, link: link)
         }
@@ -392,7 +392,7 @@ final class TripSharingService: ObservableObject {
         var changedCount = 0
         for record in itemRecords {
             guard let itemKey = keyByRecordName[record.recordID.recordName] else { continue }
-            guard let localItem = trip.items.first(where: { storageKey(for: $0.persistentModelID) == itemKey }) else { continue }
+            guard let localItem = trip.items.first(where: { storageKey(for: $0.id) == itemKey }) else { continue }
 
             let remoteIsPacked = (record[SharedItemField.isPacked] as? Int ?? 0) != 0
             if localItem.isPacked != remoteIsPacked {
@@ -517,8 +517,14 @@ final class TripSharingService: ObservableObject {
 
     // MARK: - Link storage
 
-    private func storageKey(for id: PersistentIdentifier) -> String {
-        (try? JSONEncoder().encode(id))?.base64EncodedString() ?? UUID().uuidString
+    /// A stable string key for UserDefaults, derived from each model's own
+    /// `id: UUID` (not persistentModelID — confirmed via diagnostic
+    /// logging that persistentModelID embeds a per-launch store-session
+    /// identifier and produces a *different* string for the same logical
+    /// object across separate app launches, silently breaking every
+    /// lookup keyed off it after any relaunch).
+    private func storageKey(for id: UUID) -> String {
+        id.uuidString
     }
 
     private func linkDefaultsKey(_ key: String) -> String {

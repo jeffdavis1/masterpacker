@@ -5,6 +5,10 @@ import SwiftData
 final class PackingItem {
     // Default values at the declaration site — required for SwiftData's
     // CloudKit sync.
+
+    /// Stable, launch-independent identifier — see Trip.id's doc comment
+    /// for why persistentModelID isn't safe to use for this.
+    var id: UUID = UUID()
     var name: String = ""
     var category: PackingCategory = PackingCategory.misc
     var quantity: Int = 1

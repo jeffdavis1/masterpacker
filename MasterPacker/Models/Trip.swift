@@ -7,6 +7,17 @@ final class Trip {
     // site (not just via `init`) — required for SwiftData's CloudKit sync,
     // which needs to be able to materialize a record without every field
     // being supplied.
+
+    /// A stable identifier that survives app relaunches — unlike
+    /// persistentModelID, which embeds a per-store-session identifier and
+    /// is NOT guaranteed to stay the same for the same logical object
+    /// across separate app launches (confirmed the hard way: it's what
+    /// broke TripSharingService's owner-side item-sync lookup, since that
+    /// key was being computed fresh on each launch and silently no
+    /// longer matching what was saved the first time). Used by
+    /// TripSharingService wherever a durable, launch-independent key is
+    /// needed.
+    var id: UUID = UUID()
     var name: String = ""
     var destination: String = ""
     var startDate: Date = Date.now

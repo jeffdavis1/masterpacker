@@ -228,11 +228,14 @@ final class NotificationManager {
         let lowTemperature: Double
     }
 
-    /// A stable-enough per-trip key derived from SwiftData's own model
-    /// identifier — avoids adding an `id` field to `Trip` (a schema
-    /// change) just for this local-only bookkeeping.
+    /// A stable per-trip key derived from `Trip.id` (not
+    /// persistentModelID — confirmed via diagnostic logging in
+    /// TripSharingService that persistentModelID embeds a per-launch
+    /// store-session identifier and produces a *different* string for the
+    /// same logical trip across separate app launches, silently breaking
+    /// any lookup keyed off it after a relaunch).
     private func storageKey(for trip: Trip) -> String {
-        (try? JSONEncoder().encode(trip.persistentModelID))?.base64EncodedString() ?? trip.name
+        trip.id.uuidString
     }
 
     private func baselineDefaultsKey(_ key: String) -> String {
