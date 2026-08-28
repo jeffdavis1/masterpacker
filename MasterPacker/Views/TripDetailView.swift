@@ -9,37 +9,42 @@ struct TripDetailView: View {
     @State private var isPresentingApplyTemplate = false
     @State private var collapsedSections: Set<String> = []
 
-    /// Shared/household items first, then one section per traveler (trip
-    /// order), then one section per pet — each sorted by category so the
-    /// list reads predictably.
-    private var sections: [(label: String, items: [PackingItem])] {
-        var result: [(String, [PackingItem])] = []
+    /// One category's items within a traveler/pet/shared group.
+    private struct CategoryGroup: Identifiable {
+        var id: String { category.rawValue }
+        let category: PackingCategory
+        let items: [PackingItem]
+    }
 
-        let shared = trip.items.filter { $0.traveler == nil && $0.pet == nil }
-        if !shared.isEmpty {
-            result.append(("Shared", sorted(shared)))
+    /// Shared/household items first, then one group per traveler (trip
+    /// order), then one group per pet — each broken down further into
+    /// per-category groups so e.g. all of one traveler's electronics sit
+    /// together, separate from their toiletries.
+    private var sections: [(label: String, categoryGroups: [CategoryGroup], items: [PackingItem])] {
+        var result: [(String, [CategoryGroup], [PackingItem])] = []
+
+        func addSection(_ label: String, _ items: [PackingItem]) {
+            guard !items.isEmpty else { return }
+            result.append((label, categoryGroups(for: items), items))
         }
+
+        addSection("Shared", trip.items.filter { $0.traveler == nil && $0.pet == nil })
         for traveler in trip.travelers {
-            let items = trip.items.filter { $0.traveler == traveler }
-            if !items.isEmpty {
-                result.append((traveler.name, sorted(items)))
-            }
+            addSection(traveler.name, trip.items.filter { $0.traveler == traveler })
         }
         for pet in trip.pets {
-            let items = trip.items.filter { $0.pet == pet }
-            if !items.isEmpty {
-                result.append(("\(pet.name) (pet)", sorted(items)))
-            }
+            addSection("\(pet.name) (pet)", trip.items.filter { $0.pet == pet })
         }
         return result
     }
 
-    private func sorted(_ items: [PackingItem]) -> [PackingItem] {
-        items.sorted { lhs, rhs in
-            lhs.category.rawValue == rhs.category.rawValue
-                ? lhs.name < rhs.name
-                : lhs.category.rawValue < rhs.category.rawValue
-        }
+    private func categoryGroups(for items: [PackingItem]) -> [CategoryGroup] {
+        let grouped = Dictionary(grouping: items, by: \.category)
+        return grouped.keys
+            .sorted { $0.rawValue < $1.rawValue }
+            .map { category in
+                CategoryGroup(category: category, items: grouped[category]!.sorted { $0.name < $1.name })
+            }
     }
 
     var body: some View {
@@ -59,14 +64,21 @@ struct TripDetailView: View {
             ForEach(sections, id: \.label) { section in
                 Section {
                     if !collapsedSections.contains(section.label) {
-                        ForEach(section.items) { item in
-                            ItemRow(item: item)
-                                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                        ForEach(section.categoryGroups) { group in
+                            CategoryHeaderRow(category: group.category)
+                                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 2, trailing: 16))
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
-                        }
-                        .onDelete { offsets in
-                            deleteItems(section.items, at: offsets)
+
+                            ForEach(group.items) { item in
+                                ItemRow(item: item)
+                                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
+                            .onDelete { offsets in
+                                deleteItems(group.items, at: offsets)
+                            }
                         }
                     }
                 } header: {
@@ -164,6 +176,21 @@ private struct SectionHeaderButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// A small non-interactive label marking one category's items within a
+/// traveler/pet/shared group — e.g. "ELECTRONICS" above phone charger,
+/// battery pack, etc. Unlike the outer traveler group, these aren't
+/// individually collapsible; they're just a visual break.
+private struct CategoryHeaderRow: View {
+    let category: PackingCategory
+
+    var body: some View {
+        Label(category.rawValue.uppercased(), systemImage: category.symbol)
+            .font(.system(.caption2, design: .rounded, weight: .bold))
+            .tracking(0.4)
+            .foregroundStyle(.secondary.opacity(0.8))
     }
 }
 
