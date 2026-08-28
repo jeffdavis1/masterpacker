@@ -29,7 +29,7 @@ struct EditTripView: View {
             Form {
                 Section("Trip") {
                     TextField("Trip name", text: $name)
-                    TextField("Destination", text: $destination)
+                    DestinationField(destination: $destination)
                     DatePicker("Start", selection: $startDate, displayedComponents: .date)
                     DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: .date)
                     Picker("Travel method", selection: $travelMethod) {
