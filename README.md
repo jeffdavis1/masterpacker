@@ -110,6 +110,18 @@ etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
 - Branded splash screen and a consistent visual design system (see below)
 - All data synced across the signed-in iCloud account's devices via
   SwiftData + CloudKit (falls back to local-only if not signed into iCloud)
+- **Trip map**: every trip plotted as a pin (navy for past, brand blue for
+  upcoming) via MapKit — geocoded from `Trip.destination`, no stored
+  coordinates or location permission needed. Tap a pin to jump to that trip.
+- **Reusable packing templates**: save a named, trip-wide item list (e.g.
+  "Camping Essentials") once and apply it to any trip — either at creation
+  time or afterward from the trip detail page. Distinct from traveler/pet
+  profiles, which are per-person/per-pet rather than trip-wide.
+- **Weather-aware suggestions**: the auto-generated packing list factors in
+  the destination's forecast, not just activities/age/trip length — rain
+  adds a rain jacket + umbrella, snow adds snow boots, a cold low adds a
+  warm jacket + gloves, a hot high adds sunscreen (skipped if an activity
+  already covers the same item, e.g. hiking's own rain jacket)
 
 ## Weather
 
@@ -133,21 +145,12 @@ out, so trips further out than that just show nothing yet — that's expected.
   real testing needs two Apple IDs/devices bouncing an invite back and
   forth) — picking this back up after the backlog below.
 
-### Backlog (not yet started, no particular priority order)
+### Backlog (in progress order)
 
-- Map view with pins for every past/future trip destination. Note:
-  `Trip.destination` is just a validated place-name string, not stored
-  coordinates — the picker only produces clean text, so this still
-  needs to geocode each trip's destination (same `CLGeocoder` approach
-  `WeatherService` already uses) to place pins
-- Reusable packing templates you can save and reapply at the *trip* level
-  (distinct from traveler profiles, which are per-person)
 - Widgets / Live Activities for "days until trip" and packing progress —
   meaningfully bigger lift than most items here: needs a separate Widget
   Extension Xcode target with its own Info.plist and an App Group
   entitlement to share data with the main app, similar in kind (though
   probably not degree) to the iCloud capability setup that gave us trouble
-- Weather-aware packing suggestions — e.g. rain in the forecast adds a rain
-  jacket to the generated list (today weather is shown but doesn't feed
-  back into `PackingRulesEngine`)
+- Phase 3: CloudKit sharing (`CKShare`, see Roadmap above)
 - (more to come)
