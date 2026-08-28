@@ -536,4 +536,28 @@ final class TripSharingService: ObservableObject {
         guard let data = try? JSONEncoder().encode(link) else { return }
         UserDefaults.standard.set(data, forKey: linkDefaultsKey(key))
     }
+
+    // MARK: - Unsharing
+
+    /// Whether this trip currently has an active CloudKit share — used to
+    /// decide whether deleting it needs the stronger "this will remove it
+    /// from everyone you've shared it with" warning.
+    func isShared(_ trip: Trip) -> Bool {
+        loadLink(key: storageKey(for: trip.id)) != nil
+    }
+
+    /// Revokes this trip's share entirely: deletes its CloudKit zone,
+    /// which deletes the share record and every record in it, and — per
+    /// CloudKit's own semantics — removes the zone from every
+    /// participant's shared-database view automatically. Call this
+    /// before deleting a shared trip locally, so "delete" actually means
+    /// gone for everyone, not just orphaned CloudKit data nobody can
+    /// reach through the app anymore.
+    func stopSharing(_ trip: Trip) async {
+        let key = storageKey(for: trip.id)
+        guard let link = loadLink(key: key) else { return }
+        let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
+        _ = try? await container.privateCloudDatabase.modifyRecordZones(saving: [], deleting: [zoneID])
+        UserDefaults.standard.removeObject(forKey: linkDefaultsKey(key))
+    }
 }

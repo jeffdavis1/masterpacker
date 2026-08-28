@@ -4,6 +4,7 @@ import SwiftData
 struct TripDetailView: View {
     @Bindable var trip: Trip
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @State private var isPresentingAddItem = false
     @State private var isPresentingEditTrip = false
     @State private var isPresentingApplyTemplate = false
@@ -149,7 +150,7 @@ struct TripDetailView: View {
             AddItemView(trip: trip)
         }
         .sheet(isPresented: $isPresentingEditTrip) {
-            EditTripView(trip: trip)
+            EditTripView(trip: trip, onDelete: { dismiss() })
         }
         .sheet(isPresented: $isPresentingApplyTemplate) {
             ApplyTemplateView(trip: trip)

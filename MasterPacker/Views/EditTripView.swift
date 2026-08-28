@@ -7,6 +7,14 @@ import SwiftData
 /// live as you type.
 struct EditTripView: View {
     let trip: Trip
+    /// Called after the trip is actually deleted — lets the presenter
+    /// (TripDetailView, which is pushed on a NavigationStack rather than
+    /// sheeted) pop itself too, since this view's own dismiss() only
+    /// closes this Edit Trip sheet and would otherwise leave the caller
+    /// showing a trip that no longer exists.
+    var onDelete: () -> Void = {}
+
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
@@ -14,9 +22,11 @@ struct EditTripView: View {
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var travelMethod: TravelMethod
+    @State private var isPresentingDeleteConfirmation = false
 
-    init(trip: Trip) {
+    init(trip: Trip, onDelete: @escaping () -> Void = {}) {
         self.trip = trip
+        self.onDelete = onDelete
         _name = State(initialValue: trip.name)
         _destination = State(initialValue: trip.destination)
         _startDate = State(initialValue: trip.startDate)
@@ -38,6 +48,12 @@ struct EditTripView: View {
                         }
                     }
                 }
+
+                Section {
+                    Button("Delete Trip", role: .destructive) {
+                        isPresentingDeleteConfirmation = true
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .background(AppTheme.screenGradient.ignoresSafeArea())
@@ -52,6 +68,31 @@ struct EditTripView: View {
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
+            .alert("Delete Trip?", isPresented: $isPresentingDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) { deleteTrip() }
+            } message: {
+                Text(deleteWarningMessage)
+            }
+        }
+    }
+
+    private var deleteWarningMessage: String {
+        if TripSharingService.shared.isShared(trip) {
+            return "This trip is shared. Deleting it will also remove it from everyone you've shared it with. This can't be undone."
+        }
+        return "This can't be undone."
+    }
+
+    private func deleteTrip() {
+        Task {
+            if TripSharingService.shared.isShared(trip) {
+                await TripSharingService.shared.stopSharing(trip)
+            }
+            NotificationManager.shared.cancelReminders(for: trip)
+            modelContext.delete(trip)
+            dismiss()
+            onDelete()
         }
     }
 
