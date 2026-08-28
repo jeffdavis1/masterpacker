@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00C6DEE7C2AC6D2BDE99782D /* Traveler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F25240B4E950DBDC6BB44A /* Traveler.swift */; };
+		60863B06BD172B146BE092BC /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6E52E38C6B68EFE0790BC6 /* AnalyticsService.swift */; };
 		4EE7AAA453CF1DC6CC5A71F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C25AA24A6A64E0E2D5EC5DB6 /* Assets.xcassets */; };
 		5DCF9A4D2223123201C9A438 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC6629E1BC017F7D1A0506E /* AddItemView.swift */; };
 		EF1E2DA5CEC7F7F359DB3ABA /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B91A9DD3FF6A5590DF8E2EB /* SplashScreenView.swift */; };
@@ -62,6 +63,7 @@
 
 /* Begin PBXFileReference section */
 		0000796B7023BFF2AE768B51 /* DestinationField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationField.swift; sourceTree = "<group>"; };
+		DD6E52E38C6B68EFE0790BC6 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		07E321AF525F903CB2AA1905 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
 		0F1B318C863261EEAA8FE43F /* TemplateListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateListView.swift; sourceTree = "<group>"; };
 		103DAD5C7D76416917811B57 /* TripSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSharingService.swift; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 		155842F409CD5C51A4E79855 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				DD6E52E38C6B68EFE0790BC6 /* AnalyticsService.swift */,
 				70541B1AD346B7FD891E405E /* Trip.swift */,
 				16BD4940700936872CE97FF4 /* PackingItem.swift */,
 				1AA9CCA06D61EF382938C70B /* PackingRulesEngine.swift */,
@@ -313,6 +316,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				60863B06BD172B146BE092BC /* AnalyticsService.swift in Sources */,
 				181C1577AC6EEC784416A864 /* MasterPackerApp.swift in Sources */,
 				7BC98E4A879ECC550BA074B2 /* ContentView.swift in Sources */,
 				0A1C0191A5E78EAB16D3E28B /* DesignSystem.swift in Sources */,

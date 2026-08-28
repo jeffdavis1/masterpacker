@@ -156,6 +156,7 @@ final class TripSharingService: ObservableObject {
         )
 
         await ensureZoneSubscription(zoneID: zoneID, database: database)
+        AnalyticsService.tripShared()
 
         // Critical: modifyRecords(saving:deleting:) does NOT mutate the
         // CKShare instance we passed in — it only returns an updated copy
@@ -318,6 +319,7 @@ final class TripSharingService: ObservableObject {
             _ = try await shareContainer.accept(metadata)
             await refreshSharedTrips()
             justAcceptedTripID = metadata.rootRecordID.recordName
+            AnalyticsService.shareAccepted()
         } catch {
             // Nothing further to do — the share simply won't show up.
         }
@@ -594,6 +596,7 @@ final class TripSharingService: ObservableObject {
     func addToMyTrips(_ trip: RemoteTrip) {
         pinnedSharedTripIDs.insert(trip.id)
         UserDefaults.standard.set(Array(pinnedSharedTripIDs), forKey: Self.pinnedDefaultsKey)
+        AnalyticsService.tripAddedToMyTrips()
     }
 
     /// Un-pins a shared trip from "My Trips" — it stays reachable under
@@ -614,5 +617,6 @@ final class TripSharingService: ObservableObject {
         _ = try? await container.sharedCloudDatabase.modifyRecordZones(saving: [], deleting: [trip.zoneID])
         removeFromMyTrips(trip)
         sharedTrips.removeAll { $0.id == trip.id }
+        AnalyticsService.sharedTripLeft()
     }
 }

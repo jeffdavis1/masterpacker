@@ -85,12 +85,14 @@ struct EditTripView: View {
     }
 
     private func deleteTrip() {
+        let wasShared = TripSharingService.shared.isShared(trip)
         Task {
-            if TripSharingService.shared.isShared(trip) {
+            if wasShared {
                 await TripSharingService.shared.stopSharing(trip)
             }
             NotificationManager.shared.cancelReminders(for: trip)
             modelContext.delete(trip)
+            AnalyticsService.tripDeleted(wasShared: wasShared)
             dismiss()
             onDelete()
         }

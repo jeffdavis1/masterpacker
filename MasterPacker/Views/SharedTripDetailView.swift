@@ -168,7 +168,9 @@ private struct SharedItemRow: View {
 
     var body: some View {
         Button {
-            Task { await TripSharingService.shared.setRemoteItemPacked(!item.isPacked, item: item) }
+            let newValue = !item.isPacked
+            AnalyticsService.itemPackedToggled(isPacked: newValue)
+            Task { await TripSharingService.shared.setRemoteItemPacked(newValue, item: item) }
         } label: {
             HStack {
                 Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")

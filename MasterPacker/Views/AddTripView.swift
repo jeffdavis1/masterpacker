@@ -250,6 +250,16 @@ struct AddTripView: View {
         }
 
         await NotificationManager.shared.scheduleTripReminders(for: trip)
+        AnalyticsService.tripCreated(
+            travelerCount: trip.travelers.count,
+            petCount: trip.pets.count,
+            activityCount: selectedActivities.count,
+            travelMethod: travelMethod,
+            generatedSuggestions: generateSuggestions
+        )
+        if !selectedTemplates.isEmpty {
+            AnalyticsService.bagAppliedToTrip()
+        }
 
         dismiss()
     }

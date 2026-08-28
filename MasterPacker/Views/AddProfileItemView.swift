@@ -80,6 +80,7 @@ struct AddProfileItemView: View {
         )
         if !existingNames.contains(trimmed.lowercased()) {
             modelContext.insert(CustomCategory(name: trimmed))
+            AnalyticsService.customCategoryCreated()
         }
         categoryName = trimmed
     }

@@ -373,6 +373,7 @@ private struct ItemRow: View {
     var body: some View {
         Button {
             item.isPacked.toggle()
+            AnalyticsService.itemPackedToggled(isPacked: item.isPacked)
             // No-ops if this item's trip isn't shared — cheap to call
             // unconditionally so a shared trip's participant sees the
             // change on their next refresh without a full re-share.

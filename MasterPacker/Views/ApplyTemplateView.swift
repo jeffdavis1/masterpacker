@@ -68,6 +68,7 @@ struct ApplyTemplateView: View {
             )
             modelContext.insert(item)
         }
+        AnalyticsService.bagAppliedToTrip()
         Task { await TripSharingService.shared.resyncIfShared(trip) }
         dismiss()
     }

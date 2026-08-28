@@ -32,6 +32,7 @@ struct NewTemplateView: View {
     private func save() {
         let template = PackingTemplate(name: name)
         modelContext.insert(template)
+        AnalyticsService.bagCreated()
         onCreate(template)
         dismiss()
     }
