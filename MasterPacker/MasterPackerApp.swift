@@ -31,6 +31,10 @@ struct MasterPackerApp: App {
     }()
 
     init() {
+        // Must run before anything reads a `.id` — see its own doc
+        // comment for why duplicates can exist at all.
+        Self.deduplicateStableIDs(in: sharedModelContainer)
+
         // Must be registered before the app finishes launching, per
         // BGTaskScheduler's requirements — this just teaches the system
         // handler what to do when it decides to run one; the actual
@@ -40,6 +44,50 @@ struct MasterPackerApp: App {
         // this device's own SwiftData copy for trips it owns — see
         // reconcileOwnedSharedTrips.
         TripSharingService.shared.configure(modelContainer: sharedModelContainer)
+    }
+
+    /// One-time repair for a real SwiftData/CloudKit footgun: `var id:
+    /// UUID = UUID()`'s "default value at declaration" is only evaluated
+    /// per-instance for objects created *after* the property existed.
+    /// When the property is added to a model that already has rows on
+    /// disk (exactly what happened when Trip/Traveler/Pet/PackingItem
+    /// gained `id` for the sharing-sync fix), SwiftData's lightweight
+    /// migration backfills every pre-existing row using a single static
+    /// default — not a fresh `UUID()` call per row — so every trip/item
+    /// that existed before that migration ended up with the *same*
+    /// literal id. Confirmed via a SwiftUI ForEach duplicate-ID warning
+    /// naming a UUID shared by more than one Trip.
+    ///
+    /// Fixes it by fetching each affected type once, and reassigning a
+    /// fresh UUID to every object after the first one seen with a given
+    /// id. Safe to run on every launch — once ids are unique there's
+    /// nothing left to fix, so this is a cheap no-op from then on.
+    private static func deduplicateStableIDs(in container: ModelContainer) {
+        let context = container.mainContext
+        var didChange = false
+
+        func dedupe<T: PersistentModel>(_ type: T.Type, id keyPath: ReferenceWritableKeyPath<T, UUID>) {
+            guard let all = try? context.fetch(FetchDescriptor<T>()) else { return }
+            var seen = Set<UUID>()
+            for object in all {
+                let id = object[keyPath: keyPath]
+                if seen.contains(id) {
+                    object[keyPath: keyPath] = UUID()
+                    didChange = true
+                } else {
+                    seen.insert(id)
+                }
+            }
+        }
+
+        dedupe(Trip.self, id: \.id)
+        dedupe(Traveler.self, id: \.id)
+        dedupe(Pet.self, id: \.id)
+        dedupe(PackingItem.self, id: \.id)
+
+        if didChange {
+            try? context.save()
+        }
     }
 
     var body: some Scene {
