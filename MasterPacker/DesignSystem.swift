@@ -159,11 +159,11 @@ struct IconBadge: View {
 }
 
 /// A small circular percent-complete indicator (e.g. packing progress on a
-/// trip row). Use `ProgressBar` for a full-width bar instead.
-/// A ring showing packing progress. Carries a small bag icon at its
-/// center — without it, a bare ring reads ambiguously as any kind of
-/// progress or countdown (trip cards also show a "days until" badge
-/// nearby, so the two need to be visually distinct at a glance).
+/// trip row) — use `ProgressBar` for a full-width bar instead. Carries a
+/// small bag icon at its center; without it, a bare ring reads ambiguously
+/// as any kind of progress or countdown (trip cards also show a "days
+/// until" badge nearby, so the two need to be visually distinct at a
+/// glance).
 struct ProgressRing: View {
     let progress: Double
     var lineWidth: CGFloat = 4
