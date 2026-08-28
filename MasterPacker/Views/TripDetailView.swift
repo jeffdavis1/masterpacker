@@ -63,6 +63,13 @@ struct TripDetailView: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
 
+                if !trip.travelers.isEmpty || !trip.pets.isEmpty {
+                    WhosGoingCard(trip: trip)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+
                 TripForecastCard(trip: trip)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
@@ -250,6 +257,52 @@ private struct TripProgressHeader: View {
         .padding(.horizontal, 16)
         .padding(.top, 4)
         .padding(.bottom, 8)
+    }
+}
+
+/// A quick "who's on this trip" summary — travelers and pets as chips,
+/// shown right below the progress header. Previously the only place
+/// travelers/pets showed up at all was as section headers buried further
+/// down in the packing list.
+private struct WhosGoingCard: View {
+    let trip: Trip
+    private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Who's Going", systemImage: "person.2.fill")
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
+                .foregroundStyle(.primary)
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                ForEach(trip.travelers) { traveler in
+                    WhosGoingChip(name: traveler.name, symbol: traveler.ageBracket.symbol)
+                }
+                ForEach(trip.pets) { pet in
+                    WhosGoingChip(name: pet.name, symbol: pet.species.symbol)
+                }
+            }
+        }
+        .padding(16)
+        .floatingCard()
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+}
+
+private struct WhosGoingChip: View {
+    let name: String
+    let symbol: String
+
+    var body: some View {
+        Label(name, systemImage: symbol)
+            .font(.caption)
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(AppTheme.brand.opacity(0.12))
+            .foregroundStyle(AppTheme.brand)
+            .clipShape(Capsule())
     }
 }
 
