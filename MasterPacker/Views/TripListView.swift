@@ -255,6 +255,14 @@ private struct SharedTripCard: View {
                     ProgressRing(progress: Double(trip.packedCount) / Double(trip.items.count))
                 }
             }
+
+            // Owned trips get this for free from NavigationLink; this
+            // card is a plain Button instead (it opens a sheet, not a
+            // push), so without this it's the only trip in "My Trips"
+            // missing the disclosure chevron everything else has.
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
         }
         .padding(14)
         .floatingCard()
