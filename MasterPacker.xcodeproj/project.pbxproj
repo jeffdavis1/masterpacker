@@ -17,6 +17,10 @@
 		1C4EC2BCC4A986FB625A1F2C /* TripMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8D0EB73282CD02E9223975F /* TripMapView.swift */; };
 		1D462128AAAB5F6510333E94 /* PackingItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BD4940700936872CE97FF4 /* PackingItem.swift */; };
 		2144978F6482F0A06329C59E /* AddTemplateItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A73D04C1F3B5CB93FB5EE8B /* AddTemplateItemView.swift */; };
+		4EE7AAA453CF1DC6CC5A71F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C25AA24A6A64E0E2D5EC5DB6 /* Assets.xcassets */; };
+		8890A7A1CACCE7FF2644C1A1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 30CF7F24892589ADEDD0B194 /* GoogleService-Info.plist */; };
+		5DCF9A4D2223123201C9A438 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC6629E1BC017F7D1A0506E /* AddItemView.swift */; };
+		EF1E2DA5CEC7F7F359DB3ABA /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B91A9DD3FF6A5590DF8E2EB /* SplashScreenView.swift */; };
 		270C1C4B808BE5B6D8E4248E /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F9BEEEDCD30513B9DE081C /* ProfileListView.swift */; };
 		27E0E6E98DB070F3BD949356 /* NewProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C095BF080504A31FEA5E /* NewProfileView.swift */; };
 		3EB588070026919A8237C6F1 /* ProfileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */; };
@@ -73,6 +77,7 @@
 		2A8DA39032798EA5840786A2 /* PetProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetProfile.swift; sourceTree = "<group>"; };
 		2E57A96C3040EA59007B1929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2E72EEF23040E10C00FEE90C /* MasterPacker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MasterPacker.entitlements; sourceTree = "<group>"; };
+		30CF7F24892589ADEDD0B194 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		31D76C12613F60BADD41492E /* MasterPackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterPackerApp.swift; sourceTree = "<group>"; };
 		373564E5B61B02A364226932 /* AddTripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTripView.swift; sourceTree = "<group>"; };
 		3DC3A1F3A3C45F0B6D19E5C7 /* PetProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetProfileDetailView.swift; sourceTree = "<group>"; };
@@ -211,6 +216,7 @@
 			children = (
 				2E57A96C3040EA59007B1929 /* Info.plist */,
 				2E72EEF23040E10C00FEE90C /* MasterPacker.entitlements */,
+				30CF7F24892589ADEDD0B194 /* GoogleService-Info.plist */,
 				31D76C12613F60BADD41492E /* MasterPackerApp.swift */,
 				620FDBCAB506ED42E6E22314 /* ContentView.swift */,
 				BEFDDFB630D169341E45AC3B /* AppDelegate.swift */,
@@ -286,6 +292,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EE7AAA453CF1DC6CC5A71F6 /* Assets.xcassets in Resources */,
+				8890A7A1CACCE7FF2644C1A1 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
