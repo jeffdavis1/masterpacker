@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CloudKit
 
 struct TripDetailView: View {
     @Bindable var trip: Trip
@@ -8,6 +9,10 @@ struct TripDetailView: View {
     @State private var isPresentingEditTrip = false
     @State private var isPresentingApplyTemplate = false
     @State private var collapsedSections: Set<String> = []
+    @State private var isSharingTrip = false
+    @State private var isPresentingShareSheet = false
+    @State private var activeShare: CKShare?
+    @State private var shareError: String?
 
     /// One category's items within a traveler/pet/shared group.
     private struct CategoryGroup: Identifiable {
@@ -114,6 +119,18 @@ struct TripDetailView: View {
                     Label("Edit Trip", systemImage: "pencil")
                 }
             }
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    Task { await startSharing() }
+                } label: {
+                    if isSharingTrip {
+                        ProgressView()
+                    } else {
+                        Label("Share Trip", systemImage: "square.and.arrow.up")
+                    }
+                }
+                .disabled(isSharingTrip)
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button {
@@ -139,6 +156,30 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $isPresentingApplyTemplate) {
             ApplyTemplateView(trip: trip)
+        }
+        .sheet(isPresented: $isPresentingShareSheet) {
+            if let activeShare {
+                CloudSharingControllerView(share: activeShare, container: .default())
+            }
+        }
+        .alert("Couldn't Share Trip", isPresented: Binding(
+            get: { shareError != nil },
+            set: { if !$0 { shareError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(shareError ?? "Something went wrong.")
+        }
+    }
+
+    private func startSharing() async {
+        isSharingTrip = true
+        defer { isSharingTrip = false }
+        do {
+            activeShare = try await TripSharingService.shared.shareTrip(trip)
+            isPresentingShareSheet = true
+        } catch {
+            shareError = error.localizedDescription
         }
     }
 

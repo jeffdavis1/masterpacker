@@ -11,5 +11,7 @@
 	<array>
 		<string>com.jwarrengroup.masterpacker.weatherRefresh</string>
 	</array>
+	<key>CKSharingSupported</key>
+	<true/>
 </dict>
 </plist>
