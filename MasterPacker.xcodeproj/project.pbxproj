@@ -20,6 +20,7 @@
 		4E94D9F7257212ED1C400522 /* AddProfileItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB590586804C729A187E3D3 /* AddProfileItemView.swift */; };
 		E445CA198701213BF4B9E95B /* NewPetProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D001AE4B0CDBA53AB58B0CA /* NewPetProfileView.swift */; };
 		5A400D74598A549DD03365FD /* PetProfileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC3A1F3A3C45F0B6D19E5C7 /* PetProfileDetailView.swift */; };
+		1C4EC2BCC4A986FB625A1F2C /* TripMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8D0EB73282CD02E9223975F /* TripMapView.swift */; };
 		B5C071AA4DC9BDEF82E83253 /* EditTripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7E07EF7735FC1671416FF7 /* EditTripView.swift */; };
 		C8188E0AC934DDD4D2428287 /* DestinationField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0000796B7023BFF2AE768B51 /* DestinationField.swift */; };
 		6410D3586841C6A9B6BE3B78 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5028B2482F31F599C04F93 /* TripListView.swift */; };
@@ -53,6 +54,7 @@
 		1FB590586804C729A187E3D3 /* AddProfileItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProfileItemView.swift; sourceTree = "<group>"; };
 		4D001AE4B0CDBA53AB58B0CA /* NewPetProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPetProfileView.swift; sourceTree = "<group>"; };
 		3DC3A1F3A3C45F0B6D19E5C7 /* PetProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetProfileDetailView.swift; sourceTree = "<group>"; };
+		A8D0EB73282CD02E9223975F /* TripMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripMapView.swift; sourceTree = "<group>"; };
 		FF7E07EF7735FC1671416FF7 /* EditTripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTripView.swift; sourceTree = "<group>"; };
 		0000796B7023BFF2AE768B51 /* DestinationField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationField.swift; sourceTree = "<group>"; };
 		1EE87966B57A366920A15FF0 /* Pet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pet.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 				1FB590586804C729A187E3D3 /* AddProfileItemView.swift */,
 				4D001AE4B0CDBA53AB58B0CA /* NewPetProfileView.swift */,
 				3DC3A1F3A3C45F0B6D19E5C7 /* PetProfileDetailView.swift */,
+				A8D0EB73282CD02E9223975F /* TripMapView.swift */,
 				FF7E07EF7735FC1671416FF7 /* EditTripView.swift */,
 				0000796B7023BFF2AE768B51 /* DestinationField.swift */,
 			);
@@ -271,6 +274,7 @@
 				4E94D9F7257212ED1C400522 /* AddProfileItemView.swift in Sources */,
 				E445CA198701213BF4B9E95B /* NewPetProfileView.swift in Sources */,
 				5A400D74598A549DD03365FD /* PetProfileDetailView.swift in Sources */,
+				1C4EC2BCC4A986FB625A1F2C /* TripMapView.swift in Sources */,
 				B5C071AA4DC9BDEF82E83253 /* EditTripView.swift in Sources */,
 				C8188E0AC934DDD4D2428287 /* DestinationField.swift in Sources */,
 			);

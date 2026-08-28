@@ -93,7 +93,11 @@ actor WeatherService {
         }
     }
 
-    private func coordinate(for destination: String) async -> CLLocationCoordinate2D? {
+    /// Resolves a destination string to coordinates, using the same cache
+    /// as `forecast(destination:startDate:days:)`. Exposed publicly for the
+    /// trip map view — `Trip.destination` is just a validated place-name
+    /// string, never stored coordinates, so plotting a pin needs this too.
+    func coordinate(for destination: String) async -> CLLocationCoordinate2D? {
         let trimmed = destination.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         if let cached = geocodeCache[trimmed] { return cached }

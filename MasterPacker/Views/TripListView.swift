@@ -6,6 +6,7 @@ struct TripListView: View {
     @Query(sort: \Trip.startDate) private var trips: [Trip]
     @State private var isPresentingAddTrip = false
     @State private var isPresentingProfiles = false
+    @State private var isPresentingMap = false
 
     var body: some View {
         NavigationStack {
@@ -46,6 +47,13 @@ struct TripListView: View {
                         Label("Saved Travelers", systemImage: "person.crop.circle")
                     }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isPresentingMap = true
+                    } label: {
+                        Label("Trip Map", systemImage: "map")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingAddTrip = true
@@ -56,6 +64,9 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingAddTrip) {
                 AddTripView()
+            }
+            .sheet(isPresented: $isPresentingMap) {
+                TripMapView()
             }
             .sheet(isPresented: $isPresentingProfiles) {
                 ProfileListView()
