@@ -36,7 +36,7 @@ struct SharedTripsListView: View {
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
                     .refreshable {
-                        await service.refreshSharedTrips()
+                        await service.syncSharedTrips()
                     }
                 }
             }
@@ -54,7 +54,7 @@ struct SharedTripsListView: View {
                 }
             }
             .task {
-                await service.refreshSharedTrips()
+                await service.syncSharedTrips()
             }
         }
     }

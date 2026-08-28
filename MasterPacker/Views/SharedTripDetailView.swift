@@ -48,7 +48,7 @@ struct SharedTripDetailView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .refreshable {
-                    await service.refreshSharedTrips()
+                    await service.syncSharedTrips()
                 }
                 .navigationTitle(trip.name)
             } else {

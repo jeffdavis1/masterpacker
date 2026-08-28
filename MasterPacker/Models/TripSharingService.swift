@@ -20,12 +20,20 @@ final class TripSharingService: ObservableObject {
 
     /// Trips shared *to* this device by someone else, fetched from
     /// CloudKit's shared database. Populated by refreshSharedTrips() —
-    /// call that (e.g. on view appear, pull-to-refresh, or right after
-    /// accepting a new share) rather than expecting this to update itself;
-    /// there's no live/push-driven sync yet.
+    /// call syncSharedTrips() (or this directly) on view appear, pull-to-
+    /// refresh, app foreground, and incoming push notification.
     @Published private(set) var sharedTrips: [RemoteTrip] = []
 
+    /// Needed only for reconcileOwnedSharedTrips (pulling a participant's
+    /// edits back into this device's own SwiftData copy, for trips this
+    /// device owns) — set once at launch via configure(modelContainer:).
+    private var modelContainer: ModelContainer?
+
     private init() {}
+
+    func configure(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+    }
 
     // MARK: - Owner side: creating / re-syncing a share
 
@@ -66,6 +74,7 @@ final class TripSharingService: ObservableObject {
             let tripRecordID = CKRecord.ID(recordName: existingLink.tripRecordName, zoneID: zoneID)
             if let share = try await fetchExistingShare(for: tripRecordID, database: database) {
                 try await resyncSnapshot(trip, zoneID: zoneID, tripRecordID: tripRecordID, link: existingLink, key: key, database: database)
+                await ensureZoneSubscription(zoneID: zoneID, database: database)
                 return share
             }
             // Falls through to create a fresh share below if the old one
@@ -133,6 +142,8 @@ final class TripSharingService: ObservableObject {
             ),
             key: key
         )
+
+        await ensureZoneSubscription(zoneID: zoneID, database: database)
 
         return share
     }
@@ -261,13 +272,71 @@ final class TripSharingService: ObservableObject {
         }
     }
 
-    /// Refetches every trip shared to this device. Call on view appear
-    /// and pull-to-refresh — there's no push-driven live sync yet, so
-    /// this is the only way to see a change the owner (or another
-    /// participant) made.
+    /// Refetches every trip shared to this device. Called by
+    /// syncSharedTrips(); also fine to call directly (e.g. pull-to-
+    /// refresh) when only the "shared to me" side needs updating.
     func refreshSharedTrips() async {
         guard let trips = try? await fetchSharedTrips() else { return }
         sharedTrips = trips
+    }
+
+    /// The one thing to call whenever we want the freshest possible
+    /// state — on an incoming push notification, and on app foreground
+    /// as a reliable backstop since silent push delivery isn't always
+    /// instant or guaranteed. Covers both directions: refreshes this
+    /// device's view of trips shared *to* it, and pulls any participant
+    /// edits on trips *this device owns* back into the local SwiftData
+    /// copy (see reconcileOwnedSharedTrips).
+    func syncSharedTrips() async {
+        await refreshSharedTrips()
+        await reconcileOwnedSharedTrips()
+    }
+
+    /// Handles an incoming silent push from one of our zone subscriptions
+    /// — we don't bother inspecting which zone/record changed, since a
+    /// full sync is cheap at this app's scale; just re-sync everything.
+    func handleRemoteNotification(userInfo: [AnyHashable: Any]) async {
+        guard CKNotification(fromRemoteNotificationDictionary: userInfo) != nil else { return }
+        await syncSharedTrips()
+    }
+
+    /// Pulls a participant's edits (currently just item packed/unpacked
+    /// state) back into the SwiftData copy, for every trip this device
+    /// owns and has shared. The owner's own SwiftData Trip is the "real"
+    /// data the rest of the app displays — the CKRecords are a satellite
+    /// copy participants read/write — so without this, a participant's
+    /// checkbox toggle would only ever update that satellite copy and
+    /// never actually reach the owner.
+    private func reconcileOwnedSharedTrips() async {
+        guard let modelContainer else { return }
+        let context = modelContainer.mainContext
+        guard let trips = try? context.fetch(FetchDescriptor<Trip>()) else { return }
+
+        for trip in trips {
+            guard let link = loadLink(key: storageKey(for: trip.persistentModelID)) else { continue }
+            await reconcileItems(for: trip, link: link)
+        }
+    }
+
+    private func reconcileItems(for trip: Trip, link: SharedTripLink) async {
+        let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
+        guard let itemRecords = try? await queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: container.privateCloudDatabase) else { return }
+
+        // record name -> this device's storage key for that item, so we
+        // can match a fetched CKRecord back to its local PackingItem
+        // without any crash-prone identifier lookup — trip.items is
+        // already loaded, so a simple linear match is enough here.
+        let keyByRecordName = Dictionary(uniqueKeysWithValues: link.itemRecordNames.map { ($1, $0) })
+
+        for record in itemRecords {
+            guard let itemKey = keyByRecordName[record.recordID.recordName] else { continue }
+            guard let localItem = trip.items.first(where: { storageKey(for: $0.persistentModelID) == itemKey }) else { continue }
+
+            let remoteIsPacked = (record[SharedItemField.isPacked] as? Int ?? 0) != 0
+            if localItem.isPacked != remoteIsPacked {
+                localItem.isPacked = remoteIsPacked
+            }
+        }
     }
 
     private func fetchSharedTrips() async throws -> [RemoteTrip] {
@@ -276,11 +345,29 @@ final class TripSharingService: ObservableObject {
 
         var trips: [RemoteTrip] = []
         for zone in zones {
+            // Self-healing: re-asserting the subscription here (rather
+            // than only at accept-time) means a lapsed or never-created
+            // subscription gets fixed on the next refresh automatically.
+            await ensureZoneSubscription(zoneID: zone.zoneID, database: database)
             if let trip = try? await fetchRemoteTrip(in: zone.zoneID, database: database) {
                 trips.append(trip)
             }
         }
         return trips
+    }
+
+    /// Creates (or refreshes) a silent push subscription for a shared
+    /// zone, so a change anyone makes in it — owner or participant —
+    /// wakes every other device that's subscribed. Saving a subscription
+    /// with an ID that already exists just updates it, so this is safe
+    /// to call repeatedly rather than needing separate "have I already
+    /// subscribed" bookkeeping.
+    private func ensureZoneSubscription(zoneID: CKRecordZone.ID, database: CKDatabase) async {
+        let subscription = CKRecordZoneSubscription(zoneID: zoneID, subscriptionID: "zoneChanges.\(zoneID.zoneName)")
+        let notificationInfo = CKSubscription.NotificationInfo()
+        notificationInfo.shouldSendContentAvailable = true // silent — no banner, just wakes the app
+        subscription.notificationInfo = notificationInfo
+        _ = try? await database.save(subscription)
     }
 
     private func fetchRemoteTrip(in zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> RemoteTrip? {

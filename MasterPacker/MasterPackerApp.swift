@@ -4,8 +4,9 @@ import BackgroundTasks
 
 @main
 struct MasterPackerApp: App {
-    // Only reason for an AppDelegate at all — catches the system callback
-    // fired when someone accepts an incoming trip-share invite. See
+    // Catches two system callbacks SwiftUI's App lifecycle has no direct
+    // hook for: accepting an incoming trip-share invite, and incoming
+    // silent push notifications for live trip-sharing sync. See
     // AppDelegate.swift.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
@@ -35,6 +36,10 @@ struct MasterPackerApp: App {
         // handler what to do when it decides to run one; the actual
         // request is submitted from ContentView when the app backgrounds.
         NotificationManager.shared.registerBackgroundTask(modelContainer: sharedModelContainer)
+        // Lets TripSharingService pull a participant's edits back into
+        // this device's own SwiftData copy for trips it owns — see
+        // reconcileOwnedSharedTrips.
+        TripSharingService.shared.configure(modelContainer: sharedModelContainer)
     }
 
     var body: some Scene {

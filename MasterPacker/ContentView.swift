@@ -28,12 +28,23 @@ struct ContentView: View {
         .task {
             await NotificationManager.shared.requestAuthorizationIfNeeded()
         }
+        .task {
+            await TripSharingService.shared.syncSharedTrips()
+        }
         .onChange(of: scenePhase) { _, newPhase in
             // Background App Refresh requests are one-shot — make sure
             // there's always one pending for the weather watcher whenever
             // the app isn't in the foreground.
             if newPhase == .background {
                 NotificationManager.shared.scheduleNextWeatherRefresh()
+            }
+            // Push-driven sync (see TripSharingService) covers most
+            // cases, but silent push delivery isn't instant or
+            // guaranteed — syncing again on foreground is a reliable
+            // backstop for "opening the app should show the latest
+            // state right away."
+            if newPhase == .active {
+                Task { await TripSharingService.shared.syncSharedTrips() }
             }
         }
     }
