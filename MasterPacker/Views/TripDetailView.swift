@@ -229,7 +229,11 @@ private struct TripProgressHeader: View {
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .foregroundStyle(.white)
 
-            Text("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s") · \(trip.destination)")
+            Text(trip.destination)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.8))
+
+            Text("\(tripDateRangeText(from: trip.startDate, to: trip.endDate)) · \(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s")")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
 

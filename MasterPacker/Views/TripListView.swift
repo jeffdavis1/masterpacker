@@ -261,9 +261,11 @@ private struct SharedTripCard: View {
     }
 }
 
-/// Shared by TripRow and SharedTripCard — "Mar 12 – 19" (or "Mar 30 –
-/// Apr 2, 2027" across a year boundary).
-private func tripDateRangeText(from startDate: Date, to endDate: Date) -> String {
+/// Shared by TripRow and SharedTripCard here, and by TripProgressHeader
+/// in TripDetailView.swift — "Mar 12 – 19" (or "Mar 30 – Apr 2, 2027"
+/// across a year boundary). Not private, so it's a single canonical
+/// place for this formatting rather than three ad-hoc copies of it.
+func tripDateRangeText(from startDate: Date, to endDate: Date) -> String {
     let sameYear = Calendar.current.isDate(startDate, equalTo: endDate, toGranularity: .year)
     let start = startDate.formatted(.dateTime.month(.abbreviated).day())
     let end = sameYear
