@@ -439,7 +439,15 @@ final class TripSharingService: ObservableObject {
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true // silent — no banner, just wakes the app
         subscription.notificationInfo = notificationInfo
-        _ = try? await database.save(subscription)
+        do {
+            _ = try await database.save(subscription)
+            print("🔵 [Sharing] ensureZoneSubscription: saved for zone \(zoneID.zoneName), scope=\(database.databaseScope.rawValue)")
+        } catch {
+            // TEMP diagnostic — was silently swallowed via try? before,
+            // which is exactly the kind of failure that would explain a
+            // push never arriving with zero trace of why.
+            print("🔴 [Sharing] ensureZoneSubscription FAILED for zone \(zoneID.zoneName), scope=\(database.databaseScope.rawValue): \(error)")
+        }
     }
 
     private func fetchRemoteTrip(in zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> RemoteTrip? {
