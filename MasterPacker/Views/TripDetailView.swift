@@ -104,6 +104,12 @@ struct TripDetailView: View {
         .scrollContentBackground(.hidden)
         .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationTitle(trip.name)
+        .refreshable {
+            // Pulls a participant's edits (item packed state) into this
+            // trip's local SwiftData copy, if it's shared — the owner had
+            // no way to manually do this before, only push notifications.
+            await TripSharingService.shared.syncSharedTrips()
+        }
         .onChange(of: unpackedCount) { _, _ in
             Task { await NotificationManager.shared.scheduleTripReminders(for: trip) }
         }

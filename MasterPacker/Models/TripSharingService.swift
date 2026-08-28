@@ -267,19 +267,33 @@ final class TripSharingService: ObservableObject {
     /// isPacked changes on the owner's own copy, so a participant sees the
     /// change on their next refresh without needing a full re-share.
     func syncItemPackedIfShared(_ item: PackingItem) async {
-        guard let trip = item.trip else { return }
+        guard let trip = item.trip else {
+            print("🔴 [Sharing] syncItemPackedIfShared: item has no trip")
+            return
+        }
         let tripKey = storageKey(for: trip.persistentModelID)
-        guard let link = loadLink(key: tripKey) else { return }
+        guard let link = loadLink(key: tripKey) else {
+            print("🔵 [Sharing] syncItemPackedIfShared: trip \(trip.name) isn't shared, skipping")
+            return
+        }
         let itemKey = storageKey(for: item.persistentModelID)
-        guard let recordName = link.itemRecordNames[itemKey] else { return }
+        guard let recordName = link.itemRecordNames[itemKey] else {
+            print("🔴 [Sharing] syncItemPackedIfShared: item \(item.name) has no record in the link (added after last share/sync?) — tap Share again to catch it up")
+            return
+        }
 
         let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
         let recordID = CKRecord.ID(recordName: recordName, zoneID: zoneID)
         let database = container.privateCloudDatabase
 
-        guard let record = try? await database.record(for: recordID) else { return }
-        record[SharedItemField.isPacked] = item.isPacked ? 1 : 0
-        _ = try? await database.save(record)
+        do {
+            let record = try await database.record(for: recordID)
+            record[SharedItemField.isPacked] = item.isPacked ? 1 : 0
+            _ = try await database.save(record)
+            print("🔵 [Sharing] syncItemPackedIfShared: pushed \(item.name) isPacked=\(item.isPacked) to \(recordName)")
+        } catch {
+            print("🔴 [Sharing] syncItemPackedIfShared FAILED for \(item.name): \(error)")
+        }
     }
 
     // MARK: - Recipient side: accepting + reading shares
@@ -341,19 +355,31 @@ final class TripSharingService: ObservableObject {
     /// checkbox toggle would only ever update that satellite copy and
     /// never actually reach the owner.
     private func reconcileOwnedSharedTrips() async {
-        guard let modelContainer else { return }
+        guard let modelContainer else {
+            print("🔴 [Sharing] reconcileOwnedSharedTrips: modelContainer never configured")
+            return
+        }
         let context = modelContainer.mainContext
         guard let trips = try? context.fetch(FetchDescriptor<Trip>()) else { return }
 
+        var ownedSharedCount = 0
         for trip in trips {
             guard let link = loadLink(key: storageKey(for: trip.persistentModelID)) else { continue }
+            ownedSharedCount += 1
             await reconcileItems(for: trip, link: link)
         }
+        print("🔵 [Sharing] reconcileOwnedSharedTrips: checked \(trips.count) local trip(s), \(ownedSharedCount) owned+shared")
     }
 
     private func reconcileItems(for trip: Trip, link: SharedTripLink) async {
         let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
-        guard let itemRecords = try? await queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: container.privateCloudDatabase) else { return }
+        let itemRecords: [CKRecord]
+        do {
+            itemRecords = try await queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: container.privateCloudDatabase)
+        } catch {
+            print("🔴 [Sharing] reconcileItems FAILED to query \(trip.name)'s items: \(error)")
+            return
+        }
 
         // record name -> this device's storage key for that item, so we
         // can match a fetched CKRecord back to its local PackingItem
@@ -361,6 +387,7 @@ final class TripSharingService: ObservableObject {
         // already loaded, so a simple linear match is enough here.
         let keyByRecordName = Dictionary(uniqueKeysWithValues: link.itemRecordNames.map { ($1, $0) })
 
+        var changedCount = 0
         for record in itemRecords {
             guard let itemKey = keyByRecordName[record.recordID.recordName] else { continue }
             guard let localItem = trip.items.first(where: { storageKey(for: $0.persistentModelID) == itemKey }) else { continue }
@@ -368,8 +395,10 @@ final class TripSharingService: ObservableObject {
             let remoteIsPacked = (record[SharedItemField.isPacked] as? Int ?? 0) != 0
             if localItem.isPacked != remoteIsPacked {
                 localItem.isPacked = remoteIsPacked
+                changedCount += 1
             }
         }
+        print("🔵 [Sharing] reconcileItems for \(trip.name): fetched \(itemRecords.count) remote item(s), \(changedCount) updated locally")
     }
 
     private func fetchSharedTrips() async throws -> [RemoteTrip] {
@@ -474,9 +503,14 @@ final class TripSharingService: ObservableObject {
         }
 
         let database = container.sharedCloudDatabase
-        guard let record = try? await database.record(for: item.recordID) else { return }
-        record[SharedItemField.isPacked] = isPacked ? 1 : 0
-        _ = try? await database.save(record)
+        do {
+            let record = try await database.record(for: item.recordID)
+            record[SharedItemField.isPacked] = isPacked ? 1 : 0
+            _ = try await database.save(record)
+            print("🔵 [Sharing] setRemoteItemPacked: pushed \(item.name) isPacked=\(isPacked) to \(item.recordID.recordName)")
+        } catch {
+            print("🔴 [Sharing] setRemoteItemPacked FAILED for \(item.name): \(error)")
+        }
     }
 
     // MARK: - Link storage
