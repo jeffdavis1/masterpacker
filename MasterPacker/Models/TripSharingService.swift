@@ -64,6 +64,7 @@ final class TripSharingService: ObservableObject {
     func shareTrip(_ trip: Trip) async throws -> CKShare {
         let database = container.privateCloudDatabase
         let key = storageKey(for: trip.persistentModelID)
+        print("🔵 [Sharing] shareTrip key for \(trip.name): \(key)")
 
         if let existingLink = loadLink(key: key) {
             let zoneID = CKRecordZone.ID(zoneName: existingLink.zoneName, ownerName: CKCurrentUserDefaultName)
@@ -273,7 +274,8 @@ final class TripSharingService: ObservableObject {
         }
         let tripKey = storageKey(for: trip.persistentModelID)
         guard let link = loadLink(key: tripKey) else {
-            print("🔵 [Sharing] syncItemPackedIfShared: trip \(trip.name) isn't shared, skipping")
+            let storedLinkKeys = UserDefaults.standard.dictionaryRepresentation().keys.filter { $0.hasPrefix("sharedTripLink.") }
+            print("🔵 [Sharing] syncItemPackedIfShared key for \(trip.name): \(tripKey) — trip isn't shared, skipping. All stored link keys: \(Array(storedLinkKeys))")
             return
         }
         let itemKey = storageKey(for: item.persistentModelID)
