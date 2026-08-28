@@ -5,6 +5,7 @@ struct TripDetailView: View {
     @Bindable var trip: Trip
     @Environment(\.modelContext) private var modelContext
     @State private var isPresentingAddItem = false
+    @State private var isPresentingEditTrip = false
     @State private var collapsedSections: Set<String> = []
 
     /// Shared/household items first, then one section per traveler (trip
@@ -84,6 +85,13 @@ struct TripDetailView: View {
         .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationTitle(trip.name)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    isPresentingEditTrip = true
+                } label: {
+                    Label("Edit Trip", systemImage: "pencil")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     isPresentingAddItem = true
@@ -94,6 +102,9 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $isPresentingAddItem) {
             AddItemView(trip: trip)
+        }
+        .sheet(isPresented: $isPresentingEditTrip) {
+            EditTripView(trip: trip)
         }
     }
 
@@ -179,7 +190,6 @@ private struct TripProgressHeader: View {
 private struct TripForecastCard: View {
     let trip: Trip
     @State private var forecasts: [DayForecast] = []
-    @State private var didLoad = false
 
     var body: some View {
         Group {
@@ -204,9 +214,10 @@ private struct TripForecastCard: View {
                 .padding(.bottom, 8)
             }
         }
-        .task {
-            guard !didLoad else { return }
-            didLoad = true
+        // Re-fetches automatically if the trip's destination or start date
+        // changes (e.g. after editing the trip) — WeatherService caches
+        // internally, so re-running this for unchanged values is cheap.
+        .task(id: "\(trip.destination)|\(trip.startDate)") {
             forecasts = await WeatherService.shared.forecast(destination: trip.destination, startDate: trip.startDate, days: 7)
         }
     }
@@ -249,8 +260,8 @@ private struct ItemRow: View {
                 Text(item.name)
                     .strikethrough(item.isPacked)
                     .foregroundStyle(item.isPacked ? .secondary : .primary)
+                Spacer()
                 if item.quantity > 1 {
-                    Spacer()
                     Text("×\(item.quantity)")
                         .font(.caption)
                         .foregroundStyle(.secondary)

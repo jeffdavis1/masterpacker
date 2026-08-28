@@ -117,7 +117,6 @@ private struct TripRow: View {
 private struct TripWeatherStrip: View {
     let trip: Trip
     @State private var forecasts: [DayForecast] = []
-    @State private var didLoad = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -132,9 +131,10 @@ private struct TripWeatherStrip: View {
                 }
             }
         }
-        .task {
-            guard !didLoad else { return }
-            didLoad = true
+        // Re-fetches automatically if the trip's destination or start date
+        // changes — WeatherService caches internally, so re-running this
+        // for unchanged values is cheap.
+        .task(id: "\(trip.destination)|\(trip.startDate)") {
             forecasts = await WeatherService.shared.forecast(destination: trip.destination, startDate: trip.startDate, days: 3)
         }
     }

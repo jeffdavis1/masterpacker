@@ -18,6 +18,7 @@
 		27E0E6E98DB070F3BD949356 /* NewProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C095BF080504A31FEA5E /* NewProfileView.swift */; };
 		3EB588070026919A8237C6F1 /* ProfileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */; };
 		4E94D9F7257212ED1C400522 /* AddProfileItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB590586804C729A187E3D3 /* AddProfileItemView.swift */; };
+		B5C071AA4DC9BDEF82E83253 /* EditTripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7E07EF7735FC1671416FF7 /* EditTripView.swift */; };
 		6410D3586841C6A9B6BE3B78 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5028B2482F31F599C04F93 /* TripListView.swift */; };
 		6B547671E1619B1E9CE45A41 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70541B1AD346B7FD891E405E /* Trip.swift */; };
 		7BC98E4A879ECC550BA074B2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620FDBCAB506ED42E6E22314 /* ContentView.swift */; };
@@ -44,6 +45,7 @@
 		6E00C095BF080504A31FEA5E /* NewProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewProfileView.swift; sourceTree = "<group>"; };
 		D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDetailView.swift; sourceTree = "<group>"; };
 		1FB590586804C729A187E3D3 /* AddProfileItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProfileItemView.swift; sourceTree = "<group>"; };
+		FF7E07EF7735FC1671416FF7 /* EditTripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTripView.swift; sourceTree = "<group>"; };
 		1EE87966B57A366920A15FF0 /* Pet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pet.swift; sourceTree = "<group>"; };
 		2E57A96C3040EA59007B1929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2E72EEF23040E10C00FEE90C /* MasterPacker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MasterPacker.entitlements; sourceTree = "<group>"; };
@@ -89,6 +91,7 @@
 				6E00C095BF080504A31FEA5E /* NewProfileView.swift */,
 				D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */,
 				1FB590586804C729A187E3D3 /* AddProfileItemView.swift */,
+				FF7E07EF7735FC1671416FF7 /* EditTripView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -245,6 +248,7 @@
 				27E0E6E98DB070F3BD949356 /* NewProfileView.swift in Sources */,
 				3EB588070026919A8237C6F1 /* ProfileDetailView.swift in Sources */,
 				4E94D9F7257212ED1C400522 /* AddProfileItemView.swift in Sources */,
+				B5C071AA4DC9BDEF82E83253 /* EditTripView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

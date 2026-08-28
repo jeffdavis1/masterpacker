@@ -4,7 +4,6 @@ import SwiftData
 struct AddTripView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \TravelerProfile.name) private var savedProfiles: [TravelerProfile]
 
     @State private var name = ""
     @State private var destination = ""
@@ -17,7 +16,6 @@ struct AddTripView: View {
     @State private var pets: [PetDraft] = []
     @State private var generateSuggestions = true
     @State private var isPresentingTravelerChooser = false
-    @State private var isPresentingNewProfile = false
 
     var body: some View {
         NavigationStack {
@@ -96,27 +94,10 @@ struct AddTripView: View {
                         .disabled(!isValid)
                 }
             }
-            .confirmationDialog("Add Traveler", isPresented: $isPresentingTravelerChooser, titleVisibility: .visible) {
-                ForEach(availableProfiles) { profile in
-                    Button(profile.name) {
-                        selectedProfiles.append(profile)
-                    }
-                }
-                Button("Create New Traveler") {
-                    isPresentingNewProfile = true
-                }
-                Button("Cancel", role: .cancel) {}
-            }
-            .sheet(isPresented: $isPresentingNewProfile) {
-                NewProfileView { profile in
-                    selectedProfiles.append(profile)
-                }
+            .sheet(isPresented: $isPresentingTravelerChooser) {
+                TravelerChooserView(selectedProfiles: $selectedProfiles)
             }
         }
-    }
-
-    private var availableProfiles: [TravelerProfile] {
-        savedProfiles.filter { profile in !selectedProfiles.contains { $0.id == profile.id } }
     }
 
     private var isValid: Bool {
@@ -199,6 +180,86 @@ struct AddTripView: View {
         }
 
         dismiss()
+    }
+}
+
+/// Lets the user select multiple saved travelers (tap to toggle, stays
+/// open) or create a new one on the spot, then confirm with Done — unlike
+/// a confirmation dialog, this doesn't close after every tap.
+private struct TravelerChooserView: View {
+    @Binding var selectedProfiles: [TravelerProfile]
+    @Query(sort: \TravelerProfile.name) private var savedProfiles: [TravelerProfile]
+    @Environment(\.dismiss) private var dismiss
+    @State private var isPresentingNewProfile = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if savedProfiles.isEmpty {
+                    ContentUnavailableView(
+                        "No saved travelers yet",
+                        systemImage: "person.crop.circle.badge.plus",
+                        description: Text("Create one to add them to this trip.")
+                    )
+                } else {
+                    List {
+                        ForEach(savedProfiles) { profile in
+                            Button {
+                                toggle(profile)
+                            } label: {
+                                HStack {
+                                    Text(profile.name)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    if isSelected(profile) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(AppTheme.brand)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                            }
+                            .listRowBackground(Color.white)
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .background(AppTheme.screenGradient.ignoresSafeArea())
+            .navigationTitle("Add Travelers")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isPresentingNewProfile = true
+                    } label: {
+                        Label("Create New Traveler", systemImage: "plus")
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $isPresentingNewProfile) {
+                NewProfileView { profile in
+                    if !isSelected(profile) {
+                        selectedProfiles.append(profile)
+                    }
+                }
+            }
+        }
+    }
+
+    private func isSelected(_ profile: TravelerProfile) -> Bool {
+        selectedProfiles.contains { $0.id == profile.id }
+    }
+
+    private func toggle(_ profile: TravelerProfile) {
+        if isSelected(profile) {
+            selectedProfiles.removeAll { $0.id == profile.id }
+        } else {
+            selectedProfiles.append(profile)
+        }
     }
 }
 
