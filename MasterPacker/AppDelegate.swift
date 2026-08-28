@@ -1,5 +1,6 @@
 import UIKit
 import CloudKit
+import FirebaseCore
 
 /// Small UIKit bridge for things SwiftUI's App lifecycle has no direct
 /// hook for. CloudKit share acceptance itself is NOT handled here — for
@@ -9,6 +10,12 @@ import CloudKit
 /// registration and for pointing iOS at that custom scene delegate.
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Firebase's own guidance: configure() as early in launch as
+        // possible, and before any other Firebase API (Analytics
+        // included) is touched. Reads GoogleService-Info.plist out of
+        // the app bundle automatically.
+        FirebaseApp.configure()
+
         // Needed for CloudKit's zone-change subscriptions (see
         // TripSharingService.ensureZoneSubscription) to actually deliver
         // silent pushes to this device — no explicit token handoff to
