@@ -12,6 +12,7 @@ struct MasterPackerApp: App {
         let schema = Schema([
             Trip.self, Traveler.self, Pet.self, PackingItem.self,
             TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+            PackingTemplate.self, TemplateItem.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
 

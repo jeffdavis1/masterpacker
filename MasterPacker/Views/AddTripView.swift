@@ -4,6 +4,7 @@ import SwiftData
 struct AddTripView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \PackingTemplate.name) private var savedTemplates: [PackingTemplate]
 
     @State private var name = ""
     @State private var destination = ""
@@ -14,6 +15,7 @@ struct AddTripView: View {
     @State private var notes = ""
     @State private var selectedProfiles: [TravelerProfile] = []
     @State private var selectedPetProfiles: [PetProfile] = []
+    @State private var selectedTemplates: [PackingTemplate] = []
     @State private var generateSuggestions = true
     @State private var isPresentingTravelerChooser = false
     @State private var isPresentingPetChooser = false
@@ -87,6 +89,16 @@ struct AddTripView: View {
                     Text("Pets")
                 } footer: {
                     Text("Their always-pack items come along automatically.")
+                }
+
+                if !savedTemplates.isEmpty {
+                    Section {
+                        TemplateChipGrid(templates: savedTemplates, selected: $selectedTemplates)
+                    } header: {
+                        Text("Apply Templates")
+                    } footer: {
+                        Text("Adds each selected template's items to this trip's shared list.")
+                    }
                 }
 
                 Section {
@@ -201,6 +213,20 @@ struct AddTripView: View {
                     quantity: profileItem.quantity,
                     trip: trip,
                     pet: pet
+                )
+                modelContext.insert(item)
+            }
+        }
+
+        // Selected templates' items land in the shared/household bucket
+        // (no traveler/pet assignee), same as ApplyTemplateView.
+        for template in selectedTemplates {
+            for templateItem in template.items {
+                let item = PackingItem(
+                    name: templateItem.name,
+                    category: templateItem.category,
+                    quantity: templateItem.quantity,
+                    trip: trip
                 )
                 modelContext.insert(item)
             }
@@ -399,12 +425,45 @@ private struct ActivityChipGrid: View {
     }
 }
 
+private struct TemplateChipGrid: View {
+    let templates: [PackingTemplate]
+    @Binding var selected: [PackingTemplate]
+
+    private let columns = [GridItem(.adaptive(minimum: 130), spacing: 8)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            ForEach(templates) { template in
+                let isSelected = selected.contains { $0.id == template.id }
+                Button {
+                    if isSelected {
+                        selected.removeAll { $0.id == template.id }
+                    } else {
+                        selected.append(template)
+                    }
+                } label: {
+                    Text(template.name)
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                        .foregroundStyle(isSelected ? .white : .primary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 #Preview {
     AddTripView()
         .modelContainer(
             for: [
                 Trip.self, PackingItem.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+                PackingTemplate.self, TemplateItem.self,
             ],
             inMemory: true
         )

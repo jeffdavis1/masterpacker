@@ -7,6 +7,7 @@ struct TripListView: View {
     @State private var isPresentingAddTrip = false
     @State private var isPresentingProfiles = false
     @State private var isPresentingMap = false
+    @State private var isPresentingTemplates = false
 
     var body: some View {
         NavigationStack {
@@ -41,17 +42,24 @@ struct TripListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isPresentingProfiles = true
+                    Menu {
+                        Button {
+                            isPresentingProfiles = true
+                        } label: {
+                            Label("Saved Travelers", systemImage: "person.crop.circle")
+                        }
+                        Button {
+                            isPresentingTemplates = true
+                        } label: {
+                            Label("Packing Templates", systemImage: "list.bullet.clipboard")
+                        }
+                        Button {
+                            isPresentingMap = true
+                        } label: {
+                            Label("Trip Map", systemImage: "map")
+                        }
                     } label: {
-                        Label("Saved Travelers", systemImage: "person.crop.circle")
-                    }
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isPresentingMap = true
-                    } label: {
-                        Label("Trip Map", systemImage: "map")
+                        Label("More", systemImage: "ellipsis.circle")
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -70,6 +78,9 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingProfiles) {
                 ProfileListView()
+            }
+            .sheet(isPresented: $isPresentingTemplates) {
+                TemplateListView()
             }
         }
     }
@@ -157,6 +168,7 @@ private struct TripWeatherStrip: View {
             for: [
                 Trip.self, PackingItem.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+                PackingTemplate.self, TemplateItem.self,
             ],
             inMemory: true
         )

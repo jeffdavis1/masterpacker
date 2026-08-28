@@ -33,6 +33,7 @@ struct ContentView: View {
             for: [
                 Trip.self, PackingItem.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+                PackingTemplate.self, TemplateItem.self,
             ],
             inMemory: true
         )

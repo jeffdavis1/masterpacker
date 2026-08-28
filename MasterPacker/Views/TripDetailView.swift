@@ -6,6 +6,7 @@ struct TripDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isPresentingAddItem = false
     @State private var isPresentingEditTrip = false
+    @State private var isPresentingApplyTemplate = false
     @State private var collapsedSections: Set<String> = []
 
     /// Shared/household items first, then one section per traveler (trip
@@ -93,10 +94,19 @@ struct TripDetailView: View {
                 }
             }
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isPresentingAddItem = true
+                Menu {
+                    Button {
+                        isPresentingAddItem = true
+                    } label: {
+                        Label("Add Item", systemImage: "plus")
+                    }
+                    Button {
+                        isPresentingApplyTemplate = true
+                    } label: {
+                        Label("Apply Template", systemImage: "list.bullet.clipboard")
+                    }
                 } label: {
-                    Label("Add Item", systemImage: "plus")
+                    Label("Add", systemImage: "plus")
                 }
             }
         }
@@ -105,6 +115,9 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $isPresentingEditTrip) {
             EditTripView(trip: trip)
+        }
+        .sheet(isPresented: $isPresentingApplyTemplate) {
+            ApplyTemplateView(trip: trip)
         }
     }
 
