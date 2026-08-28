@@ -12,6 +12,14 @@ struct SharedTripDetailView: View {
         tripID = trip.id
     }
 
+    /// Used when only the id is known up front — e.g. deep-linking
+    /// straight into a just-accepted share, before the caller has a full
+    /// RemoteTrip in hand. `trip` above resolves live from sharedTrips
+    /// either way, so this works the moment refreshSharedTrips() catches up.
+    init(tripID: String) {
+        self.tripID = tripID
+    }
+
     private var trip: RemoteTrip? {
         service.sharedTrips.first { $0.id == tripID }
     }
@@ -51,6 +59,23 @@ struct SharedTripDetailView: View {
                     await service.syncSharedTrips()
                 }
                 .navigationTitle(trip.name)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            if service.isPinnedToMyTrips(trip) {
+                                service.removeFromMyTrips(trip)
+                            } else {
+                                service.addToMyTrips(trip)
+                            }
+                        } label: {
+                            if service.isPinnedToMyTrips(trip) {
+                                Label("In My Trips", systemImage: "checkmark.circle.fill")
+                            } else {
+                                Label("Add to My Trips", systemImage: "plus.circle")
+                            }
+                        }
+                    }
+                }
             } else {
                 ContentUnavailableView(
                     "Trip No Longer Available",

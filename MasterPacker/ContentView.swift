@@ -4,6 +4,7 @@ import SwiftData
 struct ContentView: View {
     @State private var isShowingSplash = true
     @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var sharingService = TripSharingService.shared
 
     var body: some View {
         ZStack {
@@ -19,6 +20,24 @@ struct ContentView: View {
         // DesignSystem.swift for the rest of the palette.
         .tint(AppTheme.brand)
         .fontDesign(.rounded)
+        // Deep link: opening a share invite (cold or warm start) should
+        // drop the user straight into that trip, not leave them to go
+        // find it under Shared With Me themselves. Reads justAcceptedTripID
+        // directly rather than an event stream, so this shows correctly
+        // even if the id was set before this view first appeared (e.g.
+        // a cold-start accept that happened during the splash screen).
+        .sheet(isPresented: Binding(
+            get: { sharingService.justAcceptedTripID != nil },
+            set: { isPresented in
+                if !isPresented { sharingService.justAcceptedTripID = nil }
+            }
+        )) {
+            if let tripID = sharingService.justAcceptedTripID {
+                NavigationStack {
+                    SharedTripDetailView(tripID: tripID)
+                }
+            }
+        }
         .task {
             try? await Task.sleep(for: .seconds(1.5))
             withAnimation(.easeOut(duration: 0.5)) {

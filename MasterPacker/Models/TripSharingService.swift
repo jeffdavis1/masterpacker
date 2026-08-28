@@ -24,12 +24,28 @@ final class TripSharingService: ObservableObject {
     /// refresh, app foreground, and incoming push notification.
     @Published private(set) var sharedTrips: [RemoteTrip] = []
 
+    /// RemoteTrip.id values the user has chosen to also surface in "My
+    /// Trips", not just "Shared With Me" — still backed by CloudKit /
+    /// sharedTrips, never duplicated into a local SwiftData Trip.
+    /// Persisted so the choice survives relaunch.
+    @Published private(set) var pinnedSharedTripIDs: Set<String>
+
+    /// Set once a share is accepted (warm or cold start) to the id of the
+    /// trip that was just accepted — ContentView observes this to open
+    /// straight into that trip rather than leaving the user to go find it
+    /// under Shared With Me themselves. Cleared by whoever presents it.
+    @Published var justAcceptedTripID: String?
+
     /// Needed only for reconcileOwnedSharedTrips (pulling a participant's
     /// edits back into this device's own SwiftData copy, for trips this
     /// device owns) — set once at launch via configure(modelContainer:).
     private var modelContainer: ModelContainer?
 
-    private init() {}
+    private static let pinnedDefaultsKey = "pinnedSharedTripIDs"
+
+    private init() {
+        pinnedSharedTripIDs = Set(UserDefaults.standard.stringArray(forKey: Self.pinnedDefaultsKey) ?? [])
+    }
 
     func configure(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
@@ -292,11 +308,16 @@ final class TripSharingService: ObservableObject {
     /// Handles the system callback fired when the user accepts an
     /// incoming share invite (see AppDelegate) — accepts it with
     /// CloudKit, then refreshes the shared-trips list so it shows up.
+    /// Also records which trip was just accepted (the share's root
+    /// record *is* the SharedTrip record, so its recordName is exactly
+    /// RemoteTrip.id) so the UI can deep-link straight into it instead of
+    /// leaving the user to find it themselves under Shared With Me.
     func acceptIncomingShare(metadata: CKShare.Metadata) async {
         let shareContainer = CKContainer(identifier: metadata.containerIdentifier)
         do {
             _ = try await shareContainer.accept(metadata)
             await refreshSharedTrips()
+            justAcceptedTripID = metadata.rootRecordID.recordName
         } catch {
             // Nothing further to do — the share simply won't show up.
         }
@@ -559,5 +580,39 @@ final class TripSharingService: ObservableObject {
         let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
         _ = try? await container.privateCloudDatabase.modifyRecordZones(saving: [], deleting: [zoneID])
         UserDefaults.standard.removeObject(forKey: linkDefaultsKey(key))
+    }
+
+    // MARK: - Recipient side: "Add to My Trips" + leaving a share
+
+    func isPinnedToMyTrips(_ trip: RemoteTrip) -> Bool {
+        pinnedSharedTripIDs.contains(trip.id)
+    }
+
+    /// Surfaces this shared trip in "My Trips" too, alongside owned
+    /// trips — purely a local bookkeeping flag, the trip itself stays
+    /// backed by CloudKit/sharedTrips, never copied into SwiftData.
+    func addToMyTrips(_ trip: RemoteTrip) {
+        pinnedSharedTripIDs.insert(trip.id)
+        UserDefaults.standard.set(Array(pinnedSharedTripIDs), forKey: Self.pinnedDefaultsKey)
+    }
+
+    /// Un-pins a shared trip from "My Trips" — it stays reachable under
+    /// Shared With Me, this doesn't leave the share. See leaveSharedTrip
+    /// for actually leaving.
+    func removeFromMyTrips(_ trip: RemoteTrip) {
+        pinnedSharedTripIDs.remove(trip.id)
+        UserDefaults.standard.set(Array(pinnedSharedTripIDs), forKey: Self.pinnedDefaultsKey)
+    }
+
+    /// Leaves a share entirely — deletes this device's view of the
+    /// shared zone from CloudKit's shared database, the standard
+    /// participant-side way to remove yourself from a share without
+    /// needing the owner to do anything. Doesn't touch the owner's data
+    /// or any other participant. Also un-pins it from My Trips, since a
+    /// left share has nothing left to pin.
+    func leaveSharedTrip(_ trip: RemoteTrip) async {
+        _ = try? await container.sharedCloudDatabase.modifyRecordZones(saving: [], deleting: [trip.zoneID])
+        removeFromMyTrips(trip)
+        sharedTrips.removeAll { $0.id == trip.id }
     }
 }

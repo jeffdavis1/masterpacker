@@ -4,16 +4,29 @@ import SwiftData
 struct TripListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Trip.startDate) private var trips: [Trip]
+    @ObservedObject private var sharingService = TripSharingService.shared
     @State private var isPresentingAddTrip = false
     @State private var isPresentingProfiles = false
     @State private var isPresentingMap = false
     @State private var isPresentingTemplates = false
     @State private var isPresentingSharedTrips = false
+    @State private var selectedSharedTrip: RemoteTrip?
+
+    /// A shared trip only shows up here once the user has explicitly
+    /// pinned it via "Add to My Trips" — it's still backed live by
+    /// CloudKit/sharingService.sharedTrips, never copied into SwiftData.
+    private var entries: [TripListEntry] {
+        let owned = trips.map(TripListEntry.owned)
+        let shared = sharingService.sharedTrips
+            .filter { sharingService.isPinnedToMyTrips($0) }
+            .map(TripListEntry.shared)
+        return (owned + shared).sorted { $0.startDate < $1.startDate }
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if trips.isEmpty {
+                if entries.isEmpty {
                     ContentUnavailableView(
                         "No trips yet",
                         systemImage: "suitcase",
@@ -21,15 +34,41 @@ struct TripListView: View {
                     )
                 } else {
                     List {
-                        ForEach(trips) { trip in
-                            NavigationLink(value: trip) {
-                                TripRow(trip: trip)
+                        ForEach(entries) { entry in
+                            switch entry {
+                            case .owned(let trip):
+                                NavigationLink(value: trip) {
+                                    TripRow(trip: trip)
+                                }
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        deleteTrip(trip)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            case .shared(let trip):
+                                Button {
+                                    selectedSharedTrip = trip
+                                } label: {
+                                    SharedTripCard(trip: trip)
+                                }
+                                .buttonStyle(.plain)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        sharingService.removeFromMyTrips(trip)
+                                    } label: {
+                                        Label("Remove from My Trips", systemImage: "minus.circle")
+                                    }
+                                }
                             }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                         }
-                        .onDelete(perform: deleteTrips)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -91,13 +130,39 @@ struct TripListView: View {
             .sheet(isPresented: $isPresentingSharedTrips) {
                 SharedTripsListView()
             }
+            .sheet(item: $selectedSharedTrip) { trip in
+                NavigationStack {
+                    SharedTripDetailView(trip: trip)
+                }
+            }
         }
     }
 
-    private func deleteTrips(at offsets: IndexSet) {
-        for index in offsets {
-            NotificationManager.shared.cancelReminders(for: trips[index])
-            modelContext.delete(trips[index])
+    private func deleteTrip(_ trip: Trip) {
+        NotificationManager.shared.cancelReminders(for: trip)
+        modelContext.delete(trip)
+    }
+}
+
+/// One row in "My Trips" — either a trip this device owns, or a shared
+/// trip the user has pinned here via "Add to My Trips". The shared case
+/// stays backed live by TripSharingService.sharedTrips; it's never
+/// copied into a local SwiftData Trip.
+private enum TripListEntry: Identifiable {
+    case owned(Trip)
+    case shared(RemoteTrip)
+
+    var id: String {
+        switch self {
+        case .owned(let trip): return "owned-\(trip.id.uuidString)"
+        case .shared(let trip): return "shared-\(trip.id)"
+        }
+    }
+
+    var startDate: Date {
+        switch self {
+        case .owned(let trip): return trip.startDate
+        case .shared(let trip): return trip.startDate
         }
     }
 }
@@ -115,7 +180,7 @@ private struct TripRow: View {
                 Text(trip.destination)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text(dateRangeText)
+                Text(tripDateRangeText(from: trip.startDate, to: trip.endDate))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(subtitle)
@@ -128,7 +193,7 @@ private struct TripRow: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 8) {
-                if let daysUntilStart {
+                if let daysUntilStart = tripDaysUntilStart(from: trip.startDate, to: trip.endDate) {
                     DaysUntilBadge(days: daysUntilStart)
                 }
                 if !trip.items.isEmpty {
@@ -148,27 +213,76 @@ private struct TripRow: View {
         parts.append("\(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s")")
         return parts.joined(separator: " · ")
     }
+}
 
-    private var dateRangeText: String {
-        let sameYear = Calendar.current.isDate(trip.startDate, equalTo: trip.endDate, toGranularity: .year)
-        let start = trip.startDate.formatted(.dateTime.month(.abbreviated).day())
-        let end = sameYear
-            ? trip.endDate.formatted(.dateTime.month(.abbreviated).day())
-            : trip.endDate.formatted(.dateTime.month(.abbreviated).day().year())
-        return "\(start) – \(end)"
-    }
+/// A shared trip the user has pinned into "My Trips" — same layout as
+/// TripRow (dates, days-until badge, packing progress), plus a small
+/// "shared" badge next to the name so it reads as someone else's trip at
+/// a glance. Tapping opens SharedTripDetailView, not TripDetailView.
+private struct SharedTripCard: View {
+    let trip: RemoteTrip
 
-    /// Days until the trip starts, or nil once the trip is underway/over
-    /// — a countdown stops being meaningful at that point, so the badge
-    /// just doesn't show rather than displaying a stale/negative number.
-    private var daysUntilStart: Int? {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
-        let start = calendar.startOfDay(for: trip.startDate)
-        let end = calendar.startOfDay(for: trip.endDate)
-        guard today <= end else { return nil }
-        return max(0, calendar.dateComponents([.day], from: today, to: start).day ?? 0)
+    var body: some View {
+        HStack(spacing: 13) {
+            IconBadge(systemImage: trip.travelMethod.symbol)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 4) {
+                    Text(trip.name)
+                        .font(.system(.headline, design: .rounded))
+                    Image(systemName: "person.2.fill")
+                        .font(.caption2)
+                        .foregroundStyle(AppTheme.brand)
+                }
+                Text(trip.destination)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(tripDateRangeText(from: trip.startDate, to: trip.endDate))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("\(trip.travelers.count) traveler\(trip.travelers.count == 1 ? "" : "s") · \(trip.durationInDays) day\(trip.durationInDays == 1 ? "" : "s")")
+                    .font(.caption)
+                    .foregroundStyle(.secondary.opacity(0.85))
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(spacing: 8) {
+                if let daysUntilStart = tripDaysUntilStart(from: trip.startDate, to: trip.endDate) {
+                    DaysUntilBadge(days: daysUntilStart)
+                }
+                if !trip.items.isEmpty {
+                    ProgressRing(progress: Double(trip.packedCount) / Double(trip.items.count))
+                }
+            }
+        }
+        .padding(14)
+        .floatingCard()
     }
+}
+
+/// Shared by TripRow and SharedTripCard — "Mar 12 – 19" (or "Mar 30 –
+/// Apr 2, 2027" across a year boundary).
+private func tripDateRangeText(from startDate: Date, to endDate: Date) -> String {
+    let sameYear = Calendar.current.isDate(startDate, equalTo: endDate, toGranularity: .year)
+    let start = startDate.formatted(.dateTime.month(.abbreviated).day())
+    let end = sameYear
+        ? endDate.formatted(.dateTime.month(.abbreviated).day())
+        : endDate.formatted(.dateTime.month(.abbreviated).day().year())
+    return "\(start) – \(end)"
+}
+
+/// Shared by TripRow and SharedTripCard. Days until the trip starts, or
+/// nil once the trip is underway/over — a countdown stops being
+/// meaningful at that point, so the badge just doesn't show rather than
+/// displaying a stale/negative number.
+private func tripDaysUntilStart(from startDate: Date, to endDate: Date) -> Int? {
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: .now)
+    let start = calendar.startOfDay(for: startDate)
+    let end = calendar.startOfDay(for: endDate)
+    guard today <= end else { return nil }
+    return max(0, calendar.dateComponents([.day], from: today, to: start).day ?? 0)
 }
 
 /// A small "N days" countdown badge — deliberately distinct from

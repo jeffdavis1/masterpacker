@@ -25,12 +25,34 @@ struct SharedTripsListView: View {
                             Button {
                                 selectedTrip = trip
                             } label: {
-                                SharedTripRow(trip: trip)
+                                SharedTripRow(trip: trip, isPinned: service.isPinnedToMyTrips(trip))
                             }
                             .buttonStyle(.plain)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    Task { await service.leaveSharedTrip(trip) }
+                                } label: {
+                                    Label("Remove", systemImage: "trash")
+                                }
+                                if service.isPinnedToMyTrips(trip) {
+                                    Button {
+                                        service.removeFromMyTrips(trip)
+                                    } label: {
+                                        Label("Remove from My Trips", systemImage: "minus.circle")
+                                    }
+                                    .tint(AppTheme.brand)
+                                } else {
+                                    Button {
+                                        service.addToMyTrips(trip)
+                                    } label: {
+                                        Label("Add to My Trips", systemImage: "plus.circle")
+                                    }
+                                    .tint(AppTheme.brand)
+                                }
+                            }
                         }
                     }
                     .listStyle(.plain)
@@ -62,14 +84,22 @@ struct SharedTripsListView: View {
 
 private struct SharedTripRow: View {
     let trip: RemoteTrip
+    var isPinned: Bool = false
 
     var body: some View {
         HStack(spacing: 13) {
             IconBadge(systemImage: trip.travelMethod.symbol)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(trip.name)
-                    .font(.system(.headline, design: .rounded))
+                HStack(spacing: 4) {
+                    Text(trip.name)
+                        .font(.system(.headline, design: .rounded))
+                    if isPinned {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.sage)
+                    }
+                }
                 Text(trip.destination)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
