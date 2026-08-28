@@ -290,11 +290,12 @@ final class TripSharingService: ObservableObject {
     func acceptIncomingShare(metadata: CKShare.Metadata) async {
         let shareContainer = CKContainer(identifier: metadata.containerIdentifier)
         do {
-            _ = try await shareContainer.accept(metadata)
+            let acceptedShare = try await shareContainer.accept(metadata)
+            print("🔵 [Sharing] accept(metadata:) succeeded. share.recordID=\(acceptedShare.recordID)")
             await refreshSharedTrips()
         } catch {
-            // Best-effort — if this fails, the trip simply won't appear;
-            // the owner can resend the invite.
+            // TEMP diagnostic — was silently swallowed before.
+            print("🔴 [Sharing] accept(metadata:) FAILED: \(error)")
         }
     }
 
@@ -302,8 +303,14 @@ final class TripSharingService: ObservableObject {
     /// syncSharedTrips(); also fine to call directly (e.g. pull-to-
     /// refresh) when only the "shared to me" side needs updating.
     func refreshSharedTrips() async {
-        guard let trips = try? await fetchSharedTrips() else { return }
-        sharedTrips = trips
+        do {
+            let trips = try await fetchSharedTrips()
+            print("🔵 [Sharing] refreshSharedTrips found \(trips.count) trip(s)")
+            sharedTrips = trips
+        } catch {
+            // TEMP diagnostic — was silently swallowed before.
+            print("🔴 [Sharing] fetchSharedTrips FAILED: \(error)")
+        }
     }
 
     /// The one thing to call whenever we want the freshest possible
@@ -368,6 +375,7 @@ final class TripSharingService: ObservableObject {
     private func fetchSharedTrips() async throws -> [RemoteTrip] {
         let database = container.sharedCloudDatabase
         let zones = try await database.allRecordZones()
+        print("🔵 [Sharing] sharedCloudDatabase.allRecordZones() returned \(zones.count) zone(s): \(zones.map { $0.zoneID.zoneName })")
 
         var trips: [RemoteTrip] = []
         for zone in zones {
@@ -375,8 +383,15 @@ final class TripSharingService: ObservableObject {
             // than only at accept-time) means a lapsed or never-created
             // subscription gets fixed on the next refresh automatically.
             await ensureZoneSubscription(zoneID: zone.zoneID, database: database)
-            if let trip = try? await fetchRemoteTrip(in: zone.zoneID, database: database) {
-                trips.append(trip)
+            do {
+                if let trip = try await fetchRemoteTrip(in: zone.zoneID, database: database) {
+                    trips.append(trip)
+                } else {
+                    print("🔴 [Sharing] zone \(zone.zoneID.zoneName) has no SharedTrip record")
+                }
+            } catch {
+                // TEMP diagnostic — was silently swallowed before.
+                print("🔴 [Sharing] fetchRemoteTrip FAILED for zone \(zone.zoneID.zoneName): \(error)")
             }
         }
         return trips

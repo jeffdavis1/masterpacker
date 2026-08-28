@@ -17,6 +17,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
+        // TEMP diagnostic logging while chasing the "share never shows up
+        // on the recipient" bug — remove once resolved. Confirms whether
+        // this callback fires at all, which is the very first thing that
+        // has to happen for any of this to work.
+        print("🔵 [Sharing] userDidAcceptCloudKitShareWith fired. container=\(cloudKitShareMetadata.containerIdentifier) rootRecordID=\(String(describing: cloudKitShareMetadata.hierarchicalRootRecordID))")
         Task { @MainActor in
             await TripSharingService.shared.acceptIncomingShare(metadata: cloudKitShareMetadata)
         }
@@ -27,6 +32,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        print("🔵 [Sharing] didReceiveRemoteNotification fired: \(userInfo)")
         Task { @MainActor in
             await TripSharingService.shared.handleRemoteNotification(userInfo: userInfo)
             completionHandler(.newData)
