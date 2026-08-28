@@ -3,6 +3,7 @@ import SwiftData
 
 struct ContentView: View {
     @State private var isShowingSplash = true
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -22,6 +23,17 @@ struct ContentView: View {
             try? await Task.sleep(for: .seconds(1.5))
             withAnimation(.easeOut(duration: 0.5)) {
                 isShowingSplash = false
+            }
+        }
+        .task {
+            await NotificationManager.shared.requestAuthorizationIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Background App Refresh requests are one-shot — make sure
+            // there's always one pending for the weather watcher whenever
+            // the app isn't in the foreground.
+            if newPhase == .background {
+                NotificationManager.shared.scheduleNextWeatherRefresh()
             }
         }
     }

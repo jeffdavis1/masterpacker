@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import BackgroundTasks
 
 @main
 struct MasterPackerApp: App {
@@ -22,6 +23,14 @@ struct MasterPackerApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+
+    init() {
+        // Must be registered before the app finishes launching, per
+        // BGTaskScheduler's requirements — this just teaches the system
+        // handler what to do when it decides to run one; the actual
+        // request is submitted from ContentView when the app backgrounds.
+        NotificationManager.shared.registerBackgroundTask(modelContainer: sharedModelContainer)
+    }
 
     var body: some Scene {
         WindowGroup {

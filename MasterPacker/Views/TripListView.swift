@@ -87,6 +87,7 @@ struct TripListView: View {
 
     private func deleteTrips(at offsets: IndexSet) {
         for index in offsets {
+            NotificationManager.shared.cancelReminders(for: trips[index])
             modelContext.delete(trips[index])
         }
     }

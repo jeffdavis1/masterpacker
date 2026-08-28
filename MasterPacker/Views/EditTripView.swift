@@ -56,11 +56,24 @@ struct EditTripView: View {
     }
 
     private func save() {
+        let destinationChanged = trip.destination != destination
+
         trip.name = name
         trip.destination = destination
         trip.startDate = startDate
         trip.endDate = endDate
         trip.travelMethod = travelMethod
+
+        // A new destination invalidates the weather-change baseline — it
+        // was tracking the old place, so the next check would otherwise
+        // compare against somewhere else's forecast.
+        if destinationChanged {
+            NotificationManager.shared.resetWeatherBaseline(for: trip)
+        }
+        Task {
+            await NotificationManager.shared.scheduleTripReminders(for: trip)
+        }
+
         dismiss()
     }
 }

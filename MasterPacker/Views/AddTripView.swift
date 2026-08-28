@@ -173,6 +173,10 @@ struct AddTripView: View {
                 startDate: trip.startDate,
                 days: min(trip.durationInDays, 16)
             )
+            // Seed the weather-change watcher's baseline with the same
+            // fetch — no extra network call, and it means the very first
+            // background check has something to compare against.
+            NotificationManager.shared.establishWeatherBaseline(forecast, for: trip)
             for generated in PackingRulesEngine.generate(for: trip, weatherForecast: forecast) {
                 let traveler: Traveler?
                 let pet: Pet?
@@ -244,6 +248,8 @@ struct AddTripView: View {
                 modelContext.insert(item)
             }
         }
+
+        await NotificationManager.shared.scheduleTripReminders(for: trip)
 
         dismiss()
     }

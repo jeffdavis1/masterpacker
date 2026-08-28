@@ -47,6 +47,12 @@ struct TripDetailView: View {
             }
     }
 
+    /// Watched so the "still unpacked" reminder's item count stays
+    /// current as items are checked off, added, or removed.
+    private var unpackedCount: Int {
+        trip.items.filter { !$0.isPacked }.count
+    }
+
     var body: some View {
         List {
             Section {
@@ -97,6 +103,9 @@ struct TripDetailView: View {
         .scrollContentBackground(.hidden)
         .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationTitle(trip.name)
+        .onChange(of: unpackedCount) { _, _ in
+            Task { await NotificationManager.shared.scheduleTripReminders(for: trip) }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {

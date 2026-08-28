@@ -59,7 +59,15 @@ actor WeatherService {
     static let shared = WeatherService()
 
     private var geocodeCache: [String: CLLocationCoordinate2D] = [:]
-    private var forecastCache: [String: [DayForecast]] = [:]
+    private var forecastCache: [String: (forecasts: [DayForecast], fetchedAt: Date)] = [:]
+
+    /// How long a cached forecast is trusted before this actor will hit
+    /// the network again for the same destination/date-range. Balances not
+    /// hammering Open-Meteo against actually noticing when conditions
+    /// change — NotificationManager's weather-change watcher depends on
+    /// this cache eventually going stale, or it would compare the same
+    /// cached forecast to itself forever within one app session.
+    private static let cacheTTL: TimeInterval = 3 * 60 * 60
 
     /// Up to `days` forecast entries starting from the trip's start date
     /// (or today, whichever is later). Returns an empty array if the
@@ -76,8 +84,8 @@ actor WeatherService {
         guard let rangeEnd = calendar.date(byAdding: .day, value: days - 1, to: rangeStart) else { return [] }
 
         let cacheKey = "\(coordinate.latitude.rounded4),\(coordinate.longitude.rounded4)|\(dateKey(rangeStart))|\(dateKey(rangeEnd))"
-        if let cached = forecastCache[cacheKey] {
-            return cached
+        if let cached = forecastCache[cacheKey], Date.now.timeIntervalSince(cached.fetchedAt) < Self.cacheTTL {
+            return cached.forecasts
         }
 
         guard let url = forecastURL(coordinate: coordinate, start: rangeStart, end: rangeEnd) else { return [] }
@@ -86,10 +94,13 @@ actor WeatherService {
             let (data, _) = try await URLSession.shared.data(from: url)
             let response = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
             let result = response.daily.toDayForecasts()
-            forecastCache[cacheKey] = result
+            forecastCache[cacheKey] = (result, .now)
             return result
         } catch {
-            return []
+            // Prefer a stale cached forecast over nothing (e.g. briefly
+            // offline) — only fall back to empty if we've never fetched
+            // this destination/range at all.
+            return forecastCache[cacheKey]?.forecasts ?? []
         }
     }
 
