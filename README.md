@@ -122,6 +122,10 @@ etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
   adds a rain jacket + umbrella, snow adds snow boots, a cold low adds a
   warm jacket + gloves, a hot high adds sunscreen (skipped if an activity
   already covers the same item, e.g. hiking's own rain jacket)
+- **Local notifications**: a "2 days before your trip" packing reminder, a
+  morning-of reminder naming how many items are still unpacked (stays
+  current as you check things off), and a background weather-change
+  alert that only fires on a meaningful shift — see Notifications below.
 
 ## Weather
 
@@ -129,8 +133,39 @@ etc.) — use `AppTheme` tokens, or just let the inherited tint/font handle it.
 `CLGeocoder`, then fetches a forecast from Open-Meteo — free, no API key,
 plain HTTPS. Deliberately not persisted to SwiftData (short-lived,
 destination-derived, doesn't need to sync); results are cached in memory
-per destination/date-range for the session. Forecasts only exist ~16 days
-out, so trips further out than that just show nothing yet — that's expected.
+per destination/date-range for the session, and expires after 3 hours so
+the background weather watcher (below) can actually notice a change
+instead of comparing a stale cached forecast to itself. Forecasts only
+exist ~16 days out, so trips further out than that just show nothing
+yet — that's expected.
+
+## Notifications
+
+`NotificationManager` (in `Models/`) schedules all of the app's local
+notifications via `UNUserNotificationCenter` — no APNs, no push server, no
+new entitlement:
+
+- **2-days-before reminder** and a **morning-of "N items still
+  unpacked" reminder**, both re-scheduled automatically whenever a trip's
+  dates change or its packing list changes (item toggled/added/removed),
+  so they always reflect current state.
+- **Weather-change watcher**: periodically re-checks each upcoming trip's
+  forecast against a stored baseline and only alerts on a meaningful
+  change — a day flipping from dry to rain/snow, or a high/low
+  temperature moving more than 10°F. A sunny day turning partly cloudy,
+  or a small temperature wobble, doesn't trigger anything. Baselines are
+  small JSON snapshots in `UserDefaults`, keyed off each trip's own
+  SwiftData identifier (no schema change needed), and reset if you edit
+  a trip's destination.
+
+The weather watcher runs via `BGTaskScheduler`/`BGAppRefreshTask`, which
+needed one new capability: Background App Refresh (`UIBackgroundModes:
+fetch` + `BGTaskSchedulerPermittedIdentifiers` in Info.plist). Unlike
+iCloud/CloudKit, this is Info.plist-only — no entitlement, no Apple
+Developer portal capability — so it should be low-risk, but it's still a
+new capability worth knowing about. iOS decides the actual timing of
+background runs opportunistically (battery, usage patterns), so don't
+expect a precise clock tick.
 
 ## Roadmap
 
