@@ -12,9 +12,15 @@ struct TripDetailView: View {
     @State private var isPresentingShareSheet = false
     @State private var groupingMode: GroupingMode = .people
     /// Only meaningful in Luggage grouping — lets picking a bag apply to
-    /// every checked item at once instead of one menu tap per item.
+    /// every checked item at once instead of one menu tap per item. Keyed
+    /// by PackingItem.id (UUID), not persistentModelID — see Trip.id's
+    /// doc comment for why persistentModelID isn't safe for this: it
+    /// only takes one save cycle between a tap and the bulk-assign
+    /// action re-numbering an item's identifier out from under this set,
+    /// which was silently only ever "assigning" whichever item happened
+    /// to still match afterward.
     @State private var isSelectingForBulkAssign = false
-    @State private var selectedItemIDs: Set<PersistentIdentifier> = []
+    @State private var selectedItemIDs: Set<UUID> = []
 
     private enum GroupingMode: String, CaseIterable, Identifiable {
         case people = "People"
@@ -93,7 +99,7 @@ struct TripDetailView: View {
         var result: [TripSection] = []
 
         for bag in trip.luggage {
-            let items = trip.items.filter { $0.luggage?.persistentModelID == bag.persistentModelID }
+            let items = trip.items.filter { $0.luggage?.id == bag.id }
             result.append(TripSection(label: bag.name, categoryGroups: displayGroups(for: items), items: items))
         }
 
@@ -206,7 +212,7 @@ struct TripDetailView: View {
                                     item: item,
                                     trip: groupingMode == .luggage ? trip : nil,
                                     isSelectionMode: isSelectingForBulkAssign,
-                                    isSelected: selectedItemIDs.contains(item.persistentModelID),
+                                    isSelected: selectedItemIDs.contains(item.id),
                                     onToggleSelect: { toggleSelection(item) }
                                 )
                                 .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
@@ -323,11 +329,10 @@ struct TripDetailView: View {
     }
 
     private func toggleSelection(_ item: PackingItem) {
-        let id = item.persistentModelID
-        if selectedItemIDs.contains(id) {
-            selectedItemIDs.remove(id)
+        if selectedItemIDs.contains(item.id) {
+            selectedItemIDs.remove(item.id)
         } else {
-            selectedItemIDs.insert(id)
+            selectedItemIDs.insert(item.id)
         }
     }
 
@@ -335,7 +340,7 @@ struct TripDetailView: View {
     /// Unassigned) in one shot, then exits selection mode — the whole
     /// point of bulk-select is not needing to reopen a menu per item.
     private func assignSelection(to bag: Luggage?) {
-        for item in trip.items where selectedItemIDs.contains(item.persistentModelID) {
+        for item in trip.items where selectedItemIDs.contains(item.id) {
             item.luggage = bag
         }
         isSelectingForBulkAssign = false
