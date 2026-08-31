@@ -85,5 +85,5 @@ private struct TripPin: Identifiable {
 
 #Preview {
     TripMapView()
-        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self], inMemory: true)
+        .modelContainer(for: [Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self], inMemory: true)
 }

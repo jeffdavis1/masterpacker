@@ -56,6 +56,9 @@ final class Trip {
     @Relationship(deleteRule: .cascade, inverse: \PackingItem.trip)
     private var itemsStorage: [PackingItem]? = []
 
+    @Relationship(deleteRule: .cascade, inverse: \Luggage.trip)
+    private var luggageStorage: [Luggage]? = []
+
     init(
         name: String,
         destination: String,
@@ -92,6 +95,11 @@ final class Trip {
     var items: [PackingItem] {
         get { itemsStorage ?? [] }
         set { itemsStorage = newValue }
+    }
+
+    var luggage: [Luggage] {
+        get { luggageStorage ?? [] }
+        set { luggageStorage = newValue }
     }
 
     /// Trip length in whole days, inclusive of both start and end dates.

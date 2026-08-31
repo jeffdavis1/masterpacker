@@ -431,7 +431,7 @@ private struct TripWeatherStrip: View {
     TripListView()
         .modelContainer(
             for: [
-                Trip.self, PackingItem.self, Traveler.self, Pet.self,
+                Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
                 PackingTemplate.self, TemplateItem.self,
             ],

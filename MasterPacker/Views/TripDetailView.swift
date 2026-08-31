@@ -10,24 +10,52 @@ struct TripDetailView: View {
     @State private var isPresentingApplyTemplate = false
     @State private var collapsedSections: Set<String> = []
     @State private var isPresentingShareSheet = false
+    @State private var groupingMode: GroupingMode = .people
 
-    /// One category's items within a traveler/pet/shared group.
+    private enum GroupingMode: String, CaseIterable, Identifiable {
+        case people = "People"
+        case luggage = "Luggage"
+        var id: String { rawValue }
+    }
+
+    /// One category's items within a traveler/pet/shared/luggage group.
     private struct CategoryGroup: Identifiable {
         var id: String { category.rawValue }
         let category: PackingCategory
         let items: [PackingItem]
     }
 
+    /// One collapsible group of items in the packing list — a traveler,
+    /// "Shared", a pet, "Unassigned", or a piece of luggage, depending on
+    /// groupingMode. A named struct rather than a tuple so sections,
+    /// peopleSections, and luggageSections all share one unambiguous
+    /// type — Swift doesn't reliably unify differently-labeled tuple
+    /// types inside a generic like Array across separate return
+    /// statements the way it does for a single direct return.
+    private struct TripSection: Identifiable {
+        var id: String { label }
+        let label: String
+        let categoryGroups: [CategoryGroup]
+        let items: [PackingItem]
+    }
+
+    private var sections: [TripSection] {
+        switch groupingMode {
+        case .people: return peopleSections
+        case .luggage: return luggageSections
+        }
+    }
+
     /// Shared/household items first, then one group per traveler (trip
     /// order), then one group per pet — each broken down further into
     /// per-category groups so e.g. all of one traveler's electronics sit
     /// together, separate from their toiletries.
-    private var sections: [(label: String, categoryGroups: [CategoryGroup], items: [PackingItem])] {
-        var result: [(String, [CategoryGroup], [PackingItem])] = []
+    private var peopleSections: [TripSection] {
+        var result: [TripSection] = []
 
         func addSection(_ label: String, _ items: [PackingItem]) {
             guard !items.isEmpty else { return }
-            result.append((label, categoryGroups(for: items), items))
+            result.append(TripSection(label: label, categoryGroups: categoryGroups(for: items), items: items))
         }
 
         addSection("Shared", trip.items.filter { $0.traveler == nil && $0.pet == nil })
@@ -36,6 +64,24 @@ struct TripDetailView: View {
         }
         for pet in trip.pets {
             addSection("\(pet.name) (pet)", trip.items.filter { $0.pet == pet })
+        }
+        return result
+    }
+
+    /// Unassigned items first, then one group per piece of luggage (in
+    /// the order it was added) — lets you see at a glance what's actually
+    /// going in the carry-on vs. the checked bag, across every traveler.
+    private var luggageSections: [TripSection] {
+        var result: [TripSection] = []
+
+        func addSection(_ label: String, _ items: [PackingItem]) {
+            guard !items.isEmpty else { return }
+            result.append(TripSection(label: label, categoryGroups: categoryGroups(for: items), items: items))
+        }
+
+        addSection("Unassigned", trip.items.filter { $0.luggage == nil })
+        for bag in trip.luggage {
+            addSection(bag.name, trip.items.filter { $0.luggage?.persistentModelID == bag.persistentModelID })
         }
         return result
     }
@@ -74,9 +120,24 @@ struct TripDetailView: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+
+                Picker("Group by", selection: $groupingMode) {
+                    ForEach(GroupingMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .onChange(of: groupingMode) { _, newMode in
+                    if newMode == .luggage {
+                        Luggage.ensureDefaults(for: trip, in: modelContext)
+                    }
+                }
             }
 
-            ForEach(sections, id: \.label) { section in
+            ForEach(sections) { section in
                 Section {
                     if !collapsedSections.contains(section.label) {
                         ForEach(section.categoryGroups) { group in
@@ -86,7 +147,7 @@ struct TripDetailView: View {
                                 .listRowSeparator(.hidden)
 
                             ForEach(group.items) { item in
-                                ItemRow(item: item)
+                                ItemRow(item: item, trip: groupingMode == .luggage ? trip : nil)
                                     .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
@@ -148,6 +209,13 @@ struct TripDetailView: View {
                     } label: {
                         Label("Add from My Bag", systemImage: "bag")
                     }
+                    if !trip.notes.isEmpty {
+                        Button {
+                            addNotesSuggestions()
+                        } label: {
+                            Label("Suggest from Notes", systemImage: "text.bubble")
+                        }
+                    }
                 } label: {
                     Label("Add", systemImage: "plus")
                 }
@@ -170,6 +238,53 @@ struct TripDetailView: View {
             modelContext.delete(items[index])
         }
         Task { await TripSharingService.shared.resyncIfShared(trip) }
+    }
+
+    /// Explicit, on-demand version of what AddTripView already does
+    /// automatically at creation — re-scans trip.notes for activity
+    /// keywords (e.g. "hiking excursion") and adds any gear that isn't
+    /// already in the packing list. Only reachable when trip.notes isn't
+    /// empty (see the Add menu above), and only ever adds — never
+    /// removes or changes an existing item — so it's safe to tap more
+    /// than once as notes evolve.
+    private func addNotesSuggestions() {
+        let existingNames = Set(trip.items.map { $0.name.lowercased() })
+        var addedCount = 0
+
+        for generated in PackingRulesEngine.suggestedItemsFromNotes(for: trip) {
+            guard !existingNames.contains(generated.name.lowercased()) else { continue }
+
+            let traveler: Traveler?
+            let pet: Pet?
+            switch generated.assignee {
+            case .shared:
+                traveler = nil
+                pet = nil
+            case .traveler(let t):
+                traveler = t
+                pet = nil
+            case .pet(let p):
+                traveler = nil
+                pet = p
+            }
+
+            let item = PackingItem(
+                name: generated.name,
+                category: generated.category,
+                quantity: generated.quantity,
+                trip: trip,
+                traveler: traveler,
+                pet: pet
+            )
+            modelContext.insert(item)
+            addedCount += 1
+        }
+
+        guard addedCount > 0 else { return }
+        Task {
+            await NotificationManager.shared.scheduleTripReminders(for: trip)
+            await TripSharingService.shared.resyncIfShared(trip)
+        }
     }
 
     private func toggleSection(_ label: String) {
@@ -369,36 +484,97 @@ private struct ForecastDayColumn: View {
 
 private struct ItemRow: View {
     @Bindable var item: PackingItem
+    /// Non-nil only when the list is grouped by Luggage — shows a small
+    /// "assign to bag" control so items can be sorted while looking right
+    /// at the bag they're being packed into. Deliberately absent in the
+    /// default People grouping, so that view stays exactly as it was.
+    let trip: Trip?
+    @Environment(\.modelContext) private var modelContext
+    @State private var isPresentingAddLuggage = false
+    @State private var newLuggageName = ""
 
     var body: some View {
-        Button {
-            item.isPacked.toggle()
-            AnalyticsService.itemPackedToggled(isPacked: item.isPacked)
-            // No-ops if this item's trip isn't shared — cheap to call
-            // unconditionally so a shared trip's participant sees the
-            // change on their next refresh without a full re-share.
-            Task { await TripSharingService.shared.syncItemPackedIfShared(item) }
-        } label: {
-            HStack {
-                Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
-                Image(systemName: item.displaySymbol)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20)
-                Text(item.name)
-                    .strikethrough(item.isPacked)
-                    .foregroundStyle(item.isPacked ? .secondary : .primary)
-                Spacer()
-                if item.quantity > 1 {
-                    Text("×\(item.quantity)")
-                        .font(.caption)
+        HStack(spacing: 8) {
+            Button {
+                item.isPacked.toggle()
+                AnalyticsService.itemPackedToggled(isPacked: item.isPacked)
+                // No-ops if this item's trip isn't shared — cheap to call
+                // unconditionally so a shared trip's participant sees the
+                // change on their next refresh without a full re-share.
+                Task { await TripSharingService.shared.syncItemPackedIfShared(item) }
+            } label: {
+                HStack {
+                    Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
+                    Image(systemName: item.displaySymbol)
                         .foregroundStyle(.secondary)
+                        .frame(width: 20)
+                    Text(item.name)
+                        .strikethrough(item.isPacked)
+                        .foregroundStyle(item.isPacked ? .secondary : .primary)
+                    Spacer()
+                    if item.quantity > 1 {
+                        Text("×\(item.quantity)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
+            .buttonStyle(.plain)
+
+            if let trip {
+                luggageMenu(trip: trip)
+            }
         }
-        .buttonStyle(.plain)
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
         .floatingCard(radius: AppTheme.cornerRadius - 2)
+        .alert("New Luggage", isPresented: $isPresentingAddLuggage) {
+            TextField("Name", text: $newLuggageName)
+            Button("Cancel", role: .cancel) { newLuggageName = "" }
+            Button("Add") { addLuggageAndAssign() }
+        } message: {
+            Text("e.g. \"Kids' backpack\"")
+        }
+    }
+
+    @ViewBuilder
+    private func luggageMenu(trip: Trip) -> some View {
+        Menu {
+            Button("Unassigned") { item.luggage = nil }
+            if !trip.luggage.isEmpty {
+                Divider()
+                ForEach(trip.luggage) { bag in
+                    Button(bag.name) { item.luggage = bag }
+                }
+            }
+            Divider()
+            Button {
+                isPresentingAddLuggage = true
+            } label: {
+                Label("Add New Luggage…", systemImage: "plus")
+            }
+        } label: {
+            Label(item.luggage?.name ?? "Unassigned", systemImage: "bag.fill")
+                .font(.caption)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(AppTheme.brand.opacity(0.1))
+                .foregroundStyle(AppTheme.brand)
+                .clipShape(Capsule())
+        }
+    }
+
+    /// Creates a new custom Luggage for this item's trip and immediately
+    /// assigns the item to it — one action instead of "create, then find
+    /// it in the menu again to assign".
+    private func addLuggageAndAssign() {
+        let trimmed = newLuggageName.trimmingCharacters(in: .whitespaces)
+        newLuggageName = ""
+        guard !trimmed.isEmpty, let trip else { return }
+        let bag = Luggage(name: trimmed, trip: trip)
+        modelContext.insert(bag)
+        item.luggage = bag
     }
 }

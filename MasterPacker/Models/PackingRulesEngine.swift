@@ -28,12 +28,21 @@ enum PackingRulesEngine {
             // Only add a weather-suggested item if its name isn't already
             // covered by an activity-based item (e.g. hiking already adds
             // "Rain jacket") — avoids literal duplicates.
-            let existingNames = Set(travelerGenerated.map { $0.name.lowercased() })
             for weatherItem in weatherItems(forecast: weatherForecast, traveler: traveler) {
-                if !existingNames.contains(weatherItem.name.lowercased()) {
+                if !travelerGenerated.contains(where: { $0.name.lowercased() == weatherItem.name.lowercased() }) {
                     travelerGenerated.append(weatherItem)
                 }
             }
+
+            // Same dedup approach for notes-inferred activities — checked
+            // last so it only ever fills in gear an explicit activity chip
+            // or the weather forecast didn't already cover.
+            for noteItem in noteItems(notes: trip.notes, existingActivities: trip.activities, traveler: traveler, days: days) {
+                if !travelerGenerated.contains(where: { $0.name.lowercased() == noteItem.name.lowercased() }) {
+                    travelerGenerated.append(noteItem)
+                }
+            }
+
             items += travelerGenerated
         }
 
@@ -43,6 +52,24 @@ enum PackingRulesEngine {
             items += petItems(pet: pet, days: days)
         }
 
+        return items
+    }
+
+    /// Re-scans trip.notes for activity keywords and returns items for
+    /// every traveler — the same inference generate(for:) already folds
+    /// in automatically, but usable on its own so a caller can offer it
+    /// as an explicit "Suggest from Notes" action (see TripDetailView).
+    /// generate(for:) only ever runs once, at trip creation, so this is
+    /// what actually makes notes typed or edited afterward do anything —
+    /// deliberately not wired up to run automatically on every notes
+    /// edit, since silently adding items whenever notes change would be
+    /// a surprising side effect of what looks like an unrelated edit.
+    static func suggestedItemsFromNotes(for trip: Trip) -> [GeneratedItem] {
+        let days = trip.durationInDays
+        var items: [GeneratedItem] = []
+        for traveler in trip.travelers {
+            items += noteItems(notes: trip.notes, existingActivities: trip.activities, traveler: traveler, days: days)
+        }
         return items
     }
 
@@ -173,6 +200,50 @@ enum PackingRulesEngine {
                 item("Day bag", .gear, 1),
             ]
         }
+    }
+
+    // MARK: - Trip notes
+
+    /// Free-text keyword phrases that infer an Activity from a trip's
+    /// notes, even if the user never tapped that activity's chip when
+    /// creating the trip — e.g. writing "hiking excursion Tuesday" in
+    /// notes infers .hiking just like tapping the Hiking / Outdoors chip
+    /// would. Deliberately reuses activityItems(for:traveler:days:) for
+    /// the actual item list rather than a separate one, so a
+    /// notes-inferred activity generates exactly the same gear the
+    /// equivalent chip would — one source of "what hiking needs", not
+    /// two lists that can drift apart. On-device string matching only,
+    /// same "deterministic, no network/LLM calls" approach as the rest of
+    /// this engine — not an actual AI call.
+    private static let notesKeywords: [(keywords: [String], activity: Activity)] = [
+        (["beach"], .beach),
+        (["swim", "pool"], .swimming),
+        (["hik", "trail", "trek"], .hiking),
+        (["camp"], .camping),
+        (["ski", "snowboard"], .skiing),
+        (["business meeting", "conference", "work trip", "client meeting"], .business),
+        (["formal dinner", "wedding", "gala", "black tie", "formal event"], .formalEvent),
+        (["run", "marathon", "workout", "the gym"], .running),
+        (["sightsee", "city walk", "museum", "walking tour"], .cityWalking),
+    ]
+
+    /// Skips any activity already covered by the trip's own activity
+    /// chips (trip.activities) — those already generate their items via
+    /// the normal path in travelerItems, so re-adding them here would
+    /// just be redundant work immediately deduped away by the caller.
+    private static func noteItems(notes: String, existingActivities: Set<Activity>, traveler: Traveler, days: Int) -> [GeneratedItem] {
+        guard !notes.isEmpty, traveler.ageBracket != .infant else { return [] }
+        let lowercased = notes.lowercased()
+
+        var items: [GeneratedItem] = []
+        var matched = existingActivities
+        for rule in notesKeywords {
+            guard !matched.contains(rule.activity) else { continue }
+            guard rule.keywords.contains(where: lowercased.contains) else { continue }
+            items += activityItems(for: rule.activity, traveler: traveler, days: days)
+            matched.insert(rule.activity)
+        }
+        return items
     }
 
     // MARK: - Weather

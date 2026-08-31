@@ -19,6 +19,11 @@ final class PackingItem {
     var traveler: Traveler?
     var pet: Pet?
 
+    /// Which of the trip's Luggage this item is packed in, if the user
+    /// has bothered to assign one — nil just means "not sorted into a
+    /// bag yet", not an error state.
+    var luggage: Luggage?
+
     init(
         name: String,
         category: PackingCategory,
@@ -26,7 +31,8 @@ final class PackingItem {
         isPacked: Bool = false,
         trip: Trip? = nil,
         traveler: Traveler? = nil,
-        pet: Pet? = nil
+        pet: Pet? = nil,
+        luggage: Luggage? = nil
     ) {
         self.name = name
         self.category = category
@@ -35,6 +41,7 @@ final class PackingItem {
         self.trip = trip
         self.traveler = traveler
         self.pet = pet
+        self.luggage = luggage
     }
 
     /// Display label for the section this item belongs in.
@@ -103,10 +110,11 @@ enum PackingIcon {
         // indistinguishable from actual shirts — the most-cited example
         // of the icon-accuracy problem this rework fixes.
         (["pajama", "pyjama", "sleepwear", "nightgown"], "moon.zzz.fill"),
-        // "umbrella" on its own used to miss this rule entirely (only
-        // "rain jacket"/"raincoat"/"waterproof" matched), so the actual
-        // generated "Umbrella" weather item never got its own icon.
-        (["rain jacket", "raincoat", "waterproof", "umbrella"], "umbrella.fill"),
+        // Split from umbrella below — a rain jacket and an umbrella are
+        // different objects and shouldn't share an icon just because
+        // they're both rain gear.
+        (["rain jacket", "raincoat", "waterproof"], "cloud.rain.fill"),
+        (["umbrella"], "umbrella.fill"),
         // Cold-weather gear — snow jacket/pants matched here before, but
         // "warm jacket" (the actual generated weather-item name) and
         // "gloves" fell through to generic tshirt; grouped together
@@ -118,7 +126,34 @@ enum PackingIcon {
         (["hiking"], "figure.hiking"),
         (["sunscreen"], "sun.max.fill"),
         (["first aid"], "cross.case.fill"),
+        // Must precede the generic "phone" rule below — "Phone charger"
+        // would otherwise match "phone" first and get the iphone icon
+        // instead of a charging-cable one.
+        (["phone charger", "charging cable"], "cable.connector"),
+        (["power adapter", "plug adapter"], "powerplug.fill"),
+        (["phone"], "iphone"),
+        (["camera"], "camera.fill"),
+        (["headphone"], "headphones"),
         (["laptop"], "laptopcomputer"),
+        (["credit card", "debit card"], "creditcard.fill"),
+        (["wallet"], "wallet.pass.fill"),
+        (["flight", "boarding pass"], "airplane"),
+        // Must precede "book"/"e-reader" below — "Notebook" contains
+        // "book" as a substring and would otherwise match that instead.
+        (["notebook"], "pencil"),
+        (["book", "e-reader"], "book.fill"),
+        (["nail clipper"], "scissors"),
+        (["hand sanitizer"], "hands.sparkles.fill"),
+        (["packing cube"], "shippingbox.fill"),
+        (["toiletry bag"], "bag.fill"),
+        (["compression bag"], "archivebox.fill"),
+        // Liquid/gel toiletries — distinct from the plain "drop" outline
+        // used as toiletries' category fallback.
+        (["shampoo", "conditioner", "body wash", "face wash", "moisturizer", "hair styling", "soap"], "drop.fill"),
+        // General over-the-counter medications/supplements — distinct
+        // from the toiletries category fallback, without needing a
+        // separate icon per symptom (no such icons exist to pick from).
+        (["pain reliever", "antacid", "allergy medication", "flu medicine", "cold medicine", "melatonin", "sleep aid", "digestive aid", "vitamin"], "pills.fill"),
         (["sleeping bag"], "bed.double.fill"),
         (["headlamp", "flashlight"], "flashlight.on.fill"),
         (["tent"], "tent.fill"),

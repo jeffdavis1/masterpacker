@@ -41,12 +41,17 @@ struct TemplateDetailView: View {
 
             if !curatedSuggestions.isEmpty {
                 Section {
-                    SuggestionChipGrid(suggestions: curatedSuggestions, selected: [], onToggle: addSuggestion)
-                        .listRowBackground(Color.clear)
+                    ForEach(CommonProfileItems.grouped(curatedSuggestions), id: \.group) { bucket in
+                        DisclosureGroup(bucket.group) {
+                            SuggestionChipGrid(suggestions: bucket.suggestions, selected: [], onToggle: addSuggestion)
+                                .padding(.top, 4)
+                        }
+                        .listRowBackground(AppTheme.cardSurface)
+                    }
                 } header: {
                     Text("Suggested items")
                 } footer: {
-                    Text("A few things almost everyone packs — tap to add.")
+                    Text("Tap a category to see items, then tap to add.")
                 }
             }
         }

@@ -52,12 +52,17 @@ struct ProfileDetailView: View {
 
             if !curatedSuggestions.isEmpty {
                 Section {
-                    SuggestionChipGrid(suggestions: curatedSuggestions, selected: pendingSuggestions, onToggle: togglePending)
-                        .listRowBackground(Color.clear)
+                    ForEach(CommonProfileItems.grouped(curatedSuggestions), id: \.group) { bucket in
+                        DisclosureGroup(bucket.group) {
+                            SuggestionChipGrid(suggestions: bucket.suggestions, selected: pendingSuggestions, onToggle: togglePending)
+                                .padding(.top, 4)
+                        }
+                        .listRowBackground(AppTheme.cardSurface)
+                    }
                 } header: {
                     Text("Common items")
                 } footer: {
-                    Text("Tap to select, then Save.")
+                    Text("Tap a category to see items, then tap to select, then Save.")
                 }
             }
 
@@ -160,7 +165,15 @@ struct SuggestionChipGrid: View {
                 Button {
                     onToggle(suggestion)
                 } label: {
-                    Label(suggestion.name, systemImage: isSelected ? "checkmark.circle.fill" : "plus.circle.fill")
+                    // The item's own icon normally, swapped for a
+                    // checkmark once selected — surfaces the real icon
+                    // library while still reading clearly as "selected"
+                    // the same way the checkmark always did.
+                    Label {
+                        Text(suggestion.name)
+                    } icon: {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : PackingIcon.symbol(forName: suggestion.name, fallback: suggestion.category.symbol))
+                    }
                         .font(.caption)
                         .lineLimit(1)
                         .padding(.horizontal, 10)
@@ -182,7 +195,7 @@ struct SuggestionChipGrid: View {
         ProfileDetailView(profile: profile)
     }
     .modelContainer(
-        for: [TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
+        for: [TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self, Luggage.self],
         inMemory: true
     )
 }

@@ -77,5 +77,5 @@ enum AssigneeOption: Hashable {
 #Preview {
     let trip = Trip(name: "Preview Trip", destination: "Somewhere", startDate: .now, endDate: .now)
     return AddItemView(trip: trip)
-        .modelContainer(for: [Trip.self, PackingItem.self, Traveler.self, Pet.self], inMemory: true)
+        .modelContainer(for: [Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self], inMemory: true)
 }

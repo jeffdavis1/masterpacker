@@ -155,7 +155,7 @@ struct PetProfileDetailView: View {
         PetProfileDetailView(profile: profile)
     }
     .modelContainer(
-        for: [PetProfile.self, TravelerProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self],
+        for: [PetProfile.self, TravelerProfile.self, ProfileItem.self, CustomCategory.self, Trip.self, Traveler.self, Pet.self, PackingItem.self, Luggage.self],
         inMemory: true
     )
 }

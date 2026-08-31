@@ -156,7 +156,7 @@ private struct ProfileRow: View {
         .modelContainer(
             for: [
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
-                Trip.self, Traveler.self, Pet.self, PackingItem.self,
+                Trip.self, Traveler.self, Pet.self, PackingItem.self, Luggage.self,
             ],
             inMemory: true
         )
