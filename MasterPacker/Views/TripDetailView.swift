@@ -710,6 +710,12 @@ private struct ItemRow: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            // Without this, .buttonStyle(.plain) only makes the actual
+            // rendered content (icon/text) tappable, not the Spacer's
+            // empty space — tapping anywhere in the middle/right of the
+            // row silently did nothing, since nothing gave the whole
+            // HStack a hit-testable shape.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
