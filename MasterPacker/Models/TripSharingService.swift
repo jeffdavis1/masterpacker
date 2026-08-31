@@ -412,13 +412,27 @@ final class TripSharingService: ObservableObject {
         // for why this can't be done per-zone like the owner's side does.
         await ensureSharedDatabaseSubscription()
 
-        var trips: [RemoteTrip] = []
-        for zone in zones {
-            if let trip = try? await fetchRemoteTrip(in: zone.zoneID, database: database) {
-                trips.append(trip)
+        // Every zone's trip is fetched concurrently rather than one at a
+        // time. This used to be a plain sequential `for zone in zones`
+        // loop — with N shared trips that meant N sequential round trips
+        // here, stacked on top of the 4 sequential queries per zone in
+        // fetchRemoteTrip below, which is what made "My Trips" take
+        // ~25s to finish loading once someone had more than a handful of
+        // shared trips.
+        return await withTaskGroup(of: RemoteTrip?.self) { group in
+            for zone in zones {
+                group.addTask {
+                    try? await Self.fetchRemoteTrip(in: zone.zoneID, database: database)
+                }
             }
+            var trips: [RemoteTrip] = []
+            for await trip in group {
+                if let trip {
+                    trips.append(trip)
+                }
+            }
+            return trips
         }
-        return trips
     }
 
     /// Creates (or refreshes) a silent push subscription for a shared
@@ -460,13 +474,29 @@ final class TripSharingService: ObservableObject {
         _ = try? await container.sharedCloudDatabase.save(subscription)
     }
 
-    private func fetchRemoteTrip(in zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> RemoteTrip? {
-        guard let tripRecord = try await queryRecords(type: SharedRecordType.trip, zoneID: zoneID, database: database).first else {
+    // static + nonisolated so a batch of these can run concurrently from
+    // fetchSharedTrips' TaskGroup without hopping back through the
+    // MainActor for each one — neither this nor queryRecords touches any
+    // of this service's own state, just the zoneID/database passed in.
+    private static func fetchRemoteTrip(in zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> RemoteTrip? {
+        // All 4 record types live in the same zone and don't depend on
+        // one another, so they're queried concurrently instead of one
+        // after another — that was the other half of the ~25s "My Trips"
+        // load time (4 sequential round trips per shared zone). If the
+        // trip record itself turns out to be missing, the other three
+        // async-lets are simply left un-awaited and get cancelled when
+        // this function returns.
+        async let tripRecordsTask = queryRecords(type: SharedRecordType.trip, zoneID: zoneID, database: database)
+        async let travelerRecordsTask = queryRecords(type: SharedRecordType.traveler, zoneID: zoneID, database: database)
+        async let petRecordsTask = queryRecords(type: SharedRecordType.pet, zoneID: zoneID, database: database)
+        async let itemRecordsTask = queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: database)
+
+        guard let tripRecord = try await tripRecordsTask.first else {
             return nil
         }
-        let travelerRecords = try await queryRecords(type: SharedRecordType.traveler, zoneID: zoneID, database: database)
-        let petRecords = try await queryRecords(type: SharedRecordType.pet, zoneID: zoneID, database: database)
-        let itemRecords = try await queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: database)
+        let travelerRecords = try await travelerRecordsTask
+        let petRecords = try await petRecordsTask
+        let itemRecords = try await itemRecordsTask
 
         return RemoteTrip(
             zoneID: zoneID,
@@ -506,7 +536,7 @@ final class TripSharingService: ObservableObject {
         )
     }
 
-    private func queryRecords(type: String, zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> [CKRecord] {
+    private static func queryRecords(type: String, zoneID: CKRecordZone.ID, database: CKDatabase) async throws -> [CKRecord] {
         let query = CKQuery(recordType: type, predicate: NSPredicate(value: true))
         let (results, _) = try await database.records(matching: query, inZoneWith: zoneID)
         return results.compactMap { _, result in try? result.get() }
