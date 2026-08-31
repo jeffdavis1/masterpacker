@@ -403,14 +403,19 @@ final class TripSharingService: ObservableObject {
 
     private func fetchSharedTrips() async throws -> [RemoteTrip] {
         let database = container.sharedCloudDatabase
-        let zones = try await database.allRecordZones()
 
         // Self-healing: re-asserting this here (rather than only at
         // accept-time) means a lapsed or never-created subscription gets
         // fixed on the next refresh automatically. One call covers every
         // shared zone — see ensureSharedDatabaseSubscription's doc comment
         // for why this can't be done per-zone like the owner's side does.
-        await ensureSharedDatabaseSubscription()
+        // Nothing below depends on its result (its own errors are already
+        // swallowed), so it now runs concurrently with the zone listing
+        // and per-trip fetch instead of blocking a full round trip in
+        // front of them.
+        async let subscriptionTask: Void = ensureSharedDatabaseSubscription()
+
+        let zones = try await database.allRecordZones()
 
         // Every zone's trip is fetched concurrently rather than one at a
         // time. This used to be a plain sequential `for zone in zones`
@@ -419,7 +424,7 @@ final class TripSharingService: ObservableObject {
         // fetchRemoteTrip below, which is what made "My Trips" take
         // ~25s to finish loading once someone had more than a handful of
         // shared trips.
-        return await withTaskGroup(of: RemoteTrip?.self) { group in
+        let trips = await withTaskGroup(of: RemoteTrip?.self) { group in
             for zone in zones {
                 group.addTask {
                     try? await Self.fetchRemoteTrip(in: zone.zoneID, database: database)
@@ -433,6 +438,9 @@ final class TripSharingService: ObservableObject {
             }
             return trips
         }
+
+        await subscriptionTask
+        return trips
     }
 
     /// Creates (or refreshes) a silent push subscription for a shared
