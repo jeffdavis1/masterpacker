@@ -42,9 +42,18 @@ final class TripSharingService: ObservableObject {
     private var modelContainer: ModelContainer?
 
     private static let pinnedDefaultsKey = "pinnedSharedTripIDs"
+    private static let sharedTripsCacheKey = "cachedSharedTrips"
 
     private init() {
         pinnedSharedTripIDs = Set(UserDefaults.standard.stringArray(forKey: Self.pinnedDefaultsKey) ?? [])
+        // Seed sharedTrips from whatever we last successfully fetched,
+        // so a shared trip already known from a previous launch renders
+        // immediately in My Trips instead of waiting on this launch's
+        // CloudKit round trip — same instant-first-paint feel owned
+        // trips already get for free from SwiftData's own local store.
+        // refreshSharedTrips() (called on every launch/foreground) then
+        // replaces this with the fresh fetch once it lands.
+        sharedTrips = Self.loadCachedSharedTrips()
     }
 
     func configure(modelContainer: ModelContainer) {
@@ -330,10 +339,13 @@ final class TripSharingService: ObservableObject {
     /// refresh) when only the "shared to me" side needs updating.
     func refreshSharedTrips() async {
         do {
-            sharedTrips = try await fetchSharedTrips()
+            let trips = try await fetchSharedTrips()
+            sharedTrips = trips
+            Self.cacheSharedTrips(trips)
         } catch {
-            // Leaves sharedTrips as whatever it was before — the next
-            // refresh (pull-to-refresh or push) will catch up.
+            // Leaves sharedTrips as whatever it was before (the cached
+            // snapshot from init, or the last successful refresh) — the
+            // next refresh (pull-to-refresh or push) will catch up.
         }
     }
 
@@ -558,6 +570,7 @@ final class TripSharingService: ObservableObject {
         if let tripIndex = sharedTrips.firstIndex(where: { trip in trip.items.contains { $0.id == item.id } }),
            let itemIndex = sharedTrips[tripIndex].items.firstIndex(where: { $0.id == item.id }) {
             sharedTrips[tripIndex].items[itemIndex].isPacked = isPacked
+            Self.cacheSharedTrips(sharedTrips)
         }
 
         let database = container.sharedCloudDatabase
@@ -655,6 +668,29 @@ final class TripSharingService: ObservableObject {
         _ = try? await container.sharedCloudDatabase.modifyRecordZones(saving: [], deleting: [trip.zoneID])
         removeFromMyTrips(trip)
         sharedTrips.removeAll { $0.id == trip.id }
+        // Otherwise the cache still has the left trip in it, and it
+        // would flash back into view on the next cold launch for the
+        // moment before refreshSharedTrips() catches up.
+        Self.cacheSharedTrips(sharedTrips)
         AnalyticsService.sharedTripLeft()
+    }
+
+    // MARK: - Local cache
+
+    /// Best-effort snapshot of the last successful fetchSharedTrips()
+    /// result, used only to seed `sharedTrips` at launch so shared trips
+    /// render immediately instead of waiting on this launch's CloudKit
+    /// round trip. Never treated as authoritative — refreshSharedTrips()
+    /// always overwrites it with a fresh fetch, and a decode failure
+    /// (e.g. after a model change) just falls back to an empty list, the
+    /// same as a first launch with nothing cached yet.
+    private static func loadCachedSharedTrips() -> [RemoteTrip] {
+        guard let data = UserDefaults.standard.data(forKey: sharedTripsCacheKey) else { return [] }
+        return (try? JSONDecoder().decode([RemoteTrip].self, from: data)) ?? []
+    }
+
+    private static func cacheSharedTrips(_ trips: [RemoteTrip]) {
+        guard let data = try? JSONEncoder().encode(trips) else { return }
+        UserDefaults.standard.set(data, forKey: sharedTripsCacheKey)
     }
 }
