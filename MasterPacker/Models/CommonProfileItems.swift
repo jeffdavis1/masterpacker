@@ -17,7 +17,20 @@ enum CommonProfileItems {
         var id: String { name }
         let name: String
         let category: PackingCategory
-        let group: String = "Frequently Packed"
+        let group: String
+
+        // Explicit rather than relying on the synthesized memberwise
+        // init to make `group` an overridable parameter — it didn't
+        // (Xcode rejected `group:` at every call site below as an
+        // "extra argument"), so this makes the parameter unambiguous
+        // and keeps the same "group defaults for callers that don't
+        // care" behavior CommonPetItems.all and the frequentSuggestions
+        // computed property (in ProfileDetailView) rely on.
+        init(name: String, category: PackingCategory, group: String = "Frequently Packed") {
+            self.name = name
+            self.category = category
+            self.group = group
+        }
     }
 
     /// Display order for the expandable category sections — fixed rather
