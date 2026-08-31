@@ -11,6 +11,10 @@ struct TripDetailView: View {
     @State private var collapsedSections: Set<String> = []
     @State private var isPresentingShareSheet = false
     @State private var groupingMode: GroupingMode = .people
+    /// Only meaningful in Luggage grouping — lets picking a bag apply to
+    /// every checked item at once instead of one menu tap per item.
+    @State private var isSelectingForBulkAssign = false
+    @State private var selectedItemIDs: Set<PersistentIdentifier> = []
 
     private enum GroupingMode: String, CaseIterable, Identifiable {
         case people = "People"
@@ -68,20 +72,23 @@ struct TripDetailView: View {
         return result
     }
 
-    /// Unassigned items first, then one group per piece of luggage (in
-    /// the order it was added) — lets you see at a glance what's actually
-    /// going in the carry-on vs. the checked bag, across every traveler.
+    /// One group per piece of luggage first (in the order it was added),
+    /// then Unassigned last — so the bags a user actually cares about
+    /// packing show up front. Unlike the People grouping, a luggage
+    /// section shows even when empty (0/0), so e.g. "Checked Bag" is
+    /// visible as a real, ready-to-fill destination the moment it
+    /// exists, not only once something's already in it.
     private var luggageSections: [TripSection] {
         var result: [TripSection] = []
 
-        func addSection(_ label: String, _ items: [PackingItem]) {
-            guard !items.isEmpty else { return }
-            result.append(TripSection(label: label, categoryGroups: categoryGroups(for: items), items: items))
+        for bag in trip.luggage {
+            let items = trip.items.filter { $0.luggage?.persistentModelID == bag.persistentModelID }
+            result.append(TripSection(label: bag.name, categoryGroups: categoryGroups(for: items), items: items))
         }
 
-        addSection("Unassigned", trip.items.filter { $0.luggage == nil })
-        for bag in trip.luggage {
-            addSection(bag.name, trip.items.filter { $0.luggage?.persistentModelID == bag.persistentModelID })
+        let unassigned = trip.items.filter { $0.luggage == nil }
+        if !unassigned.isEmpty {
+            result.append(TripSection(label: "Unassigned", categoryGroups: categoryGroups(for: unassigned), items: unassigned))
         }
         return result
     }
@@ -133,6 +140,12 @@ struct TripDetailView: View {
                 .onChange(of: groupingMode) { _, newMode in
                     if newMode == .luggage {
                         Luggage.ensureDefaults(for: trip, in: modelContext)
+                    } else {
+                        // Bulk-select only makes sense while looking at
+                        // luggage — leaving that view shouldn't leave a
+                        // stale selection or the Select bar behind.
+                        isSelectingForBulkAssign = false
+                        selectedItemIDs.removeAll()
                     }
                 }
             }
@@ -147,10 +160,16 @@ struct TripDetailView: View {
                                 .listRowSeparator(.hidden)
 
                             ForEach(group.items) { item in
-                                ItemRow(item: item, trip: groupingMode == .luggage ? trip : nil)
-                                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
+                                ItemRow(
+                                    item: item,
+                                    trip: groupingMode == .luggage ? trip : nil,
+                                    isSelectionMode: isSelectingForBulkAssign,
+                                    isSelected: selectedItemIDs.contains(item.persistentModelID),
+                                    onToggleSelect: { toggleSelection(item) }
+                                )
+                                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             }
                             .onDelete { offsets in
                                 deleteItems(group.items, at: offsets)
@@ -172,6 +191,17 @@ struct TripDetailView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(AppTheme.screenGradient.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom) {
+            if isSelectingForBulkAssign && !selectedItemIDs.isEmpty {
+                BulkLuggageAssignBar(
+                    count: selectedItemIDs.count,
+                    trip: trip,
+                    onAssign: { bag in
+                        assignSelection(to: bag)
+                    }
+                )
+            }
+        }
         .navigationTitle(trip.name)
         .refreshable {
             // Pulls a participant's edits (item packed state) into this
@@ -220,6 +250,16 @@ struct TripDetailView: View {
                     Label("Add", systemImage: "plus")
                 }
             }
+            if groupingMode == .luggage {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(isSelectingForBulkAssign ? "Done" : "Select") {
+                        isSelectingForBulkAssign.toggle()
+                        if !isSelectingForBulkAssign {
+                            selectedItemIDs.removeAll()
+                        }
+                    }
+                }
+            }
         }
         .sheet(isPresented: $isPresentingAddItem) {
             AddItemView(trip: trip)
@@ -238,6 +278,26 @@ struct TripDetailView: View {
             modelContext.delete(items[index])
         }
         Task { await TripSharingService.shared.resyncIfShared(trip) }
+    }
+
+    private func toggleSelection(_ item: PackingItem) {
+        let id = item.persistentModelID
+        if selectedItemIDs.contains(id) {
+            selectedItemIDs.remove(id)
+        } else {
+            selectedItemIDs.insert(id)
+        }
+    }
+
+    /// Assigns every currently-selected item to `bag` (nil means
+    /// Unassigned) in one shot, then exits selection mode — the whole
+    /// point of bulk-select is not needing to reopen a menu per item.
+    private func assignSelection(to bag: Luggage?) {
+        for item in trip.items where selectedItemIDs.contains(item.persistentModelID) {
+            item.luggage = bag
+        }
+        isSelectingForBulkAssign = false
+        selectedItemIDs.removeAll()
     }
 
     /// Explicit, on-demand version of what AddTripView already does
@@ -339,6 +399,38 @@ private struct CategoryHeaderRow: View {
             .font(.system(.caption2, design: .rounded, weight: .bold))
             .tracking(0.4)
             .foregroundStyle(.secondary.opacity(0.8))
+    }
+}
+
+/// Floating bar shown while bulk-selecting in Luggage grouping — lets one
+/// menu tap assign every selected item to a bag at once, instead of
+/// reopening ItemRow's per-item menu N times.
+private struct BulkLuggageAssignBar: View {
+    let count: Int
+    let trip: Trip
+    let onAssign: (Luggage?) -> Void
+
+    var body: some View {
+        HStack {
+            Text("\(count) selected")
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+            Spacer()
+            Menu {
+                Button("Unassigned") { onAssign(nil) }
+                if !trip.luggage.isEmpty {
+                    Divider()
+                    ForEach(trip.luggage) { bag in
+                        Button(bag.name) { onAssign(bag) }
+                    }
+                }
+            } label: {
+                Label("Assign to Luggage", systemImage: "bag.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.regularMaterial)
     }
 }
 
@@ -489,11 +581,39 @@ private struct ItemRow: View {
     /// at the bag they're being packed into. Deliberately absent in the
     /// default People grouping, so that view stays exactly as it was.
     let trip: Trip?
+    /// The three below are only meaningful when trip != nil (bulk-select
+    /// only exists in Luggage grouping). While selecting, the whole row
+    /// becomes one tap target for toggling selection — packed-toggle and
+    /// the per-item luggage menu are hidden rather than left active
+    /// alongside it, so there's never ambiguity about what a tap does.
+    var isSelectionMode = false
+    var isSelected = false
+    var onToggleSelect: (() -> Void)?
     @Environment(\.modelContext) private var modelContext
     @State private var isPresentingAddLuggage = false
     @State private var newLuggageName = ""
 
     var body: some View {
+        Group {
+            if isSelectionMode {
+                selectionRow
+            } else {
+                normalRow
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .floatingCard(radius: AppTheme.cornerRadius - 2)
+        .alert("New Luggage", isPresented: $isPresentingAddLuggage) {
+            TextField("Name", text: $newLuggageName)
+            Button("Cancel", role: .cancel) { newLuggageName = "" }
+            Button("Add") { addLuggageAndAssign() }
+        } message: {
+            Text("e.g. \"Kids' backpack\"")
+        }
+    }
+
+    private var normalRow: some View {
         HStack(spacing: 8) {
             Button {
                 item.isPacked.toggle()
@@ -526,16 +646,29 @@ private struct ItemRow: View {
                 luggageMenu(trip: trip)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
-        .floatingCard(radius: AppTheme.cornerRadius - 2)
-        .alert("New Luggage", isPresented: $isPresentingAddLuggage) {
-            TextField("Name", text: $newLuggageName)
-            Button("Cancel", role: .cancel) { newLuggageName = "" }
-            Button("Add") { addLuggageAndAssign() }
-        } message: {
-            Text("e.g. \"Kids' backpack\"")
+    }
+
+    private var selectionRow: some View {
+        Button {
+            onToggleSelect?()
+        } label: {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? AppTheme.brand : .secondary)
+                Image(systemName: item.displaySymbol)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                Text(item.name)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if item.quantity > 1 {
+                    Text("×\(item.quantity)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
