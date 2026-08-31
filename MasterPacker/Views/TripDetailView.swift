@@ -22,10 +22,15 @@ struct TripDetailView: View {
         var id: String { rawValue }
     }
 
-    /// One category's items within a traveler/pet/shared/luggage group.
+    /// One category's items within a traveler/pet/shared/luggage group —
+    /// label/symbol rather than a raw PackingCategory, since a human
+    /// section uses ItemDisplayGroup's 9 browsing groups (the same ones
+    /// the Suggested Items picker uses) while a pet's section still uses
+    /// PackingCategory directly. See categoryGroups/displayGroups below.
     private struct CategoryGroup: Identifiable {
-        var id: String { category.rawValue }
-        let category: PackingCategory
+        var id: String { label }
+        let label: String
+        let symbol: String
         let items: [PackingItem]
     }
 
@@ -52,22 +57,25 @@ struct TripDetailView: View {
 
     /// Shared/household items first, then one group per traveler (trip
     /// order), then one group per pet — each broken down further into
-    /// per-category groups so e.g. all of one traveler's electronics sit
-    /// together, separate from their toiletries.
+    /// sub-groups so e.g. a traveler's electronics sit together, separate
+    /// from their toiletries. Pet sections use displayGroups: false — see
+    /// its doc comment for why pets stay on the plain PackingCategory
+    /// grouping instead of the 9-group system everything else uses.
     private var peopleSections: [TripSection] {
         var result: [TripSection] = []
 
-        func addSection(_ label: String, _ items: [PackingItem]) {
+        func addSection(_ label: String, _ items: [PackingItem], useDisplayGroups: Bool) {
             guard !items.isEmpty else { return }
-            result.append(TripSection(label: label, categoryGroups: categoryGroups(for: items), items: items))
+            let groups = useDisplayGroups ? displayGroups(for: items) : categoryGroups(for: items)
+            result.append(TripSection(label: label, categoryGroups: groups, items: items))
         }
 
-        addSection("Shared", trip.items.filter { $0.traveler == nil && $0.pet == nil })
+        addSection("Shared", trip.items.filter { $0.traveler == nil && $0.pet == nil }, useDisplayGroups: true)
         for traveler in trip.travelers {
-            addSection(traveler.name, trip.items.filter { $0.traveler == traveler })
+            addSection(traveler.name, trip.items.filter { $0.traveler == traveler }, useDisplayGroups: true)
         }
         for pet in trip.pets {
-            addSection("\(pet.name) (pet)", trip.items.filter { $0.pet == pet })
+            addSection("\(pet.name) (pet)", trip.items.filter { $0.pet == pet }, useDisplayGroups: false)
         }
         return result
     }
@@ -77,29 +85,63 @@ struct TripDetailView: View {
     /// packing show up front. Unlike the People grouping, a luggage
     /// section shows even when empty (0/0), so e.g. "Checked Bag" is
     /// visible as a real, ready-to-fill destination the moment it
-    /// exists, not only once something's already in it.
+    /// exists, not only once something's already in it. Always uses
+    /// displayGroups — a bag can mix a traveler's clothes with a pet's
+    /// supplies, so there's no single "whose bag is this" to key the
+    /// pets-stay-on-PackingCategory exception off of.
     private var luggageSections: [TripSection] {
         var result: [TripSection] = []
 
         for bag in trip.luggage {
             let items = trip.items.filter { $0.luggage?.persistentModelID == bag.persistentModelID }
-            result.append(TripSection(label: bag.name, categoryGroups: categoryGroups(for: items), items: items))
+            result.append(TripSection(label: bag.name, categoryGroups: displayGroups(for: items), items: items))
         }
 
         let unassigned = trip.items.filter { $0.luggage == nil }
         if !unassigned.isEmpty {
-            result.append(TripSection(label: "Unassigned", categoryGroups: categoryGroups(for: unassigned), items: unassigned))
+            result.append(TripSection(label: "Unassigned", categoryGroups: displayGroups(for: unassigned), items: unassigned))
         }
         return result
     }
 
+    /// Used only for pet sections. Every pet item already shares one
+    /// PackingCategory (.petSupplies — see PackingRulesEngine.petItems),
+    /// so this already collapses a pet's section to one correctly-named
+    /// "PET SUPPLIES" header; running it through ItemDisplayGroup instead
+    /// would just relabel that same single header "Miscellaneous" — a
+    /// worse name for the same one-group outcome, since none of the 9
+    /// human-oriented browsing groups actually fit a leash or a bag of
+    /// kibble.
     private func categoryGroups(for items: [PackingItem]) -> [CategoryGroup] {
         let grouped = Dictionary(grouping: items, by: \.category)
         return grouped.keys
             .sorted { $0.rawValue < $1.rawValue }
             .map { category in
-                CategoryGroup(category: category, items: grouped[category]!.sorted { $0.name < $1.name })
+                CategoryGroup(
+                    label: category.rawValue.uppercased(),
+                    symbol: category.symbol,
+                    items: grouped[category]!.sorted { $0.name < $1.name }
+                )
             }
+    }
+
+    /// Used for every section except pets — groups by ItemDisplayGroup's
+    /// 9 browsing groups (Clothing Essentials, Footwear, …), the same
+    /// taxonomy the Suggested Items picker uses, so the trip's own
+    /// packing list reads with the same categories rather than the
+    /// coarser 7-value PackingCategory.
+    private func displayGroups(for items: [PackingItem]) -> [CategoryGroup] {
+        let grouped = Dictionary(grouping: items) { item in
+            ItemDisplayGroup.group(forName: item.name, category: item.category)
+        }
+        return CommonProfileItems.groupOrder.compactMap { group in
+            guard let groupItems = grouped[group], !groupItems.isEmpty else { return nil }
+            return CategoryGroup(
+                label: group.uppercased(),
+                symbol: ItemDisplayGroup.symbol(for: group),
+                items: groupItems.sorted { $0.name < $1.name }
+            )
+        }
     }
 
     /// Watched so the "still unpacked" reminder's item count stays
@@ -154,7 +196,7 @@ struct TripDetailView: View {
                 Section {
                     if !collapsedSections.contains(section.label) {
                         ForEach(section.categoryGroups) { group in
-                            CategoryHeaderRow(category: group.category)
+                            CategoryHeaderRow(label: group.label, symbol: group.symbol)
                                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 2, trailing: 16))
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
@@ -392,10 +434,11 @@ private struct SectionHeaderButton: View {
 /// battery pack, etc. Unlike the outer traveler group, these aren't
 /// individually collapsible; they're just a visual break.
 private struct CategoryHeaderRow: View {
-    let category: PackingCategory
+    let label: String
+    let symbol: String
 
     var body: some View {
-        Label(category.rawValue.uppercased(), systemImage: category.symbol)
+        Label(label, systemImage: symbol)
             .font(.system(.caption2, design: .rounded, weight: .bold))
             .tracking(0.4)
             .foregroundStyle(.secondary.opacity(0.8))
