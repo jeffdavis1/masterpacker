@@ -379,7 +379,7 @@ final class TripSharingService: ObservableObject {
         let zoneID = CKRecordZone.ID(zoneName: link.zoneName, ownerName: CKCurrentUserDefaultName)
         let itemRecords: [CKRecord]
         do {
-            itemRecords = try await queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: container.privateCloudDatabase)
+            itemRecords = try await Self.queryRecords(type: SharedRecordType.item, zoneID: zoneID, database: container.privateCloudDatabase)
         } catch {
             return
         }
