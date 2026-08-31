@@ -16,12 +16,22 @@ import SwiftData
 /// weather watcher can run periodically without the app being open; see
 /// Info.plist's `BGTaskSchedulerPermittedIdentifiers` / `UIBackgroundModes`.
 @MainActor
-final class NotificationManager {
+final class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
     static let weatherRefreshTaskID = "com.jwarrengroup.masterpacker.weatherRefresh"
 
-    private init() {}
+    /// Set when the user taps a trip notification (any of the three
+    /// below) — ContentView observes this to deep-link straight into that
+    /// trip's detail page rather than just opening to My Trips like a
+    /// cold launch normally would. Cleared by whoever presents it. Mirrors
+    /// TripSharingService.justAcceptedTripID's exact same pattern for the
+    /// CloudKit-share-accept deep link.
+    @Published var pendingNotificationTripID: String?
+
+    private override init() {
+        super.init()
+    }
 
     // MARK: - Authorization
 
@@ -56,6 +66,7 @@ final class NotificationManager {
             content.title = "Trip in 2 days"
             content.body = "\(trip.name) starts in 2 days — time to start packing!"
             content.sound = .default
+            content.userInfo = ["tripID": key]
             let request = UNNotificationRequest(identifier: startReminderID, content: content, trigger: calendarTrigger(for: fireDate))
             try? await center.add(request)
         }
@@ -68,6 +79,7 @@ final class NotificationManager {
             content.title = "\(trip.name) starts today"
             content.body = "You still have \(unpackedCount) unpacked item\(unpackedCount == 1 ? "" : "s") — check your list before you leave!"
             content.sound = .default
+            content.userInfo = ["tripID": key]
             let request = UNNotificationRequest(identifier: unpackedID, content: content, trigger: calendarTrigger(for: fireDate))
             try? await center.add(request)
         }
@@ -210,6 +222,7 @@ final class NotificationManager {
         content.title = "Weather update: \(trip.name)"
         content.body = message
         content.sound = .default
+        content.userInfo = ["tripID": key]
         // No trigger — delivers as soon as the system can, since this is
         // itself the notification (not a future reminder).
         let request = UNNotificationRequest(identifier: "trip.\(key).weatherAlert", content: content, trigger: nil)
@@ -253,5 +266,26 @@ final class NotificationManager {
         }
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: baselineDefaultsKey(key))
+    }
+
+    // MARK: - UNUserNotificationCenterDelegate
+
+    /// Without a delegate at all, iOS doesn't show an alert for a
+    /// notification that arrives while the app is in the foreground —
+    /// AppDelegate now sets NotificationManager.shared as the delegate
+    /// (needed for didReceive below), so this opts back into the banner/
+    /// sound/badge the app already relied on before that delegate existed.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        [.banner, .sound, .badge]
+    }
+
+    /// Fired when the user taps a notification (foreground, background, or
+    /// cold launch alike). Every trip notification this class schedules
+    /// carries the trip's stable id in userInfo — see scheduleTripReminders
+    /// and sendWeatherAlert — so this just surfaces it for ContentView to
+    /// deep-link into.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        guard let tripID = response.notification.request.content.userInfo["tripID"] as? String else { return }
+        pendingNotificationTripID = tripID
     }
 }

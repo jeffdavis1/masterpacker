@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A7A2AD51B6DE5A9FB4E60FD4 /* TripArchiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B416DF383594DAD3A4C44C6 /* TripArchiver.swift */; };
+		A29B4861561AD6B0C7997178 /* ArchivedTripsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14A25B88D1E62128D23E974 /* ArchivedTripsView.swift */; };
 		00C6DEE7C2AC6D2BDE99782D /* Traveler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4F25240B4E950DBDC6BB44A /* Traveler.swift */; };
 		60863B06BD172B146BE092BC /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6E52E38C6B68EFE0790BC6 /* AnalyticsService.swift */; };
 		4EE7AAA453CF1DC6CC5A71F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C25AA24A6A64E0E2D5EC5DB6 /* Assets.xcassets */; };
@@ -62,6 +64,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B416DF383594DAD3A4C44C6 /* TripArchiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripArchiver.swift; sourceTree = "<group>"; };
+		A14A25B88D1E62128D23E974 /* ArchivedTripsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivedTripsView.swift; sourceTree = "<group>"; };
 		0000796B7023BFF2AE768B51 /* DestinationField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationField.swift; sourceTree = "<group>"; };
 		DD6E52E38C6B68EFE0790BC6 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		07E321AF525F903CB2AA1905 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
@@ -156,6 +160,7 @@
 				7277AD1098A99EF4F33AA3A9 /* SharedTripsListView.swift */,
 				F137B16996BEC3610ADA3689 /* SharedTripDetailView.swift */,
 				BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */,
+				A14A25B88D1E62128D23E974 /* ArchivedTripsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -185,6 +190,7 @@
 				1D323752A0A3BC0D691396FF /* CloudSharingRecords.swift */,
 				103DAD5C7D76416917811B57 /* TripSharingService.swift */,
 				4336701D9576990AA209D485 /* DestinationSearchCompleter.swift */,
+				0B416DF383594DAD3A4C44C6 /* TripArchiver.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -365,6 +371,8 @@
 				B6EA257E00C0827C7C66762A /* ApplyTemplateView.swift in Sources */,
 				B5C071AA4DC9BDEF82E83253 /* EditTripView.swift in Sources */,
 				C8188E0AC934DDD4D2428287 /* DestinationField.swift in Sources */,
+				A7A2AD51B6DE5A9FB4E60FD4 /* TripArchiver.swift in Sources */,
+				A29B4861561AD6B0C7997178 /* ArchivedTripsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -36,6 +36,21 @@ final class TripSharingService: ObservableObject {
     /// under Shared With Me themselves. Cleared by whoever presents it.
     @Published var justAcceptedTripID: String?
 
+    /// RemoteTrip.id values currently archived — mirrors Trip.isArchived
+    /// for owned trips, but a RemoteTrip has no persisted field of its own
+    /// to carry that state in (it isn't ours to write into someone else's
+    /// CloudKit records), so it's local-only bookkeeping here instead,
+    /// same as pinnedSharedTripIDs. Only meaningful for a trip that's also
+    /// in pinnedSharedTripIDs — an unpinned trip was never in My Trips to
+    /// begin with, let alone the Archived page.
+    @Published private(set) var archivedSharedTripIDs: Set<String>
+
+    /// Sticky marker mirroring Trip.hasBeenAutoArchived — every id that's
+    /// ever been auto-archived by autoArchiveEligiblePinnedTrips(), so a
+    /// manual restore isn't immediately undone by the next scan finding
+    /// the same trip's end date still in the past.
+    @Published private(set) var autoArchivedSharedTripIDs: Set<String>
+
     /// Needed only for reconcileOwnedSharedTrips (pulling a participant's
     /// edits back into this device's own SwiftData copy, for trips this
     /// device owns) — set once at launch via configure(modelContainer:).
@@ -43,9 +58,13 @@ final class TripSharingService: ObservableObject {
 
     private static let pinnedDefaultsKey = "pinnedSharedTripIDs"
     private static let sharedTripsCacheKey = "cachedSharedTrips"
+    private static let archivedSharedDefaultsKey = "archivedSharedTripIDs"
+    private static let autoArchivedSharedDefaultsKey = "autoArchivedSharedTripIDs"
 
     private init() {
         pinnedSharedTripIDs = Set(UserDefaults.standard.stringArray(forKey: Self.pinnedDefaultsKey) ?? [])
+        archivedSharedTripIDs = Set(UserDefaults.standard.stringArray(forKey: Self.archivedSharedDefaultsKey) ?? [])
+        autoArchivedSharedTripIDs = Set(UserDefaults.standard.stringArray(forKey: Self.autoArchivedSharedDefaultsKey) ?? [])
         // Seed sharedTrips from whatever we last successfully fetched,
         // so a shared trip already known from a previous launch renders
         // immediately in My Trips instead of waiting on this launch's
@@ -656,6 +675,52 @@ final class TripSharingService: ObservableObject {
     func removeFromMyTrips(_ trip: RemoteTrip) {
         pinnedSharedTripIDs.remove(trip.id)
         UserDefaults.standard.set(Array(pinnedSharedTripIDs), forKey: Self.pinnedDefaultsKey)
+        // Otherwise a later re-pin of the same trip would come back
+        // showing as already archived, going straight to the Archived
+        // page instead of My Trips like any newly-pinned trip should.
+        archivedSharedTripIDs.remove(trip.id)
+        autoArchivedSharedTripIDs.remove(trip.id)
+        persistArchivedSharedTripIDs()
+    }
+
+    // MARK: - Archiving pinned shared trips
+
+    func isArchived(_ trip: RemoteTrip) -> Bool {
+        archivedSharedTripIDs.contains(trip.id)
+    }
+
+    /// Moves a pinned shared trip back from the Archived page into My
+    /// Trips. hasBeenAutoArchived-equivalent membership in
+    /// autoArchivedSharedTripIDs deliberately isn't cleared here — see
+    /// its doc comment.
+    func restoreFromArchive(_ trip: RemoteTrip) {
+        archivedSharedTripIDs.remove(trip.id)
+        persistArchivedSharedTripIDs()
+    }
+
+    /// The shared-trip half of TripArchiver's scan — archives every
+    /// pinned trip past the same "end date + 1 day" threshold used for
+    /// owned trips, skipping anything that's already been through this
+    /// once so a manual restore sticks. Called by TripArchiver.run(), not
+    /// meant to be called directly.
+    func autoArchiveEligiblePinnedTrips() {
+        var didChange = false
+        for trip in sharedTrips {
+            guard pinnedSharedTripIDs.contains(trip.id),
+                  !autoArchivedSharedTripIDs.contains(trip.id),
+                  TripArchiver.isPastArchiveThreshold(endDate: trip.endDate) else { continue }
+            archivedSharedTripIDs.insert(trip.id)
+            autoArchivedSharedTripIDs.insert(trip.id)
+            didChange = true
+        }
+        if didChange {
+            persistArchivedSharedTripIDs()
+        }
+    }
+
+    private func persistArchivedSharedTripIDs() {
+        UserDefaults.standard.set(Array(archivedSharedTripIDs), forKey: Self.archivedSharedDefaultsKey)
+        UserDefaults.standard.set(Array(autoArchivedSharedTripIDs), forKey: Self.autoArchivedSharedDefaultsKey)
     }
 
     /// Leaves a share entirely — deletes this device's view of the

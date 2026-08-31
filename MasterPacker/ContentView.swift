@@ -4,7 +4,13 @@ import SwiftData
 struct ContentView: View {
     @State private var isShowingSplash = true
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
     @ObservedObject private var sharingService = TripSharingService.shared
+    @ObservedObject private var notificationManager = NotificationManager.shared
+    // Only needed to resolve a tapped notification's tripID back to a
+    // real Trip for the deep link below — TripListView runs its own
+    // separate @Query for the actual My Trips display.
+    @Query(sort: \Trip.startDate) private var trips: [Trip]
 
     var body: some View {
         ZStack {
@@ -38,6 +44,25 @@ struct ContentView: View {
                 }
             }
         }
+        // Deep link: tapping a trip notification (2-days-out reminder,
+        // day-of unpacked reminder, or a weather alert) should drop the
+        // user straight into that trip, not just open to My Trips. Same
+        // pattern as justAcceptedTripID above — NotificationManager sets
+        // pendingNotificationTripID when the notification is tapped (see
+        // its UNUserNotificationCenterDelegate conformance).
+        .sheet(isPresented: Binding(
+            get: { notificationManager.pendingNotificationTripID != nil },
+            set: { isPresented in
+                if !isPresented { notificationManager.pendingNotificationTripID = nil }
+            }
+        )) {
+            if let tripID = notificationManager.pendingNotificationTripID,
+               let trip = trips.first(where: { $0.id.uuidString == tripID }) {
+                NavigationStack {
+                    TripDetailView(trip: trip)
+                }
+            }
+        }
         .task {
             try? await Task.sleep(for: .seconds(1.5))
             withAnimation(.easeOut(duration: 0.5)) {
@@ -49,6 +74,9 @@ struct ContentView: View {
         }
         .task {
             await TripSharingService.shared.syncSharedTrips()
+            // Same cadence as the sync above — catches a trip crossing
+            // the archive threshold while the app wasn't running.
+            TripArchiver.run(modelContext: modelContext, sharingService: sharingService)
         }
         .onChange(of: scenePhase) { _, newPhase in
             // Background App Refresh requests are one-shot — make sure
@@ -63,7 +91,10 @@ struct ContentView: View {
             // backstop for "opening the app should show the latest
             // state right away."
             if newPhase == .active {
-                Task { await TripSharingService.shared.syncSharedTrips() }
+                Task {
+                    await TripSharingService.shared.syncSharedTrips()
+                    TripArchiver.run(modelContext: modelContext, sharingService: sharingService)
+                }
             }
         }
     }

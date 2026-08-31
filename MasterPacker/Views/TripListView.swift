@@ -10,17 +10,28 @@ struct TripListView: View {
     @State private var isPresentingMap = false
     @State private var isPresentingTemplates = false
     @State private var isPresentingSharedTrips = false
+    @State private var isPresentingArchived = false
     @State private var selectedSharedTrip: RemoteTrip?
 
     /// A shared trip only shows up here once the user has explicitly
     /// pinned it via "Add to My Trips" — it's still backed live by
     /// CloudKit/sharingService.sharedTrips, never copied into SwiftData.
+    /// Archived trips (owned or pinned-shared) are excluded — they live
+    /// on the Archived page instead, which is the whole point of
+    /// archiving: keep this list to current/upcoming travel.
     private var entries: [TripListEntry] {
-        let owned = trips.map(TripListEntry.owned)
+        let owned = trips.filter { !$0.isArchived }.map(TripListEntry.owned)
         let shared = sharingService.sharedTrips
-            .filter { sharingService.isPinnedToMyTrips($0) }
+            .filter { sharingService.isPinnedToMyTrips($0) && !sharingService.isArchived($0) }
             .map(TripListEntry.shared)
         return (owned + shared).sorted { $0.startDate < $1.startDate }
+    }
+
+    /// Active trips grouped by the month their start date falls in,
+    /// closest month first — empty months simply don't produce a
+    /// section, since monthSections only ever groups entries that exist.
+    private var sections: [MonthSection] {
+        monthSections(for: entries, dateKeyPath: \.startDate, ascending: true)
     }
 
     var body: some View {
@@ -34,37 +45,41 @@ struct TripListView: View {
                     )
                 } else {
                     List {
-                        ForEach(entries) { entry in
-                            switch entry {
-                            case .owned(let trip):
-                                NavigationLink(value: trip) {
-                                    TripRow(trip: trip)
-                                }
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        deleteTrip(trip)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            case .shared(let trip):
-                                Button {
-                                    selectedSharedTrip = trip
-                                } label: {
-                                    SharedTripCard(trip: trip)
-                                }
-                                .buttonStyle(.plain)
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        sharingService.removeFromMyTrips(trip)
-                                    } label: {
-                                        Label("Remove from My Trips", systemImage: "minus.circle")
+                        ForEach(sections) { section in
+                            Section(section.title) {
+                                ForEach(section.entries) { entry in
+                                    switch entry {
+                                    case .owned(let trip):
+                                        NavigationLink(value: trip) {
+                                            TripRow(trip: trip)
+                                        }
+                                        .listRowBackground(Color.clear)
+                                        .listRowSeparator(.hidden)
+                                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) {
+                                                deleteTrip(trip)
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
+                                    case .shared(let trip):
+                                        Button {
+                                            selectedSharedTrip = trip
+                                        } label: {
+                                            SharedTripCard(trip: trip)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .listRowBackground(Color.clear)
+                                        .listRowSeparator(.hidden)
+                                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                        .swipeActions(edge: .trailing) {
+                                            Button(role: .destructive) {
+                                                sharingService.removeFromMyTrips(trip)
+                                            } label: {
+                                                Label("Remove from My Trips", systemImage: "minus.circle")
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -103,6 +118,11 @@ struct TripListView: View {
                         } label: {
                             Label("Shared With Me", systemImage: "person.2")
                         }
+                        Button {
+                            isPresentingArchived = true
+                        } label: {
+                            Label("Archived", systemImage: "archivebox")
+                        }
                     } label: {
                         Label("More", systemImage: "ellipsis.circle")
                     }
@@ -130,6 +150,9 @@ struct TripListView: View {
             .sheet(isPresented: $isPresentingSharedTrips) {
                 SharedTripsListView()
             }
+            .sheet(isPresented: $isPresentingArchived) {
+                ArchivedTripsView()
+            }
             .sheet(item: $selectedSharedTrip) { trip in
                 NavigationStack {
                     SharedTripDetailView(trip: trip)
@@ -144,11 +167,13 @@ struct TripListView: View {
     }
 }
 
-/// One row in "My Trips" — either a trip this device owns, or a shared
-/// trip the user has pinned here via "Add to My Trips". The shared case
-/// stays backed live by TripSharingService.sharedTrips; it's never
-/// copied into a local SwiftData Trip.
-private enum TripListEntry: Identifiable {
+/// One row in "My Trips" (or the Archived page) — either a trip this
+/// device owns, or a shared trip the user has pinned here via "Add to My
+/// Trips". The shared case stays backed live by TripSharingService.
+/// sharedTrips; it's never copied into a local SwiftData Trip. Not
+/// private — ArchivedTripsView reuses this alongside TripRow/
+/// SharedTripCard below, rather than duplicating the owned/shared split.
+enum TripListEntry: Identifiable {
     case owned(Trip)
     case shared(RemoteTrip)
 
@@ -165,9 +190,16 @@ private enum TripListEntry: Identifiable {
         case .shared(let trip): return trip.startDate
         }
     }
+
+    var endDate: Date {
+        switch self {
+        case .owned(let trip): return trip.endDate
+        case .shared(let trip): return trip.endDate
+        }
+    }
 }
 
-private struct TripRow: View {
+struct TripRow: View {
     let trip: Trip
 
     var body: some View {
@@ -219,7 +251,7 @@ private struct TripRow: View {
 /// TripRow (dates, days-until badge, packing progress), plus a small
 /// "shared" badge next to the name so it reads as someone else's trip at
 /// a glance. Tapping opens SharedTripDetailView, not TripDetailView.
-private struct SharedTripCard: View {
+struct SharedTripCard: View {
     let trip: RemoteTrip
 
     var body: some View {
@@ -266,6 +298,51 @@ private struct SharedTripCard: View {
         }
         .padding(14)
         .floatingCard()
+    }
+}
+
+/// One month's worth of trips in a sectioned list — used by both
+/// TripListView (active trips, grouped by start date) and
+/// ArchivedTripsView (archived trips, grouped by end date). id is a
+/// locale-independent "year-month" key, purely for List/ForEach identity;
+/// title is what's actually shown ("August 2026").
+struct MonthSection: Identifiable {
+    let id: String
+    let title: String
+    let entries: [TripListEntry]
+}
+
+/// Groups entries by the month/year of whichever date dateKeyPath picks
+/// out, sorted `ascending` (closest month first) or not (most recent
+/// month first). A month with no entries never produces a section at
+/// all — there's nothing to hide, since this only ever groups the
+/// entries actually passed in, never walks a fixed calendar range.
+func monthSections(for entries: [TripListEntry], dateKeyPath: KeyPath<TripListEntry, Date>, ascending: Bool) -> [MonthSection] {
+    struct MonthKey: Hashable {
+        let year: Int
+        let month: Int
+    }
+
+    let calendar = Calendar.current
+    let grouped = Dictionary(grouping: entries) { entry -> MonthKey in
+        let components = calendar.dateComponents([.year, .month], from: entry[keyPath: dateKeyPath])
+        return MonthKey(year: components.year ?? 0, month: components.month ?? 0)
+    }
+
+    let sortedKeys = grouped.keys.sorted { lhs, rhs in
+        let lhsOrder = (lhs.year, lhs.month)
+        let rhsOrder = (rhs.year, rhs.month)
+        return ascending ? lhsOrder < rhsOrder : lhsOrder > rhsOrder
+    }
+
+    return sortedKeys.map { key in
+        let firstOfMonth = calendar.date(from: DateComponents(year: key.year, month: key.month, day: 1)) ?? .now
+        let sectionEntries = (grouped[key] ?? []).sorted { $0[keyPath: dateKeyPath] < $1[keyPath: dateKeyPath] }
+        return MonthSection(
+            id: "\(key.year)-\(key.month)",
+            title: firstOfMonth.formatted(.dateTime.month(.wide).year()),
+            entries: sectionEntries
+        )
     }
 }
 

@@ -25,6 +25,21 @@ final class Trip {
     var travelMethod: TravelMethod = TravelMethod.car
     var notes: String = ""
 
+    /// Whether this trip is currently archived — hidden from My Trips,
+    /// shown on the Archived page instead. Set automatically by
+    /// TripArchiver once the trip is far enough in the past, or manually
+    /// cleared by the user restoring it from the Archived page.
+    var isArchived: Bool = false
+
+    /// Sticky marker: true once this trip has EVER been auto-archived.
+    /// TripArchiver's scan only acts on trips where this is still false —
+    /// without it, restoring an old trip from the Archived page would just
+    /// have it silently re-archived on the very next scan, since its end
+    /// date is still just as far in the past as it ever was. Once a trip
+    /// has been through the archive/restore cycle, it's the user's call
+    /// from then on.
+    var hasBeenAutoArchived: Bool = false
+
     /// Stored as raw strings because SwiftData attributes must be primitive-
     /// codable types; `activities` below bridges this to `Set<Activity>`.
     var activityRawValues: [String] = []
