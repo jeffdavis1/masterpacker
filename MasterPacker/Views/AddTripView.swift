@@ -268,8 +268,15 @@ struct AddTripView: View {
 
 /// Lets the user select multiple saved travelers (tap to toggle, stays
 /// open) or create a new one on the spot, then confirm with Done — unlike
-/// a confirmation dialog, this doesn't close after every tap.
-private struct TravelerChooserView: View {
+/// a confirmation dialog, this doesn't close after every tap. Also used
+/// by EditTripView to add travelers to an existing trip.
+///
+/// "Create a new traveler" is an in-list row (last, below the saved
+/// ones) rather than a toolbar button — reads as one continuous list
+/// action instead of a separate, easy-to-miss affordance up in the nav
+/// bar, and means the empty state's own "create one" button is the only
+/// other place that action needs to exist.
+struct TravelerChooserView: View {
     @Binding var selectedProfiles: [TravelerProfile]
     @Query(sort: \TravelerProfile.name) private var savedProfiles: [TravelerProfile]
     @Environment(\.dismiss) private var dismiss
@@ -279,11 +286,13 @@ private struct TravelerChooserView: View {
         NavigationStack {
             Group {
                 if savedProfiles.isEmpty {
-                    ContentUnavailableView(
-                        "No saved travelers yet",
-                        systemImage: "person.crop.circle.badge.plus",
-                        description: Text("Create one to add them to this trip.")
-                    )
+                    ContentUnavailableView {
+                        Label("No saved travelers yet", systemImage: "person.crop.circle.badge.plus")
+                    } description: {
+                        Text("Create one to add them to this trip.")
+                    } actions: {
+                        Button("Create New Traveler") { isPresentingNewProfile = true }
+                    }
                 } else {
                     List {
                         ForEach(savedProfiles) { profile in
@@ -303,6 +312,12 @@ private struct TravelerChooserView: View {
                             }
                             .listRowBackground(AppTheme.cardSurface)
                         }
+                        Button {
+                            isPresentingNewProfile = true
+                        } label: {
+                            Label("Add New Traveler", systemImage: "plus.circle.fill")
+                        }
+                        .listRowBackground(AppTheme.cardSurface)
                     }
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
@@ -312,13 +327,6 @@ private struct TravelerChooserView: View {
             .navigationTitle("Add Travelers")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isPresentingNewProfile = true
-                    } label: {
-                        Label("Create New Traveler", systemImage: "plus")
-                    }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
@@ -347,7 +355,7 @@ private struct TravelerChooserView: View {
 }
 
 /// Same as TravelerChooserView, but for saved pets.
-private struct PetChooserView: View {
+struct PetChooserView: View {
     @Binding var selectedProfiles: [PetProfile]
     @Query(sort: \PetProfile.name) private var savedProfiles: [PetProfile]
     @Environment(\.dismiss) private var dismiss
@@ -357,11 +365,13 @@ private struct PetChooserView: View {
         NavigationStack {
             Group {
                 if savedProfiles.isEmpty {
-                    ContentUnavailableView(
-                        "No saved pets yet",
-                        systemImage: "pawprint",
-                        description: Text("Create one to add them to this trip.")
-                    )
+                    ContentUnavailableView {
+                        Label("No saved pets yet", systemImage: "pawprint")
+                    } description: {
+                        Text("Create one to add them to this trip.")
+                    } actions: {
+                        Button("Create New Pet") { isPresentingNewProfile = true }
+                    }
                 } else {
                     List {
                         ForEach(savedProfiles) { profile in
@@ -381,6 +391,12 @@ private struct PetChooserView: View {
                             }
                             .listRowBackground(AppTheme.cardSurface)
                         }
+                        Button {
+                            isPresentingNewProfile = true
+                        } label: {
+                            Label("Add New Pet", systemImage: "plus.circle.fill")
+                        }
+                        .listRowBackground(AppTheme.cardSurface)
                     }
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
@@ -390,13 +406,6 @@ private struct PetChooserView: View {
             .navigationTitle("Add Pets")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isPresentingNewProfile = true
-                    } label: {
-                        Label("Create New Pet", systemImage: "plus")
-                    }
-                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
