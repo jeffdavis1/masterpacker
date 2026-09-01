@@ -64,7 +64,7 @@ struct AddTripView: View {
                 Section("Activities") {
                     ActivityChipGrid(selected: $selectedActivities)
                     TextField(
-                        "AI will suggest items for your trip. The more you tell us the better the recommendations will be.",
+                        "Tell us about your trip. AI will make suggestions; the more you tell us the better the suggestions.",
                         text: $notes,
                         axis: .vertical
                     )
