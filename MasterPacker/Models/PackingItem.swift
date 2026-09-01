@@ -223,8 +223,10 @@ enum PackingIcon {
         (["toothbrush", "toothpaste"], .custom("icon-tooth")),
         (["portable battery", "battery pack"], .custom("icon-battery")),
         // The Venus symbol reads clearly as "women's" without needing an
-        // actual garment illustration — no bra icon exists anywhere.
-        (["bra"], .custom("icon-bra")),
+        // actual garment/product illustration — no bra or feminine
+        // hygiene icon exists anywhere checked, and both are clearly the
+        // same "women's" concept.
+        (["bra", "feminine hygiene"], .custom("icon-bra")),
         // A brush, not literally a hairbrush (none exists) — closer to
         // the object than the generic drop icon toiletries otherwise get.
         (["hairbrush"], .custom("icon-hairbrush")),
@@ -233,10 +235,9 @@ enum PackingIcon {
         // Apple's SF Symbols catalog plus four open icon sets (Lucide,
         // Phosphor, Tabler, Material Symbols) — none has a matching icon
         // for: underwear, scarves, deodorant, makeup, razors, shaving
-        // cream, reusable water bottles, wet wipes, and feminine hygiene
-        // products. They fall through to their category's fallback icon
-        // (tshirt/drop/misc/etc.) — not a bug, just the actual ceiling of
-        // icon coverage available without commissioning bespoke
-        // illustration.
+        // cream, and reusable water bottles/wet wipes. They fall through
+        // to their category's fallback icon (tshirt/drop/misc/etc.) —
+        // not a bug, just the actual ceiling of icon coverage available
+        // without commissioning bespoke illustration.
     ]
 }
