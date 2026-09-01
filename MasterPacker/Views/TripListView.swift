@@ -11,6 +11,7 @@ struct TripListView: View {
     @State private var isPresentingTemplates = false
     @State private var isPresentingSharedTrips = false
     @State private var isPresentingArchived = false
+    @State private var isPresentingCategories = false
     @State private var selectedSharedTrip: RemoteTrip?
 
     /// A shared trip only shows up here once the user has explicitly
@@ -123,6 +124,11 @@ struct TripListView: View {
                         } label: {
                             Label("Archived", systemImage: "archivebox")
                         }
+                        Button {
+                            isPresentingCategories = true
+                        } label: {
+                            Label("Manage Categories", systemImage: "tag")
+                        }
                     } label: {
                         Label("More", systemImage: "ellipsis.circle")
                     }
@@ -152,6 +158,9 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingArchived) {
                 ArchivedTripsView()
+            }
+            .sheet(isPresented: $isPresentingCategories) {
+                CategoryListView()
             }
             .sheet(item: $selectedSharedTrip) { trip in
                 NavigationStack {

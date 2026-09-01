@@ -26,6 +26,7 @@
 		1D462128AAAB5F6510333E94 /* PackingItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BD4940700936872CE97FF4 /* PackingItem.swift */; };
 		2144978F6482F0A06329C59E /* AddTemplateItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A73D04C1F3B5CB93FB5EE8B /* AddTemplateItemView.swift */; };
 		270C1C4B808BE5B6D8E4248E /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F9BEEEDCD30513B9DE081C /* ProfileListView.swift */; };
+		037884CA2481A52C9C201426 /* CategoryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C49F50F30C480E85B0895A0 /* CategoryListView.swift */; };
 		27E0E6E98DB070F3BD949356 /* NewProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C095BF080504A31FEA5E /* NewProfileView.swift */; };
 		2E3AA606304229F500360261 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2E3AA605304229F500360261 /* FirebaseAnalytics */; };
 		3EB588070026919A8237C6F1 /* ProfileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */; };
@@ -97,6 +98,7 @@
 		4D001AE4B0CDBA53AB58B0CA /* NewPetProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewPetProfileView.swift; sourceTree = "<group>"; };
 		4D8091FDE99682428E6578CE /* TemplateItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateItem.swift; sourceTree = "<group>"; };
 		50F9BEEEDCD30513B9DE081C /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
+		2C49F50F30C480E85B0895A0 /* CategoryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryListView.swift; sourceTree = "<group>"; };
 		524CB759DF28E21FD1F371FD /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		620FDBCAB506ED42E6E22314 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6B91A9DD3FF6A5590DF8E2EB /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				1EC6629E1BC017F7D1A0506E /* AddItemView.swift */,
 				6B91A9DD3FF6A5590DF8E2EB /* SplashScreenView.swift */,
 				50F9BEEEDCD30513B9DE081C /* ProfileListView.swift */,
+				2C49F50F30C480E85B0895A0 /* CategoryListView.swift */,
 				6E00C095BF080504A31FEA5E /* NewProfileView.swift */,
 				D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */,
 				1FB590586804C729A187E3D3 /* AddProfileItemView.swift */,
@@ -367,6 +370,7 @@
 				5DCF9A4D2223123201C9A438 /* AddItemView.swift in Sources */,
 				EF1E2DA5CEC7F7F359DB3ABA /* SplashScreenView.swift in Sources */,
 				270C1C4B808BE5B6D8E4248E /* ProfileListView.swift in Sources */,
+				037884CA2481A52C9C201426 /* CategoryListView.swift in Sources */,
 				27E0E6E98DB070F3BD949356 /* NewProfileView.swift in Sources */,
 				3EB588070026919A8237C6F1 /* ProfileDetailView.swift in Sources */,
 				4E94D9F7257212ED1C400522 /* AddProfileItemView.swift in Sources */,
