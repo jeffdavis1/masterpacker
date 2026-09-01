@@ -13,6 +13,7 @@ struct CategoryListView: View {
 
     @State private var renamingCategory: CustomCategory?
     @State private var renameText = ""
+    @State private var deletingCategory: CustomCategory?
 
     var body: some View {
         NavigationStack {
@@ -41,7 +42,7 @@ struct CategoryListView: View {
                             .listRowBackground(AppTheme.cardSurface)
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    modelContext.delete(category)
+                                    deletingCategory = category
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -67,6 +68,15 @@ struct CategoryListView: View {
             } message: {
                 Text("Items already using this category move to the new name too.")
             }
+            .alert(
+                "Delete “\(deletingCategory?.name ?? "")”?",
+                isPresented: deleteAlertBinding
+            ) {
+                Button("Cancel", role: .cancel) { deletingCategory = nil }
+                Button("Delete", role: .destructive) { commitDelete() }
+            } message: {
+                Text("Items already using this category move to Miscellaneous instead of staying on a deleted one.")
+            }
         }
     }
 
@@ -74,6 +84,13 @@ struct CategoryListView: View {
         Binding(
             get: { renamingCategory != nil },
             set: { isPresented in if !isPresented { renamingCategory = nil } }
+        )
+    }
+
+    private var deleteAlertBinding: Binding<Bool> {
+        Binding(
+            get: { deletingCategory != nil },
+            set: { isPresented in if !isPresented { deletingCategory = nil } }
         )
     }
 
@@ -99,16 +116,34 @@ struct CategoryListView: View {
 
         let oldName = category.name
         category.name = trimmed
-        renameCategoryUsages(from: oldName, to: trimmed)
+        reassignCategoryUsages(from: oldName, to: trimmed)
     }
 
-    /// Cascades a rename across every item type that can hold a free-form
-    /// category name (PackingItem/TemplateItem/ProfileItem), so nothing
-    /// is left pointing at the old name once the CustomCategory itself
-    /// has moved on — otherwise a trip/bag/profile item would silently
-    /// end up in a now-orphaned group with no matching CustomCategory
-    /// entry, permanently out of sync with the rename.
-    private func renameCategoryUsages(from oldName: String, to newName: String) {
+    /// Reassigns every item still using the deleted category to
+    /// Miscellaneous, then removes the CustomCategory record itself.
+    ///
+    /// Earlier version of this screen only removed the CustomCategory
+    /// record and left existing items' categoryName untouched — looked
+    /// fine at a glance (a "deleted" category doesn't show anywhere
+    /// obviously wrong), but a traveler/pet profile's saved always-pack
+    /// item, or a My Bag template item, could still be holding that exact
+    /// categoryName string. Add that traveler/apply that template to a
+    /// brand new trip, and AddTripView copies categoryName straight
+    /// across — resurrecting the "deleted" category on a trip that never
+    /// existed when it was deleted. Reassigning here, not just at the
+    /// CustomCategory level, is what actually makes delete mean delete.
+    private func commitDelete() {
+        guard let category = deletingCategory else { return }
+        deletingCategory = nil
+        reassignCategoryUsages(from: category.name, to: PackingCategory.misc.rawValue)
+        modelContext.delete(category)
+    }
+
+    /// Sweeps every item type that can hold a free-form category name
+    /// (PackingItem/TemplateItem/ProfileItem) and reassigns any using
+    /// `oldName` to `newName` — shared by both rename (moves usages to
+    /// the new name) and delete (moves usages to Miscellaneous).
+    private func reassignCategoryUsages(from oldName: String, to newName: String) {
         if let items = try? modelContext.fetch(FetchDescriptor<PackingItem>()) {
             for item in items where item.categoryName == oldName {
                 item.categoryName = newName
