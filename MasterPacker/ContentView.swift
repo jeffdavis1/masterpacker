@@ -50,14 +50,19 @@ struct ContentView: View {
         // pattern as justAcceptedTripID above — NotificationManager sets
         // pendingNotificationTripID when the notification is tapped (see
         // its UNUserNotificationCenterDelegate conformance).
+        //
+        // Gated on resolvedNotificationTrip rather than just "is
+        // pendingNotificationTripID non-nil" — a tripID that doesn't
+        // match any trip (stale notification for a since-deleted trip,
+        // bad data, etc.) used to still pop the sheet open with nothing
+        // in it, a blank white sheet instead of just doing nothing.
         .sheet(isPresented: Binding(
-            get: { notificationManager.pendingNotificationTripID != nil },
+            get: { resolvedNotificationTrip != nil },
             set: { isPresented in
                 if !isPresented { notificationManager.pendingNotificationTripID = nil }
             }
         )) {
-            if let tripID = notificationManager.pendingNotificationTripID,
-               let trip = trips.first(where: { $0.id.uuidString == tripID }) {
+            if let trip = resolvedNotificationTrip {
                 NavigationStack {
                     TripDetailView(trip: trip)
                 }
@@ -97,6 +102,15 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    /// The trip a tapped notification's tripID actually resolves to, or
+    /// nil if there isn't one (bad/stale id) — see the notification deep
+    /// link sheet above for why this needs to gate presentation, not just
+    /// get consulted inside it.
+    private var resolvedNotificationTrip: Trip? {
+        guard let tripID = notificationManager.pendingNotificationTripID else { return nil }
+        return trips.first(where: { $0.id.uuidString == tripID })
     }
 }
 
