@@ -84,7 +84,6 @@ enum CommonProfileItems {
         Suggestion(name: "Rain jacket", category: .clothing, group: "Outerwear & Accessories"),
         Suggestion(name: "Umbrella", category: .gear, group: "Outerwear & Accessories"),
         Suggestion(name: "Hat / cap", category: .clothing, group: "Outerwear & Accessories"),
-        Suggestion(name: "Scarf", category: .clothing, group: "Outerwear & Accessories"),
         Suggestion(name: "Sunglasses", category: .gear, group: "Outerwear & Accessories"),
         Suggestion(name: "Belt", category: .clothing, group: "Outerwear & Accessories"),
         Suggestion(name: "Lightweight layers / cardigan", category: .clothing, group: "Outerwear & Accessories"),
@@ -127,7 +126,6 @@ enum CommonProfileItems {
         Suggestion(name: "Credit & debit cards", category: .documents, group: "Documents & Essentials"),
         Suggestion(name: "Health insurance card", category: .documents, group: "Documents & Essentials"),
         Suggestion(name: "Wallet", category: .misc, group: "Documents & Essentials"),
-        Suggestion(name: "Copies of important documents", category: .documents, group: "Documents & Essentials"),
 
         // MARK: Tech & Electronics
         Suggestion(name: "Phone", category: .electronics, group: "Tech & Electronics"),
@@ -141,10 +139,8 @@ enum CommonProfileItems {
 
         // MARK: Bags & Organization
         Suggestion(name: "Day backpack / small bag", category: .gear, group: "Bags & Organization"),
-        Suggestion(name: "Packing cubes", category: .gear, group: "Bags & Organization"),
         Suggestion(name: "Toiletry bag", category: .gear, group: "Bags & Organization"),
         Suggestion(name: "Shoe bag", category: .gear, group: "Bags & Organization"),
-        Suggestion(name: "Compression bags", category: .gear, group: "Bags & Organization"),
 
         // MARK: Miscellaneous
         Suggestion(name: "Notebook & pen", category: .misc, group: "Miscellaneous"),
