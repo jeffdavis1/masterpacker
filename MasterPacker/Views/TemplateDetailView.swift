@@ -16,10 +16,9 @@ struct TemplateDetailView: View {
                     .listRowBackground(Color.clear)
             } else {
                 // Grouped the same way TripDetailView groups a trip's own
-                // items — a custom category gets its own labeled section
-                // here too, rather than sitting undifferentiated in one
-                // flat pile alongside everything else.
-                ForEach(displayGroups) { group in
+                // items — built-in categories only here; a custom one is
+                // deliberately NOT included (see customGroups below).
+                ForEach(groupedItems.builtIn) { group in
                     Section {
                         ForEach(group.items) { item in
                             HStack {
@@ -50,12 +49,40 @@ struct TemplateDetailView: View {
             }
             .listRowBackground(AppTheme.cardSurface)
 
-            if !curatedSuggestions.isEmpty {
+            if !curatedSuggestions.isEmpty || !groupedItems.custom.isEmpty {
                 Section {
                     ForEach(CommonProfileItems.grouped(curatedSuggestions), id: \.group) { bucket in
                         DisclosureGroup(bucket.group) {
                             SuggestionChipGrid(suggestions: bucket.suggestions, selected: [], onToggle: addSuggestion)
                                 .padding(.top, 4)
+                        }
+                        .listRowBackground(AppTheme.cardSurface)
+                    }
+                    // A custom category reads as "one of the regular
+                    // categories" living down here alongside the built-in
+                    // ones, per explicit design decision — same collapsed-
+                    // by-default DisclosureGroup, just showing the items
+                    // already filed there (still deletable) instead of
+                    // curated suggestions to add, since there's nothing
+                    // curated for a name the user just typed in.
+                    ForEach(groupedItems.custom) { group in
+                        DisclosureGroup(group.label) {
+                            ForEach(group.items) { item in
+                                HStack {
+                                    PackingIconView(icon: item.displaySymbol)
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: 20)
+                                    Text(item.name)
+                                    if item.quantity > 1 {
+                                        Spacer()
+                                        Text("×\(item.quantity)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .onDelete { offsets in deleteItems(in: group, at: offsets) }
+                            .padding(.top, 4)
                         }
                         .listRowBackground(AppTheme.cardSurface)
                     }
@@ -95,8 +122,8 @@ struct TemplateDetailView: View {
     }
 
     /// One category's items within the bag — same label/symbol/custom-
-    /// category-gets-its-own-section approach as TripDetailView's own
-    /// displayGroups(for:), applied to TemplateItem instead of PackingItem.
+    /// category approach as TripDetailView's own displayGroups(for:),
+    /// applied to TemplateItem instead of PackingItem.
     private struct CategoryGroup: Identifiable {
         var id: String { label }
         let label: String
@@ -104,11 +131,15 @@ struct TemplateDetailView: View {
         let items: [TemplateItem]
     }
 
-    private var displayGroups: [CategoryGroup] {
+    /// Split rather than one combined list — builtIn renders as its own
+    /// top-of-page sections, custom renders down alongside "Suggested
+    /// items" instead (see body). Computed together since both need the
+    /// same underlying grouping pass.
+    private var groupedItems: (builtIn: [CategoryGroup], custom: [CategoryGroup]) {
         let grouped = Dictionary(grouping: template.items) { item in
             ItemDisplayGroup.group(forName: item.name, categoryName: item.categoryName)
         }
-        let fixedGroups = CommonProfileItems.groupOrder.compactMap { group -> CategoryGroup? in
+        let builtIn = CommonProfileItems.groupOrder.compactMap { group -> CategoryGroup? in
             guard let groupItems = grouped[group], !groupItems.isEmpty else { return nil }
             return CategoryGroup(
                 label: group,
@@ -117,7 +148,7 @@ struct TemplateDetailView: View {
             )
         }
         let fixedGroupNames = Set(CommonProfileItems.groupOrder)
-        let customGroups = grouped.keys
+        let custom = grouped.keys
             .filter { !fixedGroupNames.contains($0) }
             .sorted()
             .map { group in
@@ -127,7 +158,7 @@ struct TemplateDetailView: View {
                     items: grouped[group]!.sorted { $0.name < $1.name }
                 )
             }
-        return fixedGroups + customGroups
+        return (builtIn, custom)
     }
 
     private var curatedSuggestions: [CommonProfileItems.Suggestion] {
