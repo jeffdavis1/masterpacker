@@ -126,14 +126,17 @@ enum PackingIcon {
         (["hiking"], "figure.hiking"),
         (["sunscreen"], "sun.max.fill"),
         (["first aid"], "cross.case.fill"),
-        // Must precede the generic "phone" rule below — "Phone charger"
-        // would otherwise match "phone" first and get the iphone icon
-        // instead of a charging-cable one.
+        // Must precede "phone" below — "Phone charger" would otherwise
+        // match that first and get the iphone icon instead.
         (["phone charger", "charging cable"], "cable.connector"),
         (["power adapter", "plug adapter"], "powerplug.fill"),
+        // Must precede the generic "phone" rule right after it — was
+        // previously listed AFTER "phone", so "Headphones" matched
+        // "phone" (a real substring of "headphones") and got the iphone
+        // icon instead of ever reaching this rule.
+        (["headphone"], "headphones"),
         (["phone"], "iphone"),
         (["camera"], "camera.fill"),
-        (["headphone"], "headphones"),
         (["laptop"], "laptopcomputer"),
         (["credit card", "debit card"], "creditcard.fill"),
         (["wallet"], "wallet.pass.fill"),
@@ -143,20 +146,48 @@ enum PackingIcon {
         (["notebook"], "pencil"),
         (["book", "e-reader"], "book.fill"),
         (["nail clipper"], "scissors"),
-        (["hand sanitizer"], "hands.sparkles.fill"),
+        // hand.raised.fill reads more clearly as "a hand" than the
+        // sparkly variant did.
+        (["hand sanitizer"], "hand.raised.fill"),
+        (["earplug"], "ear.fill"),
+        // Distinct from "eye mask" below despite both being eye-related
+        // — an open eye for vision correction vs. a covered one for
+        // sleep, rather than reusing one icon for two different items.
+        (["contact lens"], "eye.fill"),
+        (["eye mask"], "eye.slash.fill"),
         (["packing cube"], "shippingbox.fill"),
         (["toiletry bag"], "bag.fill"),
-        (["compression bag"], "archivebox.fill"),
+        // A compression bag is a bag, not a storage box — bag.fill reads
+        // more accurately than the box-shaped archivebox.fill did.
+        (["compression bag"], "bag.fill"),
+        // A pillow next to sleeping bag's bed.double.fill — same family,
+        // outline vs. filled, since no dedicated pillow icon exists.
+        (["travel pillow"], "bed.double"),
         // Liquid/gel toiletries — distinct from the plain "drop" outline
         // used as toiletries' category fallback.
         (["shampoo", "conditioner", "body wash", "face wash", "moisturizer", "hair styling", "soap"], "drop.fill"),
         // General over-the-counter medications/supplements — distinct
         // from the toiletries category fallback, without needing a
         // separate icon per symptom (no such icons exist to pick from).
-        (["pain reliever", "antacid", "allergy medication", "flu medicine", "cold medicine", "melatonin", "sleep aid", "digestive aid", "vitamin"], "pills.fill"),
+        // Bare "medication" catches the CommonProfileItems "Medications"
+        // entry itself, which none of the more specific phrases below
+        // it actually matched on their own.
+        (["medication", "pain reliever", "antacid", "flu medicine", "cold medicine", "melatonin", "sleep aid", "digestive aid", "vitamin"], "pills.fill"),
         (["sleeping bag"], "bed.double.fill"),
         (["headlamp", "flashlight"], "flashlight.on.fill"),
         (["tent"], "tent.fill"),
         (["camp stove"], "flame.fill"),
+
+        // The following clothing/toiletry items were flagged as wrong
+        // and reviewed against Apple's actual SF Symbols catalog, but
+        // have no matching icon at all — SF Symbols simply doesn't
+        // include most individual clothing or personal-care items
+        // (pants, shorts, underwear, socks, bras, sweaters, hats,
+        // scarves, belts, toothbrushes, hairbrushes, makeup, razors,
+        // water bottles, wipes, and more all have no symbol). They fall
+        // through to their category's fallback icon (tshirt/drop/
+        // backpack/etc.) — not a bug, just the ceiling of what this
+        // icon set can represent without a custom (non-SF-Symbols)
+        // asset library.
     ]
 }
