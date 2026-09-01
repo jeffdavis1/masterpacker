@@ -101,16 +101,20 @@ struct TemplateDetailView: View {
             // Renaming the bag moved to a swipe action on TemplateListView's
             // row — that freed this leading slot, so Add now gets top
             // billing instead of hiding as a list row underneath the
-            // (usually longer) built-in item sections. Two separate
-            // ToolbarItems rather than one ToolbarItemGroup — grouped
-            // items render fused together as a single pill, which read
-            // as one confusing control instead of two distinct actions.
+            // (usually longer) built-in item sections.
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     isAddingItem = true
                 } label: {
                     Image(systemName: "plus.circle.fill")
                 }
+            }
+            // Two adjacent ToolbarItems still fuse into one glass pill
+            // under the Liquid Glass toolbar style — a plain second
+            // ToolbarItem isn't enough to split them, this spacer is the
+            // actual break between the two capsules.
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .primaryAction)
             }
             ToolbarItem(placement: .primaryAction) {
                 Button(pendingSuggestions.isEmpty ? "Save" : "Save (\(pendingSuggestions.count))") {
