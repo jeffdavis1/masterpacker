@@ -63,8 +63,12 @@ struct AddTripView: View {
 
                 Section("Activities") {
                     ActivityChipGrid(selected: $selectedActivities)
-                    TextField("Notes (e.g. \"visiting grandma\")", text: $notes, axis: .vertical)
-                        .lineLimit(2...4)
+                    TextField(
+                        "AI will suggest items for your trip. The more you tell us the better the recommendations will be.",
+                        text: $notes,
+                        axis: .vertical
+                    )
+                    .lineLimit(2...4)
                 }
 
                 Section {
@@ -465,7 +469,8 @@ struct QuickDateField: View {
     }
 }
 
-private struct ActivityChipGrid: View {
+/// Shared by AddTripView and EditTripView.
+struct ActivityChipGrid: View {
     @Binding var selected: Set<Activity>
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]

@@ -7,6 +7,7 @@ import SwiftUI
 struct SharedTripDetailView: View {
     let tripID: String
     @ObservedObject private var service = TripSharingService.shared
+    @Environment(\.dismiss) private var dismiss
 
     init(trip: RemoteTrip) {
         tripID = trip.id
@@ -87,6 +88,23 @@ struct SharedTripDetailView: View {
         }
         .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        // Every presenter of this view (ContentView's share-accept deep
+        // link, TripListView/SharedTripsListView/ArchivedTripsView's row
+        // taps) shows it as a sheet — previously the only way out was a
+        // swipe-down gesture. Applied at this outer level (not inside the
+        // `if let trip` branch above) so it's there even on the "Trip No
+        // Longer Available" fallback, which had no dismiss affordance at
+        // all before this.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     private struct CategoryGroup: Identifiable {

@@ -1,10 +1,12 @@
 import SwiftUI
 import SwiftData
 
-/// Edits a trip's basic details (name, destination, dates, travel method)
-/// in place. Uses local @State pre-filled from the trip and commits on
-/// Save, so Cancel discards edits cleanly rather than mutating the trip
-/// live as you type.
+/// Edits a trip's fields in place — name, destination, dates, travel
+/// method, activities, and notes, the same set AddTripView collects at
+/// creation (travelers/pets are the one exception; managing who's on the
+/// trip is its own separate piece of work). Uses local @State pre-filled
+/// from the trip and commits on Save, so Cancel discards edits cleanly
+/// rather than mutating the trip live as you type.
 struct EditTripView: View {
     let trip: Trip
     /// Called after the trip is actually deleted — lets the presenter
@@ -22,6 +24,8 @@ struct EditTripView: View {
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var travelMethod: TravelMethod
+    @State private var selectedActivities: Set<Activity>
+    @State private var notes: String
     @State private var isPresentingDeleteConfirmation = false
 
     init(trip: Trip, onDelete: @escaping () -> Void = {}) {
@@ -32,6 +36,8 @@ struct EditTripView: View {
         _startDate = State(initialValue: trip.startDate)
         _endDate = State(initialValue: trip.endDate)
         _travelMethod = State(initialValue: trip.travelMethod)
+        _selectedActivities = State(initialValue: trip.activities)
+        _notes = State(initialValue: trip.notes)
     }
 
     var body: some View {
@@ -47,6 +53,24 @@ struct EditTripView: View {
                             Label(method.rawValue, systemImage: method.symbol).tag(method)
                         }
                     }
+                }
+
+                // Field parity with AddTripView — activities and notes
+                // used to only be settable at trip creation, with no way
+                // to change them afterward short of deleting and
+                // recreating the whole trip. Traveler/pet membership is
+                // deliberately NOT added here — that's its own separate,
+                // larger piece of work (re-triggering always-pack items,
+                // resyncing shared trips, etc.), tracked on its own
+                // roadmap card.
+                Section("Activities") {
+                    ActivityChipGrid(selected: $selectedActivities)
+                    TextField(
+                        "AI will suggest items for your trip. The more you tell us the better the recommendations will be.",
+                        text: $notes,
+                        axis: .vertical
+                    )
+                    .lineLimit(2...4)
                 }
 
                 Section {
@@ -106,6 +130,8 @@ struct EditTripView: View {
         trip.startDate = startDate
         trip.endDate = endDate
         trip.travelMethod = travelMethod
+        trip.activities = selectedActivities
+        trip.notes = notes
 
         // A new destination invalidates the weather-change baseline — it
         // was tracking the old place, so the next check would otherwise
