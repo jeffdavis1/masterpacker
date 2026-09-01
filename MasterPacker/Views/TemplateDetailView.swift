@@ -7,6 +7,14 @@ struct TemplateDetailView: View {
     @State private var isAddingItem = false
     @State private var isEditingTemplate = false
 
+    /// Suggestion chips tapped but not yet saved — tapping toggles the
+    /// chip's color rather than immediately inserting into the bag, so
+    /// the grid doesn't reflow (and the item the user was about to tap
+    /// next doesn't shift) while browsing suggestions. Committed all at
+    /// once via the Save button — same pattern as ProfileDetailView's
+    /// Always Pack chips.
+    @State private var pendingSuggestions: Set<CommonProfileItems.Suggestion> = []
+
     var body: some View {
         List {
             if template.items.isEmpty {
@@ -64,7 +72,7 @@ struct TemplateDetailView: View {
                 Section {
                     ForEach(CommonProfileItems.grouped(curatedSuggestions), id: \.group) { bucket in
                         DisclosureGroup(bucket.group) {
-                            SuggestionChipGrid(suggestions: bucket.suggestions, selected: [], onToggle: addSuggestion)
+                            SuggestionChipGrid(suggestions: bucket.suggestions, selected: pendingSuggestions, onToggle: togglePending)
                                 .padding(.top, 4)
                         }
                         .listRowBackground(AppTheme.cardSurface)
@@ -106,7 +114,7 @@ struct TemplateDetailView: View {
                 } header: {
                     Text("Suggested items")
                 } footer: {
-                    Text("Tap a category to see items, then tap to add.")
+                    Text("Tap a category to see items, then tap to select, then Save.")
                 }
             }
         }
@@ -122,6 +130,12 @@ struct TemplateDetailView: View {
                 } label: {
                     Label("Edit Bag", systemImage: "pencil")
                 }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button(pendingSuggestions.isEmpty ? "Save" : "Save (\(pendingSuggestions.count))") {
+                    commitPendingSuggestions()
+                }
+                .disabled(pendingSuggestions.isEmpty)
             }
         }
         .sheet(isPresented: $isAddingItem) {
@@ -183,12 +197,20 @@ struct TemplateDetailView: View {
         return CommonProfileItems.all.filter { !existingNames.contains($0.name.lowercased()) }
     }
 
-    /// Tapping a suggestion adds it straight to the bag — no separate
-    /// pending/Save step, since once added it naturally drops out of
-    /// curatedSuggestions above and the chip just disappears.
-    private func addSuggestion(_ suggestion: CommonProfileItems.Suggestion) {
-        let item = TemplateItem(name: suggestion.name, categoryName: suggestion.category.rawValue, template: template)
-        modelContext.insert(item)
+    private func togglePending(_ suggestion: CommonProfileItems.Suggestion) {
+        if pendingSuggestions.contains(suggestion) {
+            pendingSuggestions.remove(suggestion)
+        } else {
+            pendingSuggestions.insert(suggestion)
+        }
+    }
+
+    private func commitPendingSuggestions() {
+        for suggestion in pendingSuggestions {
+            let item = TemplateItem(name: suggestion.name, categoryName: suggestion.category.rawValue, template: template)
+            modelContext.insert(item)
+        }
+        pendingSuggestions.removeAll()
     }
 }
 
