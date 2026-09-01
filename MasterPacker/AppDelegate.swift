@@ -61,4 +61,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             completionHandler(.newData)
         }
     }
+
+    /// APNs hands back this device's push token once registerForRemoteNotifications()
+    /// above succeeds — printed here (hex-encoded, the format Apple's push
+    /// tools/console expect) purely so it's visible in Xcode's console for manual
+    /// testing. Nothing in the app itself needs to hold onto this: CloudKit's own
+    /// silent-push subscription picks up the registered token automatically,
+    /// with no explicit handoff required.
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
+        print("📱 APNs device token: \(tokenHex)")
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("⚠️ Failed to register for remote notifications: \(error)")
+    }
 }
