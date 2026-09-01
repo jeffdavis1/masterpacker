@@ -251,6 +251,16 @@ struct TripDetailView: View {
             }
         }
         .navigationTitle(trip.name)
+        .onAppear {
+            // Console-only — trip.id isn't shown anywhere in the UI, and
+            // this is the identifier notification deep links match against
+            // (see NotificationManager's userInfo["tripID"] / ContentView's
+            // pendingNotificationTripID), so printing it here is the
+            // simplest way to grab one for manually testing that deep link
+            // (e.g. via `xcrun simctl push`) without waiting for a real
+            // reminder to fire.
+            print("🔗 \(trip.name) trip ID: \(trip.id.uuidString)")
+        }
         .refreshable {
             // Pulls a participant's edits (item packed state) into this
             // trip's local SwiftData copy, if it's shared — the owner had
