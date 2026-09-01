@@ -29,10 +29,11 @@ struct TripDetailView: View {
     }
 
     /// One category's items within a traveler/pet/shared/luggage group —
-    /// label/symbol rather than a raw PackingCategory, since a human
+    /// label/symbol rather than a raw category name, since a human
     /// section uses ItemDisplayGroup's 9 browsing groups (the same ones
-    /// the Suggested Items picker uses) while a pet's section still uses
-    /// PackingCategory directly. See categoryGroups/displayGroups below.
+    /// the Suggested Items picker uses) while a pet's section still
+    /// groups directly by categoryName. See categoryGroups/displayGroups
+    /// below.
     private struct CategoryGroup: Identifiable {
         var id: String { label }
         let label: String
@@ -117,16 +118,17 @@ struct TripDetailView: View {
     /// would just relabel that same single header "Miscellaneous" — a
     /// worse name for the same one-group outcome, since none of the 9
     /// human-oriented browsing groups actually fit a leash or a bag of
-    /// kibble.
+    /// kibble. A pet item filed under a custom category still gets its
+    /// own section here too, named after whatever the user typed.
     private func categoryGroups(for items: [PackingItem]) -> [CategoryGroup] {
-        let grouped = Dictionary(grouping: items, by: \.category)
+        let grouped = Dictionary(grouping: items, by: \.categoryName)
         return grouped.keys
-            .sorted { $0.rawValue < $1.rawValue }
-            .map { category in
+            .sorted()
+            .map { categoryName in
                 CategoryGroup(
-                    label: category.rawValue.uppercased(),
-                    symbol: category.symbol,
-                    items: grouped[category]!.sorted { $0.name < $1.name }
+                    label: categoryName.uppercased(),
+                    symbol: PackingCategory(rawValue: categoryName)?.symbol ?? "tag",
+                    items: grouped[categoryName]!.sorted { $0.name < $1.name }
                 )
             }
     }
@@ -135,12 +137,15 @@ struct TripDetailView: View {
     /// 9 browsing groups (Clothing Essentials, Footwear, …), the same
     /// taxonomy the Suggested Items picker uses, so the trip's own
     /// packing list reads with the same categories rather than the
-    /// coarser 7-value PackingCategory.
+    /// coarser 7-value PackingCategory. A custom category becomes its own
+    /// section too (see ItemDisplayGroup.group) — appended after the 9
+    /// fixed ones, alphabetically, since there's no fixed position for
+    /// something the user just typed in.
     private func displayGroups(for items: [PackingItem]) -> [CategoryGroup] {
         let grouped = Dictionary(grouping: items) { item in
-            ItemDisplayGroup.group(forName: item.name, category: item.category)
+            ItemDisplayGroup.group(forName: item.name, categoryName: item.categoryName)
         }
-        return CommonProfileItems.groupOrder.compactMap { group in
+        let fixedGroups = CommonProfileItems.groupOrder.compactMap { group -> CategoryGroup? in
             guard let groupItems = grouped[group], !groupItems.isEmpty else { return nil }
             return CategoryGroup(
                 label: group.uppercased(),
@@ -148,6 +153,18 @@ struct TripDetailView: View {
                 items: groupItems.sorted { $0.name < $1.name }
             )
         }
+        let fixedGroupNames = Set(CommonProfileItems.groupOrder)
+        let customGroups = grouped.keys
+            .filter { !fixedGroupNames.contains($0) }
+            .sorted()
+            .map { group in
+                CategoryGroup(
+                    label: group.uppercased(),
+                    symbol: ItemDisplayGroup.symbol(for: group),
+                    items: grouped[group]!.sorted { $0.name < $1.name }
+                )
+            }
+        return fixedGroups + customGroups
     }
 
     /// Watched so the "still unpacked" reminder's item count stays
@@ -387,7 +404,7 @@ struct TripDetailView: View {
 
             let item = PackingItem(
                 name: generated.name,
-                category: generated.category,
+                categoryName: generated.category.rawValue,
                 quantity: generated.quantity,
                 trip: trip,
                 traveler: traveler,

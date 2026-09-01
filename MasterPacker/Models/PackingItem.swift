@@ -10,7 +10,13 @@ final class PackingItem {
     /// for why persistentModelID isn't safe to use for this.
     var id: UUID = UUID()
     var name: String = ""
-    var category: PackingCategory = PackingCategory.misc
+    /// Free-form — either one of PackingCategory's rawValues, or a
+    /// user-created custom category name (CustomCategory), same
+    /// categoryName-string pattern ProfileItem already uses. Resolve back
+    /// to a built-in case with `PackingCategory(rawValue: categoryName)`
+    /// when one is specifically needed (an icon fallback, a "is this
+    /// actually custom" check); nil from that means it's genuinely custom.
+    var categoryName: String = PackingCategory.misc.rawValue
     var quantity: Int = 1
     var isPacked: Bool = false
     var trip: Trip?
@@ -26,7 +32,7 @@ final class PackingItem {
 
     init(
         name: String,
-        category: PackingCategory,
+        categoryName: String,
         quantity: Int = 1,
         isPacked: Bool = false,
         trip: Trip? = nil,
@@ -35,7 +41,7 @@ final class PackingItem {
         luggage: Luggage? = nil
     ) {
         self.name = name
-        self.category = category
+        self.categoryName = categoryName
         self.quantity = quantity
         self.isPacked = isPacked
         self.trip = trip
@@ -53,9 +59,11 @@ final class PackingItem {
 
     /// A more specific icon based on the item's name when one matches
     /// (e.g. "Hiking boots" gets a shoe icon, not the generic clothing
-    /// icon), falling back to the category's icon otherwise.
+    /// icon), falling back to the category's icon (or, for a custom
+    /// category, a generic tag icon — mirrors ProfileItem.displaySymbol).
     var displaySymbol: IconRef {
-        PackingIcon.iconRef(forName: name, fallback: category.symbol)
+        let categorySymbol = PackingCategory(rawValue: categoryName)?.symbol ?? "tag"
+        return PackingIcon.iconRef(forName: name, fallback: categorySymbol)
     }
 }
 

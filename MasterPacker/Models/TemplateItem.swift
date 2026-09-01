@@ -1,25 +1,25 @@
 import Foundation
 import SwiftData
 
-/// A single item saved to a `PackingTemplate`. Uses the closed
-/// `PackingCategory` enum (not the free-form categoryName string
-/// `ProfileItem` uses) — custom categories were scoped to traveler/pet
-/// profile items only.
+/// A single item saved to a `PackingTemplate`. Uses the same free-form
+/// categoryName-string pattern as ProfileItem and PackingItem, so a
+/// custom category created anywhere in the app is usable here too.
 @Model
 final class TemplateItem {
     var name: String = ""
-    var category: PackingCategory = PackingCategory.misc
+    var categoryName: String = PackingCategory.misc.rawValue
     var quantity: Int = 1
     var template: PackingTemplate?
 
-    init(name: String, category: PackingCategory, quantity: Int = 1, template: PackingTemplate? = nil) {
+    init(name: String, categoryName: String, quantity: Int = 1, template: PackingTemplate? = nil) {
         self.name = name
-        self.category = category
+        self.categoryName = categoryName
         self.quantity = quantity
         self.template = template
     }
 
     var displaySymbol: IconRef {
-        PackingIcon.iconRef(forName: name, fallback: category.symbol)
+        let categorySymbol = PackingCategory(rawValue: categoryName)?.symbol ?? "tag"
+        return PackingIcon.iconRef(forName: name, fallback: categorySymbol)
     }
 }

@@ -565,7 +565,7 @@ final class TripSharingService: ObservableObject {
                 RemoteItem(
                     recordID: record.recordID,
                     name: record[SharedItemField.name] as? String ?? "",
-                    category: PackingCategory(rawValue: record[SharedItemField.category] as? String ?? "") ?? .misc,
+                    categoryName: record[SharedItemField.category] as? String ?? PackingCategory.misc.rawValue,
                     quantity: record[SharedItemField.quantity] as? Int ?? 1,
                     isPacked: (record[SharedItemField.isPacked] as? Int ?? 0) != 0,
                     travelerRecordName: record[SharedItemField.travelerRecordName] as? String,

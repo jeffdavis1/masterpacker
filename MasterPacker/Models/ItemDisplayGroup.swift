@@ -19,7 +19,19 @@ import Foundation
 /// leash or a bag of kibble, and "Miscellaneous" would just be a worse
 /// name for the same one-header outcome. See TripDetailView.
 enum ItemDisplayGroup {
-    static func group(forName name: String, category: PackingCategory) -> String {
+    /// `categoryName` is the item's free-form category — either a built-in
+    /// PackingCategory's rawValue, or a user-created custom category. A
+    /// custom one always becomes its own group, verbatim, rather than
+    /// running through the keyword/curated matching below: the user
+    /// explicitly filed the item there, so second-guessing that with
+    /// "hiking boots" -> Footwear keyword logic would defeat the point of
+    /// picking a custom bucket in the first place. Built-in categories are
+    /// entirely unaffected — same curated -> keyword -> default fallback
+    /// as before.
+    static func group(forName name: String, categoryName: String) -> String {
+        guard let category = PackingCategory(rawValue: categoryName) else {
+            return categoryName
+        }
         let lowercased = name.lowercased()
         if let curated = curatedLookup[lowercased] {
             return curated
@@ -33,10 +45,11 @@ enum ItemDisplayGroup {
     /// A representative icon for a group's header row — reuses the
     /// matching PackingCategory's own icon wherever one group maps
     /// cleanly onto one category, so these stay visually consistent with
-    /// the rest of the app's iconography rather than inventing a
-    /// parallel set.
+    /// the rest of the app's iconography rather than inventing a parallel
+    /// set. Falls back to a generic tag icon for a custom category's own
+    /// group, matching CustomCategory's own icon convention elsewhere.
     static func symbol(for group: String) -> String {
-        symbols[group] ?? PackingCategory.misc.symbol
+        symbols[group] ?? "tag"
     }
 
     private static let symbols: [String: String] = [

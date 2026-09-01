@@ -195,7 +195,7 @@ struct RemoteItem: Identifiable, Codable {
     let recordID: CKRecord.ID
     var id: String { recordID.recordName }
     var name: String
-    var category: PackingCategory
+    var categoryName: String
     var quantity: Int
     var isPacked: Bool
     /// Record names (not references) of the owning RemoteTraveler/RemotePet,
@@ -205,13 +205,14 @@ struct RemoteItem: Identifiable, Codable {
     var petRecordName: String?
 
     var displaySymbol: IconRef {
-        PackingIcon.iconRef(forName: name, fallback: category.symbol)
+        let categorySymbol = PackingCategory(rawValue: categoryName)?.symbol ?? "tag"
+        return PackingIcon.iconRef(forName: name, fallback: categorySymbol)
     }
 
     init(
         recordID: CKRecord.ID,
         name: String,
-        category: PackingCategory,
+        categoryName: String,
         quantity: Int,
         isPacked: Bool,
         travelerRecordName: String?,
@@ -219,7 +220,7 @@ struct RemoteItem: Identifiable, Codable {
     ) {
         self.recordID = recordID
         self.name = name
-        self.category = category
+        self.categoryName = categoryName
         self.quantity = quantity
         self.isPacked = isPacked
         self.travelerRecordName = travelerRecordName
@@ -241,7 +242,10 @@ struct RemoteItem: Identifiable, Codable {
             )
         )
         name = try container.decode(String.self, forKey: .name)
-        category = try container.decode(PackingCategory.self, forKey: .category)
+        // Decodes as a plain string now rather than PackingCategory —
+        // still reads a cache written by an older build fine, since that
+        // was always PackingCategory's own rawValue string underneath.
+        categoryName = try container.decode(String.self, forKey: .category)
         quantity = try container.decode(Int.self, forKey: .quantity)
         isPacked = try container.decode(Bool.self, forKey: .isPacked)
         travelerRecordName = try container.decodeIfPresent(String.self, forKey: .travelerRecordName)
@@ -254,7 +258,7 @@ struct RemoteItem: Identifiable, Codable {
         try container.encode(recordID.zoneID.zoneName, forKey: .zoneName)
         try container.encode(recordID.zoneID.ownerName, forKey: .ownerName)
         try container.encode(name, forKey: .name)
-        try container.encode(category, forKey: .category)
+        try container.encode(categoryName, forKey: .category)
         try container.encode(quantity, forKey: .quantity)
         try container.encode(isPacked, forKey: .isPacked)
         try container.encodeIfPresent(travelerRecordName, forKey: .travelerRecordName)

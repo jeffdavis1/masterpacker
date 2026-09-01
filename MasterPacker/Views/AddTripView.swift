@@ -197,7 +197,7 @@ struct AddTripView: View {
                 }
                 let item = PackingItem(
                     name: generated.name,
-                    category: generated.category,
+                    categoryName: generated.category.rawValue,
                     quantity: generated.quantity,
                     trip: trip,
                     traveler: traveler,
@@ -212,12 +212,9 @@ struct AddTripView: View {
         // whole point of saving them is that you always want them.
         for (profile, traveler) in zip(selectedProfiles, travelerModels) {
             for profileItem in profile.alwaysItems {
-                // Profile items can use a custom category (text-only, no
-                // matching PackingCategory case); fall back to .misc for
-                // the actual trip item in that case.
                 let item = PackingItem(
                     name: profileItem.name,
-                    category: PackingCategory(rawValue: profileItem.categoryName) ?? .misc,
+                    categoryName: profileItem.categoryName,
                     quantity: profileItem.quantity,
                     trip: trip,
                     traveler: traveler
@@ -230,7 +227,7 @@ struct AddTripView: View {
             for profileItem in profile.alwaysItems {
                 let item = PackingItem(
                     name: profileItem.name,
-                    category: PackingCategory(rawValue: profileItem.categoryName) ?? .misc,
+                    categoryName: profileItem.categoryName,
                     quantity: profileItem.quantity,
                     trip: trip,
                     pet: pet
@@ -245,7 +242,7 @@ struct AddTripView: View {
             for templateItem in template.items {
                 let item = PackingItem(
                     name: templateItem.name,
-                    category: templateItem.category,
+                    categoryName: templateItem.categoryName,
                     quantity: templateItem.quantity,
                     trip: trip
                 )

@@ -39,7 +39,7 @@ struct SharedTripDetailView: View {
                     ForEach(sections(for: trip), id: \.label) { section in
                         Section(section.label) {
                             ForEach(section.categoryGroups) { group in
-                                SharedCategoryHeaderRow(category: group.category)
+                                SharedCategoryHeaderRow(label: group.label, symbol: group.symbol)
                                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 2, trailing: 16))
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
@@ -108,23 +108,30 @@ struct SharedTripDetailView: View {
     }
 
     private struct CategoryGroup: Identifiable {
-        var id: String { category.rawValue }
-        let category: PackingCategory
+        var id: String { label }
+        let label: String
+        let symbol: String
         let items: [RemoteItem]
     }
 
-    /// Same shared/traveler/pet-then-category grouping as TripDetailView,
-    /// applied to RemoteItem instead of PackingItem.
+    /// Same shared/traveler/pet-then-category grouping as TripDetailView's
+    /// own categoryGroups(for:), applied to RemoteItem instead of
+    /// PackingItem — a custom category still gets its own section, named
+    /// after whatever the owner typed.
     private func sections(for trip: RemoteTrip) -> [(label: String, categoryGroups: [CategoryGroup])] {
         var result: [(String, [CategoryGroup])] = []
 
         func addSection(_ label: String, _ items: [RemoteItem]) {
             guard !items.isEmpty else { return }
-            let grouped = Dictionary(grouping: items, by: \.category)
+            let grouped = Dictionary(grouping: items, by: \.categoryName)
             let groups = grouped.keys
-                .sorted { $0.rawValue < $1.rawValue }
-                .map { category in
-                    CategoryGroup(category: category, items: grouped[category]!.sorted { $0.name < $1.name })
+                .sorted()
+                .map { categoryName in
+                    CategoryGroup(
+                        label: categoryName.uppercased(),
+                        symbol: PackingCategory(rawValue: categoryName)?.symbol ?? "tag",
+                        items: grouped[categoryName]!.sorted { $0.name < $1.name }
+                    )
                 }
             result.append((label, groups))
         }
@@ -171,10 +178,11 @@ private struct SharedTripProgressHeader: View {
 }
 
 private struct SharedCategoryHeaderRow: View {
-    let category: PackingCategory
+    let label: String
+    let symbol: String
 
     var body: some View {
-        Label(category.rawValue.uppercased(), systemImage: category.symbol)
+        Label(label, systemImage: symbol)
             .font(.system(.caption2, design: .rounded, weight: .bold))
             .tracking(0.4)
             .foregroundStyle(.secondary.opacity(0.8))

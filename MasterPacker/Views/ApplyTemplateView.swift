@@ -62,7 +62,7 @@ struct ApplyTemplateView: View {
         for templateItem in template.items {
             let item = PackingItem(
                 name: templateItem.name,
-                category: templateItem.category,
+                categoryName: templateItem.categoryName,
                 quantity: templateItem.quantity,
                 trip: trip
             )

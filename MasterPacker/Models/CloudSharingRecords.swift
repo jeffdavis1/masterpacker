@@ -91,7 +91,7 @@ enum SharedRecordBuilder {
     ) -> CKRecord {
         let record = CKRecord(recordType: SharedRecordType.item, recordID: recordID)
         record[SharedItemField.name] = item.name
-        record[SharedItemField.category] = item.category.rawValue
+        record[SharedItemField.category] = item.categoryName
         record[SharedItemField.quantity] = item.quantity
         // CKRecord fields don't support Bool directly — stored as 0/1.
         record[SharedItemField.isPacked] = item.isPacked ? 1 : 0

@@ -132,20 +132,30 @@ struct PetProfileDetailView: View {
     private var frequentSuggestions: [CommonProfileItems.Suggestion] {
         let curatedNames = Set(CommonPetItems.all.map { $0.name.lowercased() })
 
-        var tripsByName: [String: (category: PackingCategory, trips: Set<PersistentIdentifier>)] = [:]
+        var tripsByName: [String: (categoryName: String, trips: Set<PersistentIdentifier>)] = [:]
         for item in allPackingItems {
             guard item.pet != nil, let trip = item.trip else { continue }
             let key = item.name.trimmingCharacters(in: .whitespaces).lowercased()
             guard !key.isEmpty else { continue }
-            tripsByName[key, default: (item.category, [])].trips.insert(trip.persistentModelID)
+            tripsByName[key, default: (item.categoryName, [])].trips.insert(trip.persistentModelID)
         }
 
+        // A frequent item logged under a custom trip category still needs
+        // an actual PackingCategory for the suggestion chip it becomes
+        // here (Suggestion doesn't carry free-form categories the way
+        // ProfileItem/PackingItem do) — .misc is a reasonable landing spot
+        // for that edge case rather than losing the suggestion entirely.
         return tripsByName
             .filter { $0.value.trips.count >= 2 }
             .filter { !existingNames.contains($0.key) && !curatedNames.contains($0.key) }
             .sorted { $0.value.trips.count > $1.value.trips.count }
             .prefix(8)
-            .map { CommonProfileItems.Suggestion(name: $0.key.capitalized, category: $0.value.category) }
+            .map {
+                CommonProfileItems.Suggestion(
+                    name: $0.key.capitalized,
+                    category: PackingCategory(rawValue: $0.value.categoryName) ?? .misc
+                )
+            }
     }
 }
 

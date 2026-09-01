@@ -81,7 +81,7 @@ struct TemplateDetailView: View {
     /// pending/Save step, since once added it naturally drops out of
     /// curatedSuggestions above and the chip just disappears.
     private func addSuggestion(_ suggestion: CommonProfileItems.Suggestion) {
-        let item = TemplateItem(name: suggestion.name, category: suggestion.category, template: template)
+        let item = TemplateItem(name: suggestion.name, categoryName: suggestion.category.rawValue, template: template)
         modelContext.insert(item)
     }
 }
