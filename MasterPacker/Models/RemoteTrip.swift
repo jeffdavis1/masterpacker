@@ -204,8 +204,8 @@ struct RemoteItem: Identifiable, Codable {
     var travelerRecordName: String?
     var petRecordName: String?
 
-    var displaySymbol: String {
-        PackingIcon.symbol(forName: name, fallback: category.symbol)
+    var displaySymbol: IconRef {
+        PackingIcon.iconRef(forName: name, fallback: category.symbol)
     }
 
     init(

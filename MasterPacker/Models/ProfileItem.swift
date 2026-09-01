@@ -32,8 +32,8 @@ final class ProfileItem {
         self.petProfile = petProfile
     }
 
-    var displaySymbol: String {
+    var displaySymbol: IconRef {
         let categorySymbol = PackingCategory(rawValue: categoryName)?.symbol ?? "tag"
-        return PackingIcon.symbol(forName: name, fallback: categorySymbol)
+        return PackingIcon.iconRef(forName: name, fallback: categorySymbol)
     }
 }

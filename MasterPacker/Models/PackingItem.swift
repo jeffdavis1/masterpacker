@@ -54,8 +54,8 @@ final class PackingItem {
     /// A more specific icon based on the item's name when one matches
     /// (e.g. "Hiking boots" gets a shoe icon, not the generic clothing
     /// icon), falling back to the category's icon otherwise.
-    var displaySymbol: String {
-        PackingIcon.symbol(forName: name, fallback: category.symbol)
+    var displaySymbol: IconRef {
+        PackingIcon.iconRef(forName: name, fallback: category.symbol)
     }
 }
 
@@ -83,6 +83,16 @@ enum PackingCategory: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// Where an item's icon actually comes from. Most items get a system SF
+/// Symbol; a handful that Apple's catalog has no glyph for at all (pants,
+/// socks, a toothbrush, …) instead point at a small bundled icon set in
+/// Assets.xcassets (see `PackingIconView`, the only place that needs to
+/// know the two cases render differently).
+enum IconRef: Equatable {
+    case system(String)
+    case custom(String)
+}
+
 /// Picks a more specific icon based on an item's name when one matches
 /// (e.g. "Hiking boots" -> a shoe icon), falling back to a category's
 /// default icon otherwise. A modest, high-confidence keyword set — not
@@ -90,104 +100,132 @@ enum PackingCategory: String, Codable, CaseIterable, Identifiable {
 /// for clothing items in particular. Shared by `PackingItem` and
 /// `ProfileItem`.
 enum PackingIcon {
-    static func symbol(forName name: String, fallback: String) -> String {
+    static func iconRef(forName name: String, fallback: String) -> IconRef {
         let lowercased = name.lowercased()
         for rule in rules where rule.keywords.contains(where: lowercased.contains) {
-            return rule.symbol
+            return rule.icon
+        }
+        return .system(fallback)
+    }
+
+    /// Legacy String-only accessor for the few call sites (a `Label`'s
+    /// `systemImage:`, mainly) that can't render a bundled asset — a
+    /// `.custom` match degrades to the plain category fallback there
+    /// rather than showing nothing.
+    static func symbol(forName name: String, fallback: String) -> String {
+        if case .system(let symbolName) = iconRef(forName: name, fallback: fallback) {
+            return symbolName
         }
         return fallback
     }
 
-    private static let rules: [(keywords: [String], symbol: String)] = [
-        (["boot", "shoe", "sneaker", "sandal", "flip-flop", "flip flop"], "shoe.2.fill"),
-        (["swimsuit", "swim trunks", "bikini", "swim"], "figure.pool.swim"),
-        (["sunglasses", "goggles"], "eyeglasses"),
+    private static let rules: [(keywords: [String], icon: IconRef)] = [
+        (["boot", "shoe", "sneaker", "sandal", "flip-flop", "flip flop"], .system("shoe.2.fill")),
+        (["swimsuit", "swim trunks", "bikini", "swim"], .system("figure.pool.swim")),
+        (["sunglasses", "goggles"], .system("eyeglasses")),
         // "dress shoes" deliberately isn't listed below (unreachable —
         // "shoe" above already catches it first, correctly, since dress
         // shoes are still shoes).
-        (["suit", "formal", "business attire", "tie"], "briefcase.fill"),
+        (["suit", "formal", "business attire", "tie"], .system("briefcase.fill")),
         // Sleepwear used to fall through to the generic tshirt icon,
         // indistinguishable from actual shirts — the most-cited example
         // of the icon-accuracy problem this rework fixes.
-        (["pajama", "pyjama", "sleepwear", "nightgown"], "moon.zzz.fill"),
+        (["pajama", "pyjama", "sleepwear", "nightgown"], .system("moon.zzz.fill")),
         // Split from umbrella below — a rain jacket and an umbrella are
         // different objects and shouldn't share an icon just because
         // they're both rain gear.
-        (["rain jacket", "raincoat", "waterproof"], "cloud.rain.fill"),
-        (["umbrella"], "umbrella.fill"),
+        (["rain jacket", "raincoat", "waterproof"], .system("cloud.rain.fill")),
+        (["umbrella"], .system("umbrella.fill")),
         // Cold-weather gear — snow jacket/pants matched here before, but
         // "warm jacket" (the actual generated weather-item name) and
         // "gloves" fell through to generic tshirt; grouped together
         // since they're all the same kind of gear.
-        (["thermal", "snow jacket", "snow pants", "warm jacket", "warm hat", "glove"], "snowflake"),
+        (["thermal", "snow jacket", "snow pants", "warm jacket", "warm hat", "glove"], .system("snowflake")),
         // "hiking boots" isn't listed here (unreachable — "boot" above
         // already catches it first, and shoe.2.fill is a fine icon for
         // them too); "hiking" alone still catches other hiking gear.
-        (["hiking"], "figure.hiking"),
-        (["sunscreen"], "sun.max.fill"),
-        (["first aid"], "cross.case.fill"),
+        (["hiking"], .system("figure.hiking")),
+        (["sunscreen"], .system("sun.max.fill")),
+        (["first aid"], .system("cross.case.fill")),
         // Must precede "phone" below — "Phone charger" would otherwise
         // match that first and get the iphone icon instead.
-        (["phone charger", "charging cable"], "cable.connector"),
-        (["power adapter", "plug adapter"], "powerplug.fill"),
+        (["phone charger", "charging cable"], .system("cable.connector")),
+        (["power adapter", "plug adapter"], .system("powerplug.fill")),
         // Must precede the generic "phone" rule right after it — was
         // previously listed AFTER "phone", so "Headphones" matched
         // "phone" (a real substring of "headphones") and got the iphone
         // icon instead of ever reaching this rule.
-        (["headphone"], "headphones"),
-        (["phone"], "iphone"),
-        (["camera"], "camera.fill"),
-        (["laptop"], "laptopcomputer"),
-        (["credit card", "debit card"], "creditcard.fill"),
-        (["wallet"], "wallet.pass.fill"),
-        (["flight", "boarding pass"], "airplane"),
+        (["headphone"], .system("headphones")),
+        (["phone"], .system("iphone")),
+        (["camera"], .system("camera.fill")),
+        (["laptop"], .system("laptopcomputer")),
+        (["credit card", "debit card"], .system("creditcard.fill")),
+        (["wallet"], .system("wallet.pass.fill")),
+        (["flight", "boarding pass"], .system("airplane")),
         // Must precede "book"/"e-reader" below — "Notebook" contains
         // "book" as a substring and would otherwise match that instead.
-        (["notebook"], "pencil"),
-        (["book", "e-reader"], "book.fill"),
-        (["nail clipper"], "scissors"),
+        (["notebook"], .system("pencil")),
+        (["book", "e-reader"], .system("book.fill")),
+        (["nail clipper"], .system("scissors")),
         // hand.raised.fill reads more clearly as "a hand" than the
         // sparkly variant did.
-        (["hand sanitizer"], "hand.raised.fill"),
-        (["earplug"], "ear.fill"),
+        (["hand sanitizer"], .system("hand.raised.fill")),
+        (["earplug"], .system("ear.fill")),
         // Distinct from "eye mask" below despite both being eye-related
         // — an open eye for vision correction vs. a covered one for
         // sleep, rather than reusing one icon for two different items.
-        (["contact lens"], "eye.fill"),
-        (["eye mask"], "eye.slash.fill"),
-        (["packing cube"], "shippingbox.fill"),
-        (["toiletry bag"], "bag.fill"),
+        (["contact lens"], .system("eye.fill")),
+        (["eye mask"], .system("eye.slash.fill")),
+        (["packing cube"], .system("shippingbox.fill")),
+        (["toiletry bag"], .system("bag.fill")),
         // A compression bag is a bag, not a storage box — bag.fill reads
         // more accurately than the box-shaped archivebox.fill did.
-        (["compression bag"], "bag.fill"),
+        (["compression bag"], .system("bag.fill")),
         // A pillow next to sleeping bag's bed.double.fill — same family,
         // outline vs. filled, since no dedicated pillow icon exists.
-        (["travel pillow"], "bed.double"),
+        (["travel pillow"], .system("bed.double")),
         // Liquid/gel toiletries — distinct from the plain "drop" outline
         // used as toiletries' category fallback.
-        (["shampoo", "conditioner", "body wash", "face wash", "moisturizer", "hair styling", "soap"], "drop.fill"),
+        (["shampoo", "conditioner", "body wash", "face wash", "moisturizer", "hair styling", "soap"], .system("drop.fill")),
         // General over-the-counter medications/supplements — distinct
         // from the toiletries category fallback, without needing a
         // separate icon per symptom (no such icons exist to pick from).
         // Bare "medication" catches the CommonProfileItems "Medications"
         // entry itself, which none of the more specific phrases below
         // it actually matched on their own.
-        (["medication", "pain reliever", "antacid", "flu medicine", "cold medicine", "melatonin", "sleep aid", "digestive aid", "vitamin"], "pills.fill"),
-        (["sleeping bag"], "bed.double.fill"),
-        (["headlamp", "flashlight"], "flashlight.on.fill"),
-        (["tent"], "tent.fill"),
-        (["camp stove"], "flame.fill"),
+        (["medication", "pain reliever", "antacid", "flu medicine", "cold medicine", "melatonin", "sleep aid", "digestive aid", "vitamin"], .system("pills.fill")),
+        (["sleeping bag"], .system("bed.double.fill")),
+        (["headlamp", "flashlight"], .system("flashlight.on.fill")),
+        (["tent"], .system("tent.fill")),
+        (["camp stove"], .system("flame.fill")),
+
+        // ---- Custom icon set (Assets.xcassets/icon-*) ----
+        // SF Symbols has no glyph at all for these — verified against
+        // Apple's actual catalog — so these instead point at small
+        // MIT-licensed icons (Phosphor Icons) bundled as template-
+        // tintable assets. See IconRef/PackingIconView.
+        (["pants", "jeans", "trousers", "shorts"], .custom("icon-pants")),
+        (["sock"], .custom("icon-socks")),
+        // A hoodie is the closest bundled shape to "sweater" and
+        // "cardigan" — no dedicated icon exists for either, and this
+        // reads far better than the generic tshirt fallback.
+        (["sweater", "cardigan", "light jacket", "lightweight layers", "hoodie"], .custom("icon-hoodie")),
+        (["hat", "beanie"], .custom("icon-cap")),
+        (["belt"], .custom("icon-belt")),
+        // Shared between the two — no dedicated toothbrush icon exists
+        // anywhere in the icon sets checked, but a tooth reads clearly
+        // as "oral care" for both.
+        (["toothbrush", "toothpaste"], .custom("icon-tooth")),
+        (["portable battery", "battery pack"], .custom("icon-battery")),
 
         // The following clothing/toiletry items were flagged as wrong
-        // and reviewed against Apple's actual SF Symbols catalog, but
-        // have no matching icon at all — SF Symbols simply doesn't
-        // include most individual clothing or personal-care items
-        // (pants, shorts, underwear, socks, bras, sweaters, hats,
-        // scarves, belts, toothbrushes, hairbrushes, makeup, razors,
-        // water bottles, wipes, and more all have no symbol). They fall
-        // through to their category's fallback icon (tshirt/drop/
-        // backpack/etc.) — not a bug, just the ceiling of what this
-        // icon set can represent without a custom (non-SF-Symbols)
-        // asset library.
+        // and checked against Apple's SF Symbols catalog, Lucide, and
+        // Phosphor Icons — none of the three has a matching icon at all
+        // for: underwear, bras, scarves, deodorant, hairbrushes, makeup,
+        // razors, shaving cream, reusable water bottles, wet wipes, and
+        // feminine hygiene products. They fall through to their
+        // category's fallback icon (tshirt/drop/misc/etc.) — not a bug,
+        // just the actual ceiling of icon coverage available without
+        // commissioning bespoke illustration.
     ]
 }

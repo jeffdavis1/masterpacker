@@ -24,7 +24,7 @@ struct ProfileDetailView: View {
                 } else {
                     ForEach(profile.alwaysItems) { item in
                         HStack {
-                            Image(systemName: item.displaySymbol)
+                            PackingIconView(icon: item.displaySymbol)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 20)
                             Text(item.name)
@@ -172,7 +172,11 @@ struct SuggestionChipGrid: View {
                     Label {
                         Text(suggestion.name)
                     } icon: {
-                        Image(systemName: isSelected ? "checkmark.circle.fill" : PackingIcon.symbol(forName: suggestion.name, fallback: suggestion.category.symbol))
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                        } else {
+                            PackingIconView(icon: PackingIcon.iconRef(forName: suggestion.name, fallback: suggestion.category.symbol))
+                        }
                     }
                         .font(.caption)
                         .lineLimit(1)

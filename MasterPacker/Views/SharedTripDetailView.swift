@@ -175,7 +175,7 @@ private struct SharedItemRow: View {
             HStack {
                 Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
-                Image(systemName: item.displaySymbol)
+                PackingIconView(icon: item.displaySymbol)
                     .foregroundStyle(.secondary)
                     .frame(width: 20)
                 Text(item.name)

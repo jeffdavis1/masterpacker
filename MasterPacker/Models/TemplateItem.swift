@@ -19,7 +19,7 @@ final class TemplateItem {
         self.template = template
     }
 
-    var displaySymbol: String {
-        PackingIcon.symbol(forName: name, fallback: category.symbol)
+    var displaySymbol: IconRef {
+        PackingIcon.iconRef(forName: name, fallback: category.symbol)
     }
 }

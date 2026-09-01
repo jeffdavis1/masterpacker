@@ -206,3 +206,23 @@ struct ProgressBar: View {
         .frame(height: height)
     }
 }
+
+/// Renders an `IconRef` — a system SF Symbol or one of the bundled
+/// `icon-*` template assets (Assets.xcassets) for the handful of items SF
+/// Symbols has no glyph for at all (pants, socks, a toothbrush, …). Both
+/// cases come out as a tintable glyph that responds to `.foregroundStyle`
+/// exactly like a plain `Image(systemName:)` would, so this is a drop-in
+/// replacement anywhere `PackingItem`/`ProfileItem`/`TemplateItem`/
+/// `RemoteItem`'s `displaySymbol` is shown.
+struct PackingIconView: View {
+    let icon: IconRef
+
+    var body: some View {
+        switch icon {
+        case .system(let name):
+            Image(systemName: name)
+        case .custom(let name):
+            Image(name).renderingMode(.template)
+        }
+    }
+}

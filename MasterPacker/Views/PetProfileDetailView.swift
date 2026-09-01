@@ -32,7 +32,7 @@ struct PetProfileDetailView: View {
                 } else {
                     ForEach(profile.alwaysItems) { item in
                         HStack {
-                            Image(systemName: item.displaySymbol)
+                            PackingIconView(icon: item.displaySymbol)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 20)
                             Text(item.name)

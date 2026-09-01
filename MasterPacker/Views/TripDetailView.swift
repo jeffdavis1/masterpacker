@@ -674,7 +674,7 @@ private struct ItemRow: View {
                 HStack {
                     Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
-                    Image(systemName: item.displaySymbol)
+                    PackingIconView(icon: item.displaySymbol)
                         .foregroundStyle(.secondary)
                         .frame(width: 20)
                     Text(item.name)
@@ -703,7 +703,7 @@ private struct ItemRow: View {
             HStack {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? AppTheme.brand : .secondary)
-                Image(systemName: item.displaySymbol)
+                PackingIconView(icon: item.displaySymbol)
                     .foregroundStyle(.secondary)
                     .frame(width: 20)
                 Text(item.name)
