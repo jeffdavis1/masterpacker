@@ -126,7 +126,10 @@ enum PackingIcon {
         // "dress shoes" deliberately isn't listed below (unreachable —
         // "shoe" above already catches it first, correctly, since dress
         // shoes are still shoes).
-        (["suit", "formal", "business attire", "tie"], .system("briefcase.fill")),
+        (["suit", "business attire"], .system("briefcase.fill")),
+        // Split from the business-attire briefcase above — "Formal /
+        // nicer outfit" reads better as an actual tie than a work bag.
+        (["formal", "tie"], .custom("icon-tie")),
         // Sleepwear used to fall through to the generic tshirt icon,
         // indistinguishable from actual shirts — the most-cited example
         // of the icon-accuracy problem this rework fixes.
@@ -202,14 +205,16 @@ enum PackingIcon {
         // ---- Custom icon set (Assets.xcassets/icon-*) ----
         // SF Symbols has no glyph at all for these — verified against
         // Apple's actual catalog — so these instead point at small
-        // MIT-licensed icons (Phosphor Icons) bundled as template-
-        // tintable assets. See IconRef/PackingIconView.
+        // permissively-licensed icons bundled as template-tintable
+        // assets (Phosphor Icons, Tabler Icons, and Google's Material
+        // Symbols — all MIT/Apache-2.0). See IconRef/PackingIconView.
         (["pants", "jeans", "trousers", "shorts"], .custom("icon-pants")),
         (["sock"], .custom("icon-socks")),
-        // A hoodie is the closest bundled shape to "sweater" and
-        // "cardigan" — no dedicated icon exists for either, and this
-        // reads far better than the generic tshirt fallback.
-        (["sweater", "cardigan", "light jacket", "lightweight layers", "hoodie"], .custom("icon-hoodie")),
+        // A hoodie is the closest bundled shape to "sweater", "cardigan",
+        // and a long-sleeve shirt — no dedicated icon exists for any of
+        // the three, and this reads far better than the generic tshirt
+        // fallback.
+        (["sweater", "cardigan", "light jacket", "lightweight layers", "hoodie", "long sleeve", "long-sleeve"], .custom("icon-hoodie")),
         (["hat", "beanie"], .custom("icon-cap")),
         (["belt"], .custom("icon-belt")),
         // Shared between the two — no dedicated toothbrush icon exists
@@ -217,15 +222,21 @@ enum PackingIcon {
         // as "oral care" for both.
         (["toothbrush", "toothpaste"], .custom("icon-tooth")),
         (["portable battery", "battery pack"], .custom("icon-battery")),
+        // The Venus symbol reads clearly as "women's" without needing an
+        // actual garment illustration — no bra icon exists anywhere.
+        (["bra"], .custom("icon-bra")),
+        // A brush, not literally a hairbrush (none exists) — closer to
+        // the object than the generic drop icon toiletries otherwise get.
+        (["hairbrush"], .custom("icon-hairbrush")),
 
-        // The following clothing/toiletry items were flagged as wrong
-        // and checked against Apple's SF Symbols catalog, Lucide, and
-        // Phosphor Icons — none of the three has a matching icon at all
-        // for: underwear, bras, scarves, deodorant, hairbrushes, makeup,
-        // razors, shaving cream, reusable water bottles, wet wipes, and
-        // feminine hygiene products. They fall through to their
-        // category's fallback icon (tshirt/drop/misc/etc.) — not a bug,
-        // just the actual ceiling of icon coverage available without
-        // commissioning bespoke illustration.
+        // The following clothing/toiletry items were checked against
+        // Apple's SF Symbols catalog plus four open icon sets (Lucide,
+        // Phosphor, Tabler, Material Symbols) — none has a matching icon
+        // for: underwear, scarves, deodorant, makeup, razors, shaving
+        // cream, reusable water bottles, wet wipes, and feminine hygiene
+        // products. They fall through to their category's fallback icon
+        // (tshirt/drop/misc/etc.) — not a bug, just the actual ceiling of
+        // icon coverage available without commissioning bespoke
+        // illustration.
     ]
 }
