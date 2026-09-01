@@ -29,29 +29,31 @@ struct TemplateDetailView: View {
                 ForEach(groupedItems.builtIn) { group in
                     Section {
                         ForEach(group.items) { item in
-                            // A tap removes the item outright — no
-                            // confirmation, matching the "curate my bag
-                            // without too much effort" ask. Swipe-to-
-                            // delete below still works too; the two
-                            // gestures don't conflict.
-                            Button {
-                                modelContext.delete(item)
-                            } label: {
-                                HStack {
-                                    PackingIconView(icon: item.displaySymbol)
+                            HStack {
+                                PackingIconView(icon: item.displaySymbol)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                Text(item.name)
+                                Spacer()
+                                if item.quantity > 1 {
+                                    Text("×\(item.quantity)")
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
-                                        .frame(width: 20)
-                                    Text(item.name)
-                                        .foregroundStyle(.primary)
-                                    if item.quantity > 1 {
-                                        Spacer()
-                                        Text("×\(item.quantity)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
                                 }
+                                // A dedicated trash target — tapping
+                                // anywhere else on the row does nothing,
+                                // so browsing the list can't accidentally
+                                // remove an item the way a whole-row tap
+                                // did.
+                                Button {
+                                    modelContext.delete(item)
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.leading, 8)
                             }
-                            .buttonStyle(.plain)
                             .listRowBackground(AppTheme.cardSurface)
                         }
                         .onDelete { offsets in deleteItems(in: group, at: offsets) }
@@ -87,24 +89,26 @@ struct TemplateDetailView: View {
                     ForEach(groupedItems.custom) { group in
                         DisclosureGroup(group.label) {
                             ForEach(group.items) { item in
-                                Button {
-                                    modelContext.delete(item)
-                                } label: {
-                                    HStack {
-                                        PackingIconView(icon: item.displaySymbol)
+                                HStack {
+                                    PackingIconView(icon: item.displaySymbol)
+                                        .foregroundStyle(.secondary)
+                                        .frame(width: 20)
+                                    Text(item.name)
+                                    Spacer()
+                                    if item.quantity > 1 {
+                                        Text("×\(item.quantity)")
+                                            .font(.caption)
                                             .foregroundStyle(.secondary)
-                                            .frame(width: 20)
-                                        Text(item.name)
-                                            .foregroundStyle(.primary)
-                                        if item.quantity > 1 {
-                                            Spacer()
-                                            Text("×\(item.quantity)")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
                                     }
+                                    Button {
+                                        modelContext.delete(item)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                            .foregroundStyle(.red)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.leading, 8)
                                 }
-                                .buttonStyle(.plain)
                             }
                             .onDelete { offsets in deleteItems(in: group, at: offsets) }
                             .padding(.top, 4)
