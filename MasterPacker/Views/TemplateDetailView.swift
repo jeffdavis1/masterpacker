@@ -5,7 +5,6 @@ struct TemplateDetailView: View {
     @Bindable var template: PackingTemplate
     @Environment(\.modelContext) private var modelContext
     @State private var isAddingItem = false
-    @State private var isEditingTemplate = false
 
     /// Suggestion chips tapped but not yet saved — tapping toggles the
     /// chip's color rather than immediately inserting into the bag, so
@@ -18,7 +17,7 @@ struct TemplateDetailView: View {
     var body: some View {
         List {
             if template.items.isEmpty {
-                Text("No items yet — add some below.")
+                Text("No items yet — browse suggestions below, or tap + to add one.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .listRowBackground(Color.clear)
@@ -62,13 +61,6 @@ struct TemplateDetailView: View {
                     }
                 }
             }
-
-            Button {
-                isAddingItem = true
-            } label: {
-                Label("Add item", systemImage: "plus")
-            }
-            .listRowBackground(AppTheme.cardSurface)
 
             if !curatedSuggestions.isEmpty || !groupedItems.custom.isEmpty {
                 Section {
@@ -128,14 +120,16 @@ struct TemplateDetailView: View {
         .navigationTitle(template.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            // Renaming the bag moved to a swipe action on TemplateListView's
+            // row — that freed this leading slot, so Add now gets top
+            // billing instead of hiding as a list row underneath the
+            // (usually longer) built-in item sections.
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button {
-                    isEditingTemplate = true
+                    isAddingItem = true
                 } label: {
-                    Label("Edit Bag", systemImage: "pencil")
+                    Image(systemName: "plus.circle.fill")
                 }
-            }
-            ToolbarItem(placement: .primaryAction) {
                 Button(pendingSuggestions.isEmpty ? "Save" : "Save (\(pendingSuggestions.count))") {
                     commitPendingSuggestions()
                 }
@@ -144,9 +138,6 @@ struct TemplateDetailView: View {
         }
         .sheet(isPresented: $isAddingItem) {
             AddTemplateItemView(template: template)
-        }
-        .sheet(isPresented: $isEditingTemplate) {
-            EditTemplateView(template: template)
         }
     }
 

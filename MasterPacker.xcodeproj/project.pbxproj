@@ -48,7 +48,6 @@
 		88E88992E27516D6A7C022A5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985E7E070372A8B4F20FFB1F /* SceneDelegate.swift */; };
 		8DACB12FE50E19E79B416F2D /* TravelMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9ACBE4821F48738058145AA /* TravelMethod.swift */; };
 		9B974E889E657B859E33DBE9 /* NewTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD705FC539CD70F839E29A9F /* NewTemplateView.swift */; };
-		EF0958AE7FBE23AACE5BE85A /* EditTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D47B58A799A01FEF3A5F46FA /* EditTemplateView.swift */; };
 		9C0F515867C01D356DFF11FB /* PetProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8DA39032798EA5840786A2 /* PetProfile.swift */; };
 		A77AD8C55C88BABD5A7E3170 /* ProfileItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB011B79A7DDDAC9A34160A1 /* ProfileItem.swift */; };
 		B05B13C8451BD170CDDB486C /* SharedTripsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7277AD1098A99EF4F33AA3A9 /* SharedTripsListView.swift */; };
@@ -113,7 +112,6 @@
 		985E7E070372A8B4F20FFB1F /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A8D0EB73282CD02E9223975F /* TripMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripMapView.swift; sourceTree = "<group>"; };
 		AD705FC539CD70F839E29A9F /* NewTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTemplateView.swift; sourceTree = "<group>"; };
-		D47B58A799A01FEF3A5F46FA /* EditTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTemplateView.swift; sourceTree = "<group>"; };
 		B9ACBE4821F48738058145AA /* TravelMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelMethod.swift; sourceTree = "<group>"; };
 		BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSharingControllerView.swift; sourceTree = "<group>"; };
 		BEFDDFB630D169341E45AC3B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -161,7 +159,6 @@
 				A8D0EB73282CD02E9223975F /* TripMapView.swift */,
 				0F1B318C863261EEAA8FE43F /* TemplateListView.swift */,
 				AD705FC539CD70F839E29A9F /* NewTemplateView.swift */,
-				D47B58A799A01FEF3A5F46FA /* EditTemplateView.swift */,
 				46D830DBACCE563157885776 /* TemplateDetailView.swift */,
 				7A73D04C1F3B5CB93FB5EE8B /* AddTemplateItemView.swift */,
 				CD0A2D05BA45A651B248B1B9 /* ApplyTemplateView.swift */,
@@ -379,7 +376,6 @@
 				1C4EC2BCC4A986FB625A1F2C /* TripMapView.swift in Sources */,
 				B61F6CB5D3F07F8C47D2A2EF /* TemplateListView.swift in Sources */,
 				9B974E889E657B859E33DBE9 /* NewTemplateView.swift in Sources */,
-				EF0958AE7FBE23AACE5BE85A /* EditTemplateView.swift in Sources */,
 				FCF43C565C58A4D0428D5175 /* TemplateDetailView.swift in Sources */,
 				2144978F6482F0A06329C59E /* AddTemplateItemView.swift in Sources */,
 				B6EA257E00C0827C7C66762A /* ApplyTemplateView.swift in Sources */,

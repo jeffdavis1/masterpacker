@@ -10,6 +10,9 @@ struct TemplateListView: View {
     @State private var isPresentingAddTemplate = false
     @State private var path = NavigationPath()
 
+    @State private var renamingTemplate: PackingTemplate?
+    @State private var renameText = ""
+
     var body: some View {
         NavigationStack(path: $path) {
             Group {
@@ -28,8 +31,24 @@ struct TemplateListView: View {
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    modelContext.delete(template)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                // Renaming lives here instead of a pencil
+                                // button on the bag's own detail screen —
+                                // keeps that screen's toolbar free for
+                                // Add/Save, which get reached far more often.
+                                Button {
+                                    beginRename(template)
+                                } label: {
+                                    Label("Rename", systemImage: "pencil")
+                                }
+                                .tint(AppTheme.brand)
+                            }
                         }
-                        .onDelete(perform: deleteTemplates)
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -60,13 +79,32 @@ struct TemplateListView: View {
                     path.append(template)
                 }
             }
+            .alert("Rename Bag", isPresented: renameAlertBinding) {
+                TextField("Bag name", text: $renameText)
+                Button("Cancel", role: .cancel) { renamingTemplate = nil }
+                Button("Save") { commitRename() }
+            }
         }
     }
 
-    private func deleteTemplates(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(templates[index])
-        }
+    private var renameAlertBinding: Binding<Bool> {
+        Binding(
+            get: { renamingTemplate != nil },
+            set: { isPresented in if !isPresented { renamingTemplate = nil } }
+        )
+    }
+
+    private func beginRename(_ template: PackingTemplate) {
+        renameText = template.name
+        renamingTemplate = template
+    }
+
+    private func commitRename() {
+        guard let template = renamingTemplate else { return }
+        renamingTemplate = nil
+        let trimmed = renameText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        template.name = trimmed
     }
 }
 
