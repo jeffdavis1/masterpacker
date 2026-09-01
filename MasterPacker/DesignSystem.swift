@@ -214,6 +214,15 @@ struct ProgressBar: View {
 /// exactly like a plain `Image(systemName:)` would, so this is a drop-in
 /// replacement anywhere `PackingItem`/`ProfileItem`/`TemplateItem`/
 /// `RemoteItem`'s `displaySymbol` is shown.
+///
+/// SF Symbols auto-size to the ambient font, but a plain asset-catalog
+/// image doesn't — without `.resizable()` it draws at the vector's native
+/// size, which is enormous next to a 17pt SF Symbol (this is exactly what
+/// made the first cut of these render as a giant pair of pants covering
+/// the row). `.resizable().aspectRatio(.fit)` plus a fixed square frame
+/// makes the custom case self-contained at roughly the same visual weight
+/// as the system case, regardless of whatever frame/font the call site
+/// applies on top.
 struct PackingIconView: View {
     let icon: IconRef
 
@@ -222,7 +231,11 @@ struct PackingIconView: View {
         case .system(let name):
             Image(systemName: name)
         case .custom(let name):
-            Image(name).renderingMode(.template)
+            Image(name)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 18, height: 18)
         }
     }
 }
