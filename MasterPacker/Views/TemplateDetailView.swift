@@ -5,6 +5,7 @@ struct TemplateDetailView: View {
     @Bindable var template: PackingTemplate
     @Environment(\.modelContext) private var modelContext
     @State private var isAddingItem = false
+    @State private var isEditingTemplate = false
 
     var body: some View {
         List {
@@ -70,8 +71,20 @@ struct TemplateDetailView: View {
         .background(AppTheme.screenGradient.ignoresSafeArea())
         .navigationTitle(template.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    isEditingTemplate = true
+                } label: {
+                    Label("Edit Bag", systemImage: "pencil")
+                }
+            }
+        }
         .sheet(isPresented: $isAddingItem) {
             AddTemplateItemView(template: template)
+        }
+        .sheet(isPresented: $isEditingTemplate) {
+            EditTemplateView(template: template)
         }
     }
 
