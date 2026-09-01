@@ -14,22 +14,32 @@ struct TemplateDetailView: View {
                     .foregroundStyle(.secondary)
                     .listRowBackground(Color.clear)
             } else {
-                ForEach(template.items) { item in
-                    HStack {
-                        PackingIconView(icon: item.displaySymbol)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20)
-                        Text(item.name)
-                        if item.quantity > 1 {
-                            Spacer()
-                            Text("×\(item.quantity)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                // Grouped the same way TripDetailView groups a trip's own
+                // items — a custom category gets its own labeled section
+                // here too, rather than sitting undifferentiated in one
+                // flat pile alongside everything else.
+                ForEach(displayGroups) { group in
+                    Section {
+                        ForEach(group.items) { item in
+                            HStack {
+                                PackingIconView(icon: item.displaySymbol)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                Text(item.name)
+                                if item.quantity > 1 {
+                                    Spacer()
+                                    Text("×\(item.quantity)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .listRowBackground(AppTheme.cardSurface)
                         }
+                        .onDelete { offsets in deleteItems(in: group, at: offsets) }
+                    } header: {
+                        Label(group.label, systemImage: group.symbol)
                     }
-                    .listRowBackground(AppTheme.cardSurface)
                 }
-                .onDelete(perform: deleteItems)
             }
 
             Button {
@@ -65,11 +75,46 @@ struct TemplateDetailView: View {
         }
     }
 
-    private func deleteItems(at offsets: IndexSet) {
-        let items = template.items
+    private func deleteItems(in group: CategoryGroup, at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(items[index])
+            modelContext.delete(group.items[index])
         }
+    }
+
+    /// One category's items within the bag — same label/symbol/custom-
+    /// category-gets-its-own-section approach as TripDetailView's own
+    /// displayGroups(for:), applied to TemplateItem instead of PackingItem.
+    private struct CategoryGroup: Identifiable {
+        var id: String { label }
+        let label: String
+        let symbol: String
+        let items: [TemplateItem]
+    }
+
+    private var displayGroups: [CategoryGroup] {
+        let grouped = Dictionary(grouping: template.items) { item in
+            ItemDisplayGroup.group(forName: item.name, categoryName: item.categoryName)
+        }
+        let fixedGroups = CommonProfileItems.groupOrder.compactMap { group -> CategoryGroup? in
+            guard let groupItems = grouped[group], !groupItems.isEmpty else { return nil }
+            return CategoryGroup(
+                label: group,
+                symbol: ItemDisplayGroup.symbol(for: group),
+                items: groupItems.sorted { $0.name < $1.name }
+            )
+        }
+        let fixedGroupNames = Set(CommonProfileItems.groupOrder)
+        let customGroups = grouped.keys
+            .filter { !fixedGroupNames.contains($0) }
+            .sorted()
+            .map { group in
+                CategoryGroup(
+                    label: group,
+                    symbol: ItemDisplayGroup.symbol(for: group),
+                    items: grouped[group]!.sorted { $0.name < $1.name }
+                )
+            }
+        return fixedGroups + customGroups
     }
 
     private var curatedSuggestions: [CommonProfileItems.Suggestion] {
