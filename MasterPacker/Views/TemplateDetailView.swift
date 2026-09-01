@@ -22,64 +22,15 @@ struct TemplateDetailView: View {
                     .foregroundStyle(.secondary)
                     .listRowBackground(Color.clear)
             } else {
-                // Grouped the same way TripDetailView groups a trip's own
-                // items — built-in categories only here; a custom one is
-                // deliberately NOT included (see customGroups below).
-                ForEach(groupedItems.builtIn) { group in
-                    Section {
-                        ForEach(group.items) { item in
-                            HStack {
-                                PackingIconView(icon: item.displaySymbol)
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 20)
-                                Text(item.name)
-                                Spacer()
-                                if item.quantity > 1 {
-                                    Text("×\(item.quantity)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                // A dedicated trash target — tapping
-                                // anywhere else on the row does nothing,
-                                // so browsing the list can't accidentally
-                                // remove an item the way a whole-row tap
-                                // did.
-                                Button {
-                                    modelContext.delete(item)
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.plain)
-                                .padding(.leading, 8)
-                            }
-                            .listRowBackground(AppTheme.cardSurface)
-                        }
-                        .onDelete { offsets in deleteItems(in: group, at: offsets) }
-                    } header: {
-                        Label(group.label, systemImage: group.symbol)
-                    }
-                }
-            }
-
-            if !curatedSuggestions.isEmpty || !groupedItems.custom.isEmpty {
+                // Every category the bag actually has items in — built-in
+                // ones first in their usual order, then any custom ones
+                // alphabetically — each collapsed behind its own
+                // DisclosureGroup with a count, so the page reads as two
+                // clear chunks: what's already in the bag, and what's
+                // just being suggested (below).
                 Section {
-                    ForEach(CommonProfileItems.grouped(curatedSuggestions), id: \.group) { bucket in
-                        DisclosureGroup(bucket.group) {
-                            SuggestionChipGrid(suggestions: bucket.suggestions, selected: pendingSuggestions, onToggle: togglePending)
-                                .padding(.top, 4)
-                        }
-                        .listRowBackground(AppTheme.cardSurface)
-                    }
-                    // A custom category reads as "one of the regular
-                    // categories" living down here alongside the built-in
-                    // ones, per explicit design decision — same collapsed-
-                    // by-default DisclosureGroup, just showing the items
-                    // already filed there (still deletable) instead of
-                    // curated suggestions to add, since there's nothing
-                    // curated for a name the user just typed in.
-                    ForEach(groupedItems.custom) { group in
-                        DisclosureGroup(group.label) {
+                    ForEach(allItemGroups) { group in
+                        DisclosureGroup {
                             ForEach(group.items) { item in
                                 HStack {
                                     PackingIconView(icon: item.displaySymbol)
@@ -92,6 +43,11 @@ struct TemplateDetailView: View {
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
+                                    // A dedicated trash target — tapping
+                                    // anywhere else on the row does
+                                    // nothing, so browsing the list can't
+                                    // accidentally remove an item the way
+                                    // a whole-row tap did.
                                     Button {
                                         modelContext.delete(item)
                                     } label: {
@@ -104,6 +60,28 @@ struct TemplateDetailView: View {
                             }
                             .onDelete { offsets in deleteItems(in: group, at: offsets) }
                             .padding(.top, 4)
+                        } label: {
+                            HStack {
+                                Label(group.label, systemImage: group.symbol)
+                                Spacer()
+                                Text("\(group.items.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .listRowBackground(AppTheme.cardSurface)
+                    }
+                } header: {
+                    Text("My Items")
+                }
+            }
+
+            if !curatedSuggestions.isEmpty {
+                Section {
+                    ForEach(CommonProfileItems.grouped(curatedSuggestions), id: \.group) { bucket in
+                        DisclosureGroup(bucket.group) {
+                            SuggestionChipGrid(suggestions: bucket.suggestions, selected: pendingSuggestions, onToggle: togglePending)
+                                .padding(.top, 4)
                         }
                         .listRowBackground(AppTheme.cardSurface)
                     }
@@ -123,13 +101,18 @@ struct TemplateDetailView: View {
             // Renaming the bag moved to a swipe action on TemplateListView's
             // row — that freed this leading slot, so Add now gets top
             // billing instead of hiding as a list row underneath the
-            // (usually longer) built-in item sections.
-            ToolbarItemGroup(placement: .primaryAction) {
+            // (usually longer) built-in item sections. Two separate
+            // ToolbarItems rather than one ToolbarItemGroup — grouped
+            // items render fused together as a single pill, which read
+            // as one confusing control instead of two distinct actions.
+            ToolbarItem(placement: .primaryAction) {
                 Button {
                     isAddingItem = true
                 } label: {
                     Image(systemName: "plus.circle.fill")
                 }
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button(pendingSuggestions.isEmpty ? "Save" : "Save (\(pendingSuggestions.count))") {
                     commitPendingSuggestions()
                 }
@@ -157,11 +140,12 @@ struct TemplateDetailView: View {
         let items: [TemplateItem]
     }
 
-    /// Split rather than one combined list — builtIn renders as its own
-    /// top-of-page sections, custom renders down alongside "Suggested
-    /// items" instead (see body). Computed together since both need the
-    /// same underlying grouping pass.
-    private var groupedItems: (builtIn: [CategoryGroup], custom: [CategoryGroup]) {
+    /// Every category the bag has items in, built-in ones first in their
+    /// usual order, then any custom ones alphabetically after — a single
+    /// list since "My Items" now renders both the same way (a collapsed
+    /// DisclosureGroup with a count), unlike the old split where custom
+    /// categories rendered down in "Suggested items" instead.
+    private var allItemGroups: [CategoryGroup] {
         let grouped = Dictionary(grouping: template.items) { item in
             ItemDisplayGroup.group(forName: item.name, categoryName: item.categoryName)
         }
@@ -184,7 +168,7 @@ struct TemplateDetailView: View {
                     items: grouped[group]!.sorted { $0.name < $1.name }
                 )
             }
-        return (builtIn, custom)
+        return builtIn + custom
     }
 
     private var curatedSuggestions: [CommonProfileItems.Suggestion] {
