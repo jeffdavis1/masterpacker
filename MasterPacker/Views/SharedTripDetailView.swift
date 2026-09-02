@@ -136,7 +136,7 @@ struct SharedTripDetailView: View {
             result.append((label, groups))
         }
 
-        addSection("Shared", trip.items.filter { $0.travelerRecordName == nil && $0.petRecordName == nil })
+        addSection("For Everyone", trip.items.filter { $0.travelerRecordName == nil && $0.petRecordName == nil })
         for traveler in trip.travelers {
             addSection(traveler.name, trip.items.filter { $0.travelerRecordName == traveler.id })
         }

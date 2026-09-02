@@ -38,7 +38,7 @@ struct AddProfileItemView: View {
             }
             .scrollContentBackground(.hidden)
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("Always-Pack Item")
+            .navigationTitle("Essential Item")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -53,7 +53,7 @@ struct AddProfileItemView: View {
                 Button("Cancel", role: .cancel) { newCategoryName = "" }
                 Button("Add") { addCustomCategory() }
             } message: {
-                Text("Saved categories can be reused for future always-pack items.")
+                Text("Saved categories can be reused for future essentials.")
             }
         }
     }

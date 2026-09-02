@@ -17,7 +17,7 @@ struct ProfileDetailView: View {
         List {
             Section {
                 if profile.alwaysItems.isEmpty {
-                    Text("No always-pack items yet — add some below.")
+                    Text("No essentials yet — add some below.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
@@ -47,7 +47,7 @@ struct ProfileDetailView: View {
                 }
                 .listRowBackground(AppTheme.cardSurface)
             } header: {
-                Text("Always Pack")
+                Text("Essentials")
             }
 
             if !curatedSuggestions.isEmpty {

@@ -18,7 +18,7 @@ struct ProfileListView: View {
                     ContentUnavailableView(
                         "No saved travelers or pets",
                         systemImage: "person.crop.circle.badge.plus",
-                        description: Text("Save someone's always-pack list once, then reuse it on any trip.")
+                        description: Text("Save someone's essentials once, then reuse it on any trip.")
                     )
                 } else {
                     List {
@@ -135,7 +135,7 @@ private struct ProfileRow: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("\(itemCount) always-pack item\(itemCount == 1 ? "" : "s")")
+                Text("\(itemCount) essential\(itemCount == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundStyle(.secondary.opacity(0.85))
             }

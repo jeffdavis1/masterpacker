@@ -63,7 +63,7 @@ struct AddTripView: View {
                 } header: {
                     Text("Travelers ") + Text("*").foregroundStyle(.red)
                 } footer: {
-                    Text("Their always-pack items come along automatically. At least one traveler is required to save this trip.")
+                    Text("Their essentials come along automatically. At least one traveler is required to save this trip.")
                 }
 
                 Section("Activities") {
@@ -98,7 +98,7 @@ struct AddTripView: View {
                 } header: {
                     Text("Pets")
                 } footer: {
-                    Text("Their always-pack items come along automatically.")
+                    Text("Their essentials come along automatically.")
                 }
 
                 if !availableTemplates.isEmpty {

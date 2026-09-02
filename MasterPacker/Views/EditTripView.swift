@@ -102,7 +102,7 @@ struct EditTripView: View {
                 } header: {
                     Text("Travelers")
                 } footer: {
-                    Text("Adding a traveler brings along their always-pack items. Removing one also removes their items from this trip.")
+                    Text("Adding a traveler brings along their essentials. Removing one also removes their items from this trip.")
                 }
 
                 Section {
@@ -128,7 +128,7 @@ struct EditTripView: View {
                 } header: {
                     Text("Pets")
                 } footer: {
-                    Text("Adding a pet brings along their always-pack items. Removing one also removes their items from this trip.")
+                    Text("Adding a pet brings along their essentials. Removing one also removes their items from this trip.")
                 }
 
                 // AddTripView offers this at creation time; it had no
@@ -238,7 +238,7 @@ struct EditTripView: View {
 
     /// Also deletes the traveler's own items from this trip's packing
     /// list, per explicit product decision — leaving them behind as
-    /// unassigned "Shared" items would be a confusing pile nobody
+    /// unassigned "For Everyone" items would be a confusing pile nobody
     /// actually asked for once the person they belonged to is gone.
     private func removeTraveler(_ traveler: Traveler) {
         for item in trip.items where item.traveler?.id == traveler.id {

@@ -42,7 +42,7 @@ struct TripDetailView: View {
     }
 
     /// One collapsible group of items in the packing list — a traveler,
-    /// "Shared", a pet, "Unassigned", or a piece of luggage, depending on
+    /// "For Everyone", a pet, "Unassigned", or a piece of luggage, depending on
     /// groupingMode. A named struct rather than a tuple so sections,
     /// peopleSections, and luggageSections all share one unambiguous
     /// type — Swift doesn't reliably unify differently-labeled tuple
@@ -77,7 +77,7 @@ struct TripDetailView: View {
             result.append(TripSection(label: label, categoryGroups: groups, items: items))
         }
 
-        addSection("Shared", trip.items.filter { $0.traveler == nil && $0.pet == nil }, useDisplayGroups: true)
+        addSection("For Everyone", trip.items.filter { $0.traveler == nil && $0.pet == nil }, useDisplayGroups: true)
         for traveler in trip.travelers {
             addSection(traveler.name, trip.items.filter { $0.traveler == traveler }, useDisplayGroups: true)
         }

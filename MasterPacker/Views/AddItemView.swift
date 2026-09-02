@@ -33,7 +33,7 @@ struct AddItemView: View {
                 }
                 Stepper("Quantity: \(quantity)", value: $quantity, in: 1...20)
                 Picker("Assign to", selection: $assignee) {
-                    Text("Shared / Household").tag(AssigneeOption.shared)
+                    Text("For Everyone").tag(AssigneeOption.shared)
                     ForEach(trip.travelers) { traveler in
                         Text(traveler.name).tag(AssigneeOption.traveler(traveler))
                     }

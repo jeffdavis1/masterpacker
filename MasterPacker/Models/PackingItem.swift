@@ -54,7 +54,7 @@ final class PackingItem {
     var assigneeLabel: String {
         if let traveler { return traveler.name }
         if let pet { return "\(pet.name) (pet)" }
-        return "Shared"
+        return "For Everyone"
     }
 
     /// A more specific icon based on the item's name when one matches

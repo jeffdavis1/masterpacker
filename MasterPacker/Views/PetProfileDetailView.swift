@@ -25,7 +25,7 @@ struct PetProfileDetailView: View {
 
             Section {
                 if profile.alwaysItems.isEmpty {
-                    Text("No always-pack items yet — add some below.")
+                    Text("No essentials yet — add some below.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
@@ -55,7 +55,7 @@ struct PetProfileDetailView: View {
                 }
                 .listRowBackground(AppTheme.cardSurface)
             } header: {
-                Text("Always Pack")
+                Text("Essentials")
             }
 
             if !curatedSuggestions.isEmpty {
