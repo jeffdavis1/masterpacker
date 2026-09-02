@@ -16,19 +16,26 @@ struct TemplateDetailView: View {
 
     var body: some View {
         List {
-            if template.items.isEmpty {
-                Text("No items yet — browse suggestions below, or tap + to add one.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
-            } else {
-                // Every category the bag actually has items in — built-in
-                // ones first in their usual order, then any custom ones
-                // alphabetically — each collapsed behind its own
-                // DisclosureGroup with a count, so the page reads as two
-                // clear chunks: what's already in the bag, and what's
-                // just being suggested (below).
-                Section {
+            // Always its own Section — even while the bag is empty — so
+            // adding the first item never makes a brand-new section
+            // spring into existence above "Suggested items" and shove it
+            // (and wherever the user was scrolled/tapping) down the
+            // page. Only the row content inside swaps between the empty
+            // placeholder and the real category groups; the section
+            // boundary itself never appears or disappears.
+            Section {
+                if template.items.isEmpty {
+                    Text("No items yet — browse suggestions below, or tap + to add one.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .listRowBackground(Color.clear)
+                } else {
+                    // Every category the bag actually has items in —
+                    // built-in ones first in their usual order, then any
+                    // custom ones alphabetically — each collapsed behind
+                    // its own DisclosureGroup with a count, so the page
+                    // reads as two clear chunks: what's already in the
+                    // bag, and what's just being suggested (below).
                     ForEach(allItemGroups) { group in
                         DisclosureGroup {
                             ForEach(group.items) { item in
@@ -71,9 +78,9 @@ struct TemplateDetailView: View {
                         }
                         .listRowBackground(AppTheme.cardSurface)
                     }
-                } header: {
-                    Text("My Items")
                 }
+            } header: {
+                Text("My Items")
             }
 
             if !curatedSuggestions.isEmpty {
