@@ -28,7 +28,7 @@ struct EditTripView: View {
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var travelMethod: TravelMethod
-    @State private var selectedActivities: Set<Activity>
+    @State private var selectedActivityNames: Set<String>
     @State private var notes: String
     @State private var isPresentingDeleteConfirmation = false
     @State private var isPresentingTravelerChooser = false
@@ -44,7 +44,7 @@ struct EditTripView: View {
         _startDate = State(initialValue: trip.startDate)
         _endDate = State(initialValue: trip.endDate)
         _travelMethod = State(initialValue: trip.travelMethod)
-        _selectedActivities = State(initialValue: trip.activities)
+        _selectedActivityNames = State(initialValue: trip.activityNames)
         _notes = State(initialValue: trip.notes)
     }
 
@@ -68,7 +68,7 @@ struct EditTripView: View {
                 // to change them afterward short of deleting and
                 // recreating the whole trip.
                 Section("Activities") {
-                    ActivityChipGrid(selected: $selectedActivities)
+                    ActivityChipGrid(selected: $selectedActivityNames)
                     TextField(
                         "Tell us about your trip. AI will make suggestions; the more you tell us the better the suggestions.",
                         text: $notes,
@@ -275,7 +275,7 @@ struct EditTripView: View {
         trip.startDate = startDate
         trip.endDate = endDate
         trip.travelMethod = travelMethod
-        trip.activities = selectedActivities
+        trip.activityNames = selectedActivityNames
         trip.notes = notes
 
         // A new destination invalidates the weather-change baseline — it
@@ -300,6 +300,7 @@ struct EditTripView: View {
             for: [
                 Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
+                CustomActivity.self,
             ],
             inMemory: true
         )

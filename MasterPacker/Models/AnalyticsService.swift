@@ -70,4 +70,8 @@ enum AnalyticsService {
     static func customCategoryCreated() {
         Analytics.logEvent("custom_category_created", parameters: nil)
     }
+
+    static func customActivityCreated() {
+        Analytics.logEvent("custom_activity_created", parameters: nil)
+    }
 }

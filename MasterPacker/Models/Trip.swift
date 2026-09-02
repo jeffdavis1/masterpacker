@@ -65,7 +65,7 @@ final class Trip {
         startDate: Date,
         endDate: Date,
         travelMethod: TravelMethod = .car,
-        activities: Set<Activity> = [],
+        activityNames: Set<String> = [],
         notes: String = ""
     ) {
         self.name = name
@@ -73,13 +73,30 @@ final class Trip {
         self.startDate = startDate
         self.endDate = endDate
         self.travelMethod = travelMethod
-        self.activityRawValues = activities.map(\.rawValue)
+        self.activityRawValues = Array(activityNames)
         self.notes = notes
     }
 
+    /// The trip's activities restricted to ones PackingRulesEngine
+    /// actually has a rule for — get-only, since a custom activity (see
+    /// `activityNames` below) has no matching rule and can't drive
+    /// suggested-item generation the way a built-in one does. This is
+    /// what rule generation reads; the New/Edit Trip forms read and write
+    /// `activityNames` instead.
     var activities: Set<Activity> {
-        get { Set(activityRawValues.compactMap(Activity.init(rawValue:))) }
-        set { activityRawValues = newValue.map(\.rawValue) }
+        Set(activityRawValues.compactMap(Activity.init(rawValue:)))
+    }
+
+    /// Every activity chip selected for this trip, built-in or custom —
+    /// what the New/Edit Trip forms actually display and toggle. A
+    /// built-in one round-trips through `Activity`'s rawValue; a custom
+    /// one is just its own free-form name (backed by a `CustomActivity`
+    /// record so it's offered again on future trips), stored as a plain
+    /// string right alongside the built-in ones since `activityRawValues`
+    /// was already just a bag of strings.
+    var activityNames: Set<String> {
+        get { Set(activityRawValues) }
+        set { activityRawValues = Array(newValue) }
     }
 
     var travelers: [Traveler] {

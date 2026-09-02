@@ -12,6 +12,7 @@ struct TripListView: View {
     @State private var isPresentingSharedTrips = false
     @State private var isPresentingArchived = false
     @State private var isPresentingCategories = false
+    @State private var isPresentingActivities = false
     @State private var selectedSharedTrip: RemoteTrip?
 
     /// A shared trip only shows up here once the user has explicitly
@@ -129,6 +130,11 @@ struct TripListView: View {
                         } label: {
                             Label("Manage Categories", systemImage: "tag")
                         }
+                        Button {
+                            isPresentingActivities = true
+                        } label: {
+                            Label("Manage Activities", systemImage: "star")
+                        }
                     } label: {
                         Label("More", systemImage: "ellipsis.circle")
                     }
@@ -161,6 +167,9 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingCategories) {
                 CategoryListView()
+            }
+            .sheet(isPresented: $isPresentingActivities) {
+                ActivityListView()
             }
             .sheet(item: $selectedSharedTrip) { trip in
                 NavigationStack {

@@ -11,7 +11,7 @@ struct AddTripView: View {
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(60 * 60 * 24 * 3)
     @State private var travelMethod: TravelMethod = .car
-    @State private var selectedActivities: Set<Activity> = []
+    @State private var selectedActivityNames: Set<String> = []
     @State private var notes = ""
     @State private var selectedProfiles: [TravelerProfile] = []
     @State private var selectedPetProfiles: [PetProfile] = []
@@ -62,7 +62,7 @@ struct AddTripView: View {
                 }
 
                 Section("Activities") {
-                    ActivityChipGrid(selected: $selectedActivities)
+                    ActivityChipGrid(selected: $selectedActivityNames)
                     TextField(
                         "Tell us about your trip. AI will make suggestions; the more you tell us the better the suggestions.",
                         text: $notes,
@@ -151,7 +151,7 @@ struct AddTripView: View {
             startDate: startDate,
             endDate: endDate,
             travelMethod: travelMethod,
-            activities: selectedActivities,
+            activityNames: selectedActivityNames,
             notes: notes
         )
         modelContext.insert(trip)
@@ -254,7 +254,7 @@ struct AddTripView: View {
         AnalyticsService.tripCreated(
             travelerCount: trip.travelers.count,
             petCount: trip.pets.count,
-            activityCount: selectedActivities.count,
+            activityCount: selectedActivityNames.count,
             travelMethod: travelMethod,
             generatedSuggestions: generateSuggestions
         )
@@ -475,35 +475,92 @@ struct QuickDateField: View {
     }
 }
 
-/// Shared by AddTripView and EditTripView.
+/// Shared by AddTripView and EditTripView. Selection is a set of raw
+/// activity-name strings (see `Trip.activityNames`) rather than `Set
+/// <Activity>`, so a custom activity — which has no `Activity` case of
+/// its own — can sit in the same set as the built-in ones.
 struct ActivityChipGrid: View {
-    @Binding var selected: Set<Activity>
+    @Binding var selected: Set<String>
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \CustomActivity.name) private var customActivities: [CustomActivity]
+
+    @State private var isAddingCustomActivity = false
+    @State private var newActivityName = ""
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
             ForEach(Activity.allCases) { activity in
-                let isSelected = selected.contains(activity)
-                Button {
-                    if isSelected {
-                        selected.remove(activity)
-                    } else {
-                        selected.insert(activity)
-                    }
-                } label: {
-                    Label(activity.rawValue, systemImage: activity.symbol)
-                        .font(.caption)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
-                        .foregroundStyle(isSelected ? .white : .primary)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
+                chip(label: activity.rawValue, symbol: activity.symbol)
             }
+            ForEach(customActivities) { custom in
+                chip(label: custom.name, symbol: "star")
+            }
+            Button {
+                isAddingCustomActivity = true
+            } label: {
+                Label("Custom", systemImage: "plus")
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.secondary.opacity(0.15))
+                    .foregroundStyle(.primary)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 4)
+        .alert("New Activity", isPresented: $isAddingCustomActivity) {
+            TextField("Activity name", text: $newActivityName)
+            Button("Cancel", role: .cancel) { newActivityName = "" }
+            Button("Add") { addCustomActivity() }
+        } message: {
+            Text("Saved activities can be reused for future trips.")
+        }
+    }
+
+    @ViewBuilder
+    private func chip(label: String, symbol: String) -> some View {
+        let isSelected = selected.contains(label)
+        Button {
+            if isSelected {
+                selected.remove(label)
+            } else {
+                selected.insert(label)
+            }
+        } label: {
+            Label(label, systemImage: symbol)
+                .font(.caption)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func addCustomActivity() {
+        let trimmed = newActivityName.trimmingCharacters(in: .whitespaces)
+        newActivityName = ""
+        guard !trimmed.isEmpty else { return }
+
+        // A case-insensitive match against an existing chip (built-in or
+        // custom) selects that chip's actual label rather than the raw
+        // typed casing — otherwise a retyped "skiing" wouldn't match the
+        // "Skiing / Snow" chip's own label string, and selected would end
+        // up holding a name no chip in the grid actually shows as chosen.
+        let canonical = Activity.allCases.first { $0.rawValue.lowercased() == trimmed.lowercased() }?.rawValue
+            ?? customActivities.first { $0.name.lowercased() == trimmed.lowercased() }?.name
+        if let canonical {
+            selected.insert(canonical)
+            return
+        }
+
+        modelContext.insert(CustomActivity(name: trimmed))
+        AnalyticsService.customActivityCreated()
+        selected.insert(trimmed)
     }
 }
 
@@ -545,7 +602,7 @@ private struct TemplateChipGrid: View {
             for: [
                 Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
-                PackingTemplate.self, TemplateItem.self,
+                CustomActivity.self, PackingTemplate.self, TemplateItem.self,
             ],
             inMemory: true
         )
