@@ -20,9 +20,18 @@ struct ApplyTemplateView: View {
                         systemImage: "bag",
                         description: Text("Save a reusable packing list from My Bag first.")
                     )
+                } else if availableTemplates.isEmpty {
+                    // Distinct from the "no bags at all" case above —
+                    // bags exist, they're just all assigned to travelers
+                    // who aren't on this trip.
+                    ContentUnavailableView(
+                        "No bags for this trip's travelers",
+                        systemImage: "bag",
+                        description: Text("Your saved bags are each assigned to a traveler who isn't on this trip. Unassign a bag's owner in My Bag to make it available everywhere again.")
+                    )
                 } else {
                     List {
-                        ForEach(templates) { template in
+                        ForEach(availableTemplates) { template in
                             Button {
                                 apply(template)
                             } label: {
@@ -55,6 +64,19 @@ struct ApplyTemplateView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+        }
+    }
+
+    /// Bags offered here — an unowned bag is available for any trip; an
+    /// owned one only shows up when its owner is one of this trip's
+    /// actual travelers. A trip's Traveler has no stored link back to the
+    /// TravelerProfile it was created from, so matching by name is the
+    /// same proxy ProfileDetailView's frequent-item suggestions already
+    /// use for the same reason.
+    private var availableTemplates: [PackingTemplate] {
+        templates.filter { template in
+            guard let owner = template.owner else { return true }
+            return trip.travelers.contains { $0.name == owner.name }
         }
     }
 

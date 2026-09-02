@@ -125,15 +125,13 @@ private struct TemplateRow: View {
         .floatingCard()
     }
 
-    /// "6 items" for an unowned bag, "6 items · Jeff" (or "· Jeff, Sarah")
-    /// once it's been assigned to specific travelers — otherwise there's
-    /// no way to tell an owned bag apart from a general-purpose one
-    /// without opening it.
+    /// "6 items" for an unowned bag, "6 items · Jeff" once it's been
+    /// assigned to a traveler — otherwise there's no way to tell an owned
+    /// bag apart from a general-purpose one without opening it.
     private var subtitle: String {
         let itemCount = "\(template.items.count) item\(template.items.count == 1 ? "" : "s")"
-        guard !template.owners.isEmpty else { return itemCount }
-        let names = template.owners.map(\.name).sorted().joined(separator: ", ")
-        return "\(itemCount) · \(names)"
+        guard let owner = template.owner else { return itemCount }
+        return "\(itemCount) · \(owner.name)"
     }
 }
 

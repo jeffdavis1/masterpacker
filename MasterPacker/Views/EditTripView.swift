@@ -22,6 +22,7 @@ struct EditTripView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \PackingTemplate.name) private var savedTemplates: [PackingTemplate]
 
     @State private var name: String
     @State private var destination: String
@@ -35,6 +36,7 @@ struct EditTripView: View {
     @State private var newTravelerProfiles: [TravelerProfile] = []
     @State private var isPresentingPetChooser = false
     @State private var newPetProfiles: [PetProfile] = []
+    @State private var selectedTemplates: [PackingTemplate] = []
 
     init(trip: Trip, onDelete: @escaping () -> Void = {}) {
         self.trip = trip
@@ -127,6 +129,21 @@ struct EditTripView: View {
                     Text("Pets")
                 } footer: {
                     Text("Adding a pet brings along their always-pack items. Removing one also removes their items from this trip.")
+                }
+
+                // AddTripView offers this at creation time; it had no
+                // equivalent here, so a bag whose owner only got added to
+                // the trip after the fact (via the Travelers section
+                // above) had nowhere obvious to then get applied short of
+                // TripDetailView's own "Add from My Bag" menu action.
+                if !availableTemplates.isEmpty {
+                    Section {
+                        TemplateChipGrid(templates: availableTemplates, selected: $selectedTemplates)
+                    } header: {
+                        Text("From My Bag")
+                    } footer: {
+                        Text("Adds each selected bag's items to this trip's shared list on Save. Only bags with no assigned owner, or owned by a traveler on this trip, are offered here.")
+                    }
                 }
 
                 Section {
@@ -246,6 +263,18 @@ struct EditTripView: View {
         }
     }
 
+    /// Bags offered in "From My Bag" — an unowned bag is available for
+    /// any trip; an owned one only shows up when its owner is one of
+    /// this trip's actual travelers. Recomputed live off trip.travelers,
+    /// so adding/removing a traveler above immediately changes what's
+    /// offered here, same session, no separate onChange needed.
+    private var availableTemplates: [PackingTemplate] {
+        savedTemplates.filter { template in
+            guard let owner = template.owner else { return true }
+            return trip.travelers.contains { $0.name == owner.name }
+        }
+    }
+
     private var deleteWarningMessage: String {
         if TripSharingService.shared.isShared(trip) {
             return "This trip is shared. Deleting it will also remove it from everyone you've shared it with. This can't be undone."
@@ -278,6 +307,23 @@ struct EditTripView: View {
         trip.activityNames = selectedActivityNames
         trip.notes = notes
 
+        // Same as ApplyTemplateView.apply()/AddTripView.save() — lands in
+        // the shared/household bucket, no traveler/pet assignee.
+        for template in selectedTemplates {
+            for templateItem in template.items {
+                let item = PackingItem(
+                    name: templateItem.name,
+                    categoryName: templateItem.categoryName,
+                    quantity: templateItem.quantity,
+                    trip: trip
+                )
+                modelContext.insert(item)
+            }
+        }
+        if !selectedTemplates.isEmpty {
+            AnalyticsService.bagAppliedToTrip()
+        }
+
         // A new destination invalidates the weather-change baseline — it
         // was tracking the old place, so the next check would otherwise
         // compare against somewhere else's forecast.
@@ -300,7 +346,7 @@ struct EditTripView: View {
             for: [
                 Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
-                CustomActivity.self,
+                CustomActivity.self, PackingTemplate.self, TemplateItem.self,
             ],
             inMemory: true
         )

@@ -102,12 +102,12 @@ struct TemplateDetailView: View {
 
             if !travelerProfiles.isEmpty {
                 Section {
-                    OwnerChipGrid(profiles: travelerProfiles, owners: $template.owners)
+                    OwnerChipGrid(profiles: travelerProfiles, owner: $template.owner)
                         .listRowBackground(AppTheme.cardSurface)
                 } header: {
-                    Text("Owners")
+                    Text("Owner")
                 } footer: {
-                    Text("Leave empty to offer this bag on every trip. Assign it to specific travelers to only offer it when they're on the trip.")
+                    Text("Leave unassigned to offer this bag on every trip. Assign it to one traveler to only offer it when they're on the trip.")
                 }
             }
         }
@@ -227,25 +227,23 @@ struct TemplateDetailView: View {
     }
 }
 
-/// Tap-to-toggle chips for assigning this bag's owners — same capsule
-/// style as ActivityChipGrid/SuggestionChipGrid. Single-use, so it lives
-/// here rather than as its own file.
+/// Tap-to-select chips for assigning this bag's single owner — same
+/// capsule style as ActivityChipGrid/SuggestionChipGrid. Single-use, so
+/// it lives here rather than as its own file. A bag belongs to at most
+/// one traveler: tapping a different chip replaces the current owner,
+/// tapping the current owner again clears it back to unassigned.
 private struct OwnerChipGrid: View {
     let profiles: [TravelerProfile]
-    @Binding var owners: [TravelerProfile]
+    @Binding var owner: TravelerProfile?
 
     private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
             ForEach(profiles) { profile in
-                let isOwner = owners.contains { $0.id == profile.id }
+                let isOwner = owner?.id == profile.id
                 Button {
-                    if isOwner {
-                        owners.removeAll { $0.id == profile.id }
-                    } else {
-                        owners.append(profile)
-                    }
+                    owner = isOwner ? nil : profile
                 } label: {
                     Text(profile.name)
                         .font(.caption)

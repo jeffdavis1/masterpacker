@@ -154,15 +154,14 @@ struct AddTripView: View {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !selectedProfiles.isEmpty
     }
 
-    /// Bags offered in "From My Bag" — an unowned bag (no travelers
-    /// assigned) is available for any trip, same as every bag was before
-    /// ownership existed; an owned one only shows up once at least one of
-    /// its owners is among the travelers actually being added here.
+    /// Bags offered in "From My Bag" — an unowned bag is available for
+    /// any trip, same as every bag was before ownership existed; an
+    /// owned one only shows up once its owner is among the travelers
+    /// actually being added here.
     private var availableTemplates: [PackingTemplate] {
         savedTemplates.filter { template in
-            template.owners.isEmpty || template.owners.contains { owner in
-                selectedProfiles.contains { $0.id == owner.id }
-            }
+            guard let owner = template.owner else { return true }
+            return selectedProfiles.contains { $0.id == owner.id }
         }
     }
 
@@ -590,7 +589,8 @@ struct ActivityChipGrid: View {
     }
 }
 
-private struct TemplateChipGrid: View {
+/// Shared by AddTripView and EditTripView.
+struct TemplateChipGrid: View {
     let templates: [PackingTemplate]
     @Binding var selected: [PackingTemplate]
 

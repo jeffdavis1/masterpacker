@@ -13,14 +13,14 @@ final class PackingTemplate {
     @Relationship(deleteRule: .cascade, inverse: \TemplateItem.template)
     private var itemsStorage: [TemplateItem]? = []
 
-    // Many-to-many; the inverse side (TravelerProfile.ownedTemplatesStorage)
-    // owns the @Relationship(inverse:) declaration, so this side is just a
-    // plain optional array — CloudKit still requires every to-many
-    // relationship to be Optional, hence the plumbing below rather than a
-    // bare non-optional array. Not private: TravelerProfile's inverse
-    // KeyPath (\PackingTemplate.ownersStorage) needs to reference it from
-    // another file, which a private member can't be.
-    var ownersStorage: [TravelerProfile]? = []
+    /// The traveler this bag belongs to — nil means unowned, which reads
+    /// as "available for every trip" (see AddTripView/EditTripView/
+    /// ApplyTemplateView's filtering) rather than belonging to no one, so
+    /// every bag that existed before this feature keeps working exactly
+    /// as it did. A plain to-one reference, same pattern as Traveler.trip
+    /// — TravelerProfile's inverse (@Relationship on
+    /// ownedTemplatesStorage) is what actually declares the relationship.
+    var owner: TravelerProfile?
 
     init(name: String) {
         self.name = name
@@ -29,14 +29,5 @@ final class PackingTemplate {
     var items: [TemplateItem] {
         get { itemsStorage ?? [] }
         set { itemsStorage = newValue }
-    }
-
-    /// Travelers this bag belongs to. Empty means unowned — which reads as
-    /// "available for everyone" (see AddTripView's bag filtering) rather
-    /// than belonging to no one, so every bag that existed before this
-    /// feature shipped keeps working exactly as it did.
-    var owners: [TravelerProfile] {
-        get { ownersStorage ?? [] }
-        set { ownersStorage = newValue }
     }
 }
