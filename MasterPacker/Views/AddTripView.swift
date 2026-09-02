@@ -61,7 +61,7 @@ struct AddTripView: View {
                         Label("Add traveler", systemImage: "plus")
                     }
                 } header: {
-                    Text("Travelers *")
+                    Text("Travelers ") + Text("*").foregroundStyle(.red)
                 } footer: {
                     Text("Their always-pack items come along automatically. At least one traveler is required to save this trip.")
                 }

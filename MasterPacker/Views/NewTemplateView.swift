@@ -44,5 +44,8 @@ struct NewTemplateView: View {
 
 #Preview {
     NewTemplateView(onCreate: { _ in })
-        .modelContainer(for: [PackingTemplate.self, TemplateItem.self], inMemory: true)
+        .modelContainer(
+            for: [PackingTemplate.self, TemplateItem.self, TravelerProfile.self, ProfileItem.self],
+            inMemory: true
+        )
 }

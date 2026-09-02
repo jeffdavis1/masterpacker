@@ -77,5 +77,11 @@ struct ApplyTemplateView: View {
 #Preview {
     let trip = Trip(name: "Preview", destination: "Somewhere", startDate: .now, endDate: .now)
     return ApplyTemplateView(trip: trip)
-        .modelContainer(for: [Trip.self, PackingItem.self, Luggage.self, PackingTemplate.self, TemplateItem.self], inMemory: true)
+        .modelContainer(
+            for: [
+                Trip.self, PackingItem.self, Luggage.self, PackingTemplate.self, TemplateItem.self,
+                TravelerProfile.self, ProfileItem.self,
+            ],
+            inMemory: true
+        )
 }
