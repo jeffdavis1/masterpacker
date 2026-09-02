@@ -102,7 +102,7 @@ struct TemplateDetailView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(AppTheme.screenGradient.ignoresSafeArea())
-        .navigationTitle(template.name)
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Renaming the bag moved to a swipe action on TemplateListView's
@@ -180,6 +180,17 @@ struct TemplateDetailView: View {
                 )
             }
         return builtIn + custom
+    }
+
+    /// The bag's name with an item count appended once it has any, e.g.
+    /// "Golf (6)" — tapping Save disables the button (nothing pending
+    /// left to save), which reads as "did that actually work?" with no
+    /// other feedback since the screen otherwise looks unchanged until
+    /// you back out. The count updating right there in the title is
+    /// confirmation the save landed without needing a toast or a
+    /// separate "Saved" state to manage.
+    private var navigationTitle: String {
+        template.items.isEmpty ? template.name : "\(template.name) (\(template.items.count))"
     }
 
     private var curatedSuggestions: [CommonProfileItems.Suggestion] {
