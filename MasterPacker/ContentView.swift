@@ -14,7 +14,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            TripListView()
+            RootTabView()
 
             if isShowingSplash {
                 SplashScreenView()
@@ -75,6 +75,9 @@ struct ContentView: View {
             }
         }
         .task {
+            CoachMarkStore.recordAppLaunchIfNeeded()
+        }
+        .task {
             await NotificationManager.shared.requestAuthorizationIfNeeded()
         }
         .task {
@@ -120,7 +123,7 @@ struct ContentView: View {
             for: [
                 Trip.self, PackingItem.self, Luggage.self, Traveler.self, Pet.self,
                 TravelerProfile.self, PetProfile.self, ProfileItem.self, CustomCategory.self,
-                PackingTemplate.self, TemplateItem.self,
+                CustomActivity.self, PackingTemplate.self, TemplateItem.self,
             ],
             inMemory: true
         )

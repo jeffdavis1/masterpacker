@@ -1,12 +1,11 @@
 import SwiftUI
 
-/// Entry point for trips shared *to* this device by someone else —
-/// presented as a sheet from TripListView's "More" menu. Reads from
-/// TripSharingService.shared.sharedTrips; refreshing (on appear + pull-
-/// to-refresh) is the only way to see the owner's latest changes, since
-/// there's no push-driven live sync yet.
+/// Entry point for trips shared *to* this device by someone else — its
+/// own tab in RootTabView. Reads from TripSharingService.shared.
+/// sharedTrips; refreshing (on appear + pull-to-refresh) is the only way
+/// to see the owner's latest changes, since there's no push-driven live
+/// sync yet.
 struct SharedTripsListView: View {
-    @Environment(\.dismiss) private var dismiss
     @ObservedObject private var service = TripSharingService.shared
     @State private var selectedTrip: RemoteTrip?
 
@@ -65,11 +64,6 @@ struct SharedTripsListView: View {
             .background(AppTheme.screenGradient.ignoresSafeArea())
             .navigationTitle("Shared With Me")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
             .sheet(item: $selectedTrip) { trip in
                 NavigationStack {
                     SharedTripDetailView(trip: trip)

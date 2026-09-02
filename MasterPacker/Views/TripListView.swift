@@ -6,13 +6,6 @@ struct TripListView: View {
     @Query(sort: \Trip.startDate) private var trips: [Trip]
     @ObservedObject private var sharingService = TripSharingService.shared
     @State private var isPresentingAddTrip = false
-    @State private var isPresentingProfiles = false
-    @State private var isPresentingMap = false
-    @State private var isPresentingTemplates = false
-    @State private var isPresentingSharedTrips = false
-    @State private var isPresentingArchived = false
-    @State private var isPresentingCategories = false
-    @State private var isPresentingActivities = false
     @State private var selectedSharedTrip: RemoteTrip?
     @State private var path = NavigationPath()
 
@@ -108,47 +101,13 @@ struct TripListView: View {
                 TripDetailView(trip: trip)
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Menu {
-                        Button {
-                            isPresentingProfiles = true
-                        } label: {
-                            Label("Saved Travelers", systemImage: "person.crop.circle")
-                        }
-                        Button {
-                            isPresentingTemplates = true
-                        } label: {
-                            Label("My Bag", systemImage: "bag")
-                        }
-                        Button {
-                            isPresentingMap = true
-                        } label: {
-                            Label("Trip Map", systemImage: "map")
-                        }
-                        Button {
-                            isPresentingSharedTrips = true
-                        } label: {
-                            Label("Shared With Me", systemImage: "person.2")
-                        }
-                        Button {
-                            isPresentingArchived = true
-                        } label: {
-                            Label("Archived", systemImage: "archivebox")
-                        }
-                        Button {
-                            isPresentingCategories = true
-                        } label: {
-                            Label("Manage Categories", systemImage: "tag")
-                        }
-                        Button {
-                            isPresentingActivities = true
-                        } label: {
-                            Label("Manage Activities", systemImage: "star")
-                        }
-                    } label: {
-                        Label("More", systemImage: "ellipsis.circle")
-                    }
-                }
+                // The old "More" menu (Saved Travelers, My Bag, Trip Map,
+                // Shared With Me, Archived, Manage Categories, Manage
+                // Activities) is gone — each of those now has its own
+                // tab in RootTabView, or lives under the Profile tab.
+                // Trip Map specifically isn't coming back anywhere; it
+                // didn't serve a functional purpose (see the roadmap
+                // item this shipped against).
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingAddTrip = true
@@ -159,27 +118,6 @@ struct TripListView: View {
             }
             .sheet(isPresented: $isPresentingAddTrip) {
                 AddTripView()
-            }
-            .sheet(isPresented: $isPresentingMap) {
-                TripMapView()
-            }
-            .sheet(isPresented: $isPresentingProfiles) {
-                ProfileListView()
-            }
-            .sheet(isPresented: $isPresentingTemplates) {
-                TemplateListView()
-            }
-            .sheet(isPresented: $isPresentingSharedTrips) {
-                SharedTripsListView()
-            }
-            .sheet(isPresented: $isPresentingArchived) {
-                ArchivedTripsView()
-            }
-            .sheet(isPresented: $isPresentingCategories) {
-                CategoryListView()
-            }
-            .sheet(isPresented: $isPresentingActivities) {
-                ActivityListView()
             }
             .sheet(item: $selectedSharedTrip) { trip in
                 NavigationStack {

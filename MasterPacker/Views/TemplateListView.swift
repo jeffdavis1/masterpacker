@@ -1,11 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// Entry point for saved packing templates — presented as a sheet from
-/// `TripListView`.
+/// Entry point for saved packing templates — the "My Bag" tab in
+/// RootTabView.
 struct TemplateListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
     @Query(sort: \PackingTemplate.name) private var templates: [PackingTemplate]
     @State private var isPresentingAddTemplate = false
     @State private var path = NavigationPath()
@@ -61,9 +60,6 @@ struct TemplateListView: View {
                 TemplateDetailView(template: template)
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingAddTemplate = true

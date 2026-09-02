@@ -33,6 +33,10 @@ struct NewTemplateView: View {
         let template = PackingTemplate(name: name)
         modelContext.insert(template)
         AnalyticsService.bagCreated()
+        // Permanently retires the My Bag onboarding coach mark — this is
+        // the exact moment the feature it's pointing at gets used for
+        // the first time.
+        CoachMarkStore.recordFirstBagCreated()
         onCreate(template)
         dismiss()
     }

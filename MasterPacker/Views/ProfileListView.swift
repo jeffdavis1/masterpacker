@@ -1,11 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// Entry point for saved traveler and pet profiles — presented as a sheet
-/// from `TripListView`.
+/// Entry point for saved traveler and pet profiles — the "Saved
+/// Travelers" tab in RootTabView.
 struct ProfileListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
     @Query(sort: \TravelerProfile.name) private var travelerProfiles: [TravelerProfile]
     @Query(sort: \PetProfile.name) private var petProfiles: [PetProfile]
     @State private var isPresentingAddProfile = false
@@ -75,9 +74,6 @@ struct ProfileListView: View {
                 PetProfileDetailView(profile: profile)
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
