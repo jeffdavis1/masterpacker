@@ -17,6 +17,7 @@ struct ArchivedTripsView: View {
     @Query(filter: #Predicate<Trip> { $0.isArchived }, sort: \Trip.endDate, order: .reverse) private var archivedTrips: [Trip]
     @ObservedObject private var sharingService = TripSharingService.shared
     @State private var selectedSharedTrip: RemoteTrip?
+    @State private var path = NavigationPath()
 
     private var entries: [TripListEntry] {
         let owned = archivedTrips.map(TripListEntry.owned)
@@ -31,7 +32,7 @@ struct ArchivedTripsView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if entries.isEmpty {
                     ContentUnavailableView(
@@ -46,9 +47,16 @@ struct ArchivedTripsView: View {
                                 ForEach(section.entries) { entry in
                                     switch entry {
                                     case .owned(let trip):
-                                        NavigationLink(value: trip) {
+                                        // Plain Button + programmatic push,
+                                        // not NavigationLink(value:) — see
+                                        // TripListView's owned-trip row for
+                                        // why (no auto disclosure chevron).
+                                        Button {
+                                            path.append(trip)
+                                        } label: {
                                             TripRow(trip: trip)
                                         }
+                                        .buttonStyle(.plain)
                                         .listRowBackground(Color.clear)
                                         .listRowSeparator(.hidden)
                                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))

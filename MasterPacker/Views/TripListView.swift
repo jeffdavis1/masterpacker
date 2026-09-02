@@ -14,6 +14,7 @@ struct TripListView: View {
     @State private var isPresentingCategories = false
     @State private var isPresentingActivities = false
     @State private var selectedSharedTrip: RemoteTrip?
+    @State private var path = NavigationPath()
 
     /// A shared trip only shows up here once the user has explicitly
     /// pinned it via "Add to My Trips" — it's still backed live by
@@ -37,7 +38,7 @@ struct TripListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if entries.isEmpty {
                     ContentUnavailableView(
@@ -52,9 +53,18 @@ struct TripListView: View {
                                 ForEach(section.entries) { entry in
                                     switch entry {
                                     case .owned(let trip):
-                                        NavigationLink(value: trip) {
+                                        // A plain Button + programmatic push
+                                        // rather than NavigationLink(value:) —
+                                        // NavigationLink auto-adds a trailing
+                                        // disclosure chevron in a List, which
+                                        // didn't earn its keep here (every
+                                        // card is already obviously tappable).
+                                        Button {
+                                            path.append(trip)
+                                        } label: {
                                             TripRow(trip: trip)
                                         }
+                                        .buttonStyle(.plain)
                                         .listRowBackground(Color.clear)
                                         .listRowSeparator(.hidden)
                                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -305,14 +315,6 @@ struct SharedTripCard: View {
                     ProgressRing(progress: Double(trip.packedCount) / Double(trip.items.count))
                 }
             }
-
-            // Owned trips get this for free from NavigationLink; this
-            // card is a plain Button instead (it opens a sheet, not a
-            // push), so without this it's the only trip in "My Trips"
-            // missing the disclosure chevron everything else has.
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
         }
         .padding(14)
         .floatingCard()
