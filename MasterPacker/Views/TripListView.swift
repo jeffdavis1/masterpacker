@@ -104,10 +104,10 @@ struct TripListView: View {
                 // The old "More" menu (Saved Travelers, My Bag, Trip Map,
                 // Shared With Me, Archived, Manage Categories, Manage
                 // Activities) is gone — each of those now has its own
-                // tab in RootTabView, or lives under the Profile tab.
-                // Trip Map specifically isn't coming back anywhere; it
-                // didn't serve a functional purpose (see the roadmap
-                // item this shipped against).
+                // tab in RootTabView, or lives under the Profile tab
+                // (Trip Map included — its removal from the nav redesign
+                // turned out to be a mistake, restored as the last row
+                // in ProfileMenuView).
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingAddTrip = true
