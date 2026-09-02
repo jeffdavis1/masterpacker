@@ -17,8 +17,10 @@ final class PackingTemplate {
     // owns the @Relationship(inverse:) declaration, so this side is just a
     // plain optional array — CloudKit still requires every to-many
     // relationship to be Optional, hence the plumbing below rather than a
-    // bare non-optional array.
-    private var ownersStorage: [TravelerProfile]? = []
+    // bare non-optional array. Not private: TravelerProfile's inverse
+    // KeyPath (\PackingTemplate.ownersStorage) needs to reference it from
+    // another file, which a private member can't be.
+    var ownersStorage: [TravelerProfile]? = []
 
     init(name: String) {
         self.name = name
