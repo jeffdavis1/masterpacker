@@ -126,14 +126,25 @@ struct ProfileDetailView: View {
         CommonProfileItems.all.filter { !existingNames.contains($0.name.lowercased()) }
     }
 
-    /// Item names the user has packed on 2+ distinct past trips, that
-    /// aren't already saved to this profile or in the curated common list.
+    /// Item names *this traveler* has packed on 2+ distinct past trips,
+    /// that aren't already saved to this profile or in the curated common
+    /// list — scoped to them specifically so, say, traveler B's frequent
+    /// coffee mug doesn't show up as a suggestion on traveler A's profile
+    /// just because it's frequent app-wide.
+    ///
+    /// A trip's Traveler has no stored link back to the TravelerProfile it
+    /// was created from (picking a profile just copies name/age bracket in
+    /// as a one-time starting point — see TravelerProfile's own doc
+    /// comment), so matching by name is the same proxy the rest of the
+    /// app already uses for this (e.g. EditTripView's dedup check when
+    /// adding travelers).
     private var frequentSuggestions: [CommonProfileItems.Suggestion] {
         let curatedNames = Set(CommonProfileItems.all.map { $0.name.lowercased() })
 
         var tripsByName: [String: (categoryName: String, trips: Set<PersistentIdentifier>)] = [:]
         for item in allPackingItems {
             guard let trip = item.trip else { continue }
+            guard item.traveler?.name == profile.name else { continue }
             let key = item.name.trimmingCharacters(in: .whitespaces).lowercased()
             guard !key.isEmpty else { continue }
             tripsByName[key, default: (item.categoryName, [])].trips.insert(trip.persistentModelID)
