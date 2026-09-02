@@ -262,13 +262,20 @@ struct AddTripView: View {
 
         // Selected templates' items land in the shared/household bucket
         // (no traveler/pet assignee), same as ApplyTemplateView.
+        // An owned bag's items are that specific traveler's kit, not
+        // household gear — assign them to the matching Traveler just
+        // created above, not the shared bucket. Only an unowned bag
+        // (general-purpose, nobody's claimed it) still lands as shared.
+        let travelerByProfileID = Dictionary(uniqueKeysWithValues: zip(selectedProfiles.map(\.id), travelerModels))
         for template in selectedTemplates {
+            let owningTraveler = template.owner.flatMap { travelerByProfileID[$0.id] }
             for templateItem in template.items {
                 let item = PackingItem(
                     name: templateItem.name,
                     categoryName: templateItem.categoryName,
                     quantity: templateItem.quantity,
-                    trip: trip
+                    trip: trip,
+                    traveler: owningTraveler
                 )
                 modelContext.insert(item)
             }

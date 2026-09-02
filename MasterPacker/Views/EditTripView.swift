@@ -309,13 +309,21 @@ struct EditTripView: View {
 
         // Same as ApplyTemplateView.apply()/AddTripView.save() — lands in
         // the shared/household bucket, no traveler/pet assignee.
+        // An owned bag's items are that specific traveler's kit, not
+        // household gear — assign them to the matching Traveler on this
+        // trip, not the shared bucket. Only an unowned bag still lands
+        // as shared.
         for template in selectedTemplates {
+            let owningTraveler = template.owner.flatMap { owner in
+                trip.travelers.first { $0.name == owner.name }
+            }
             for templateItem in template.items {
                 let item = PackingItem(
                     name: templateItem.name,
                     categoryName: templateItem.categoryName,
                     quantity: templateItem.quantity,
-                    trip: trip
+                    trip: trip,
+                    traveler: owningTraveler
                 )
                 modelContext.insert(item)
             }

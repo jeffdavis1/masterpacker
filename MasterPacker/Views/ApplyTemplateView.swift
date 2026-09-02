@@ -81,12 +81,20 @@ struct ApplyTemplateView: View {
     }
 
     private func apply(_ template: PackingTemplate) {
+        // An owned bag's items are that specific traveler's kit, not
+        // household gear — assign them to the matching Traveler on this
+        // trip, not the shared bucket. Only an unowned bag still lands
+        // as shared.
+        let owningTraveler = template.owner.flatMap { owner in
+            trip.travelers.first { $0.name == owner.name }
+        }
         for templateItem in template.items {
             let item = PackingItem(
                 name: templateItem.name,
                 categoryName: templateItem.categoryName,
                 quantity: templateItem.quantity,
-                trip: trip
+                trip: trip,
+                traveler: owningTraveler
             )
             modelContext.insert(item)
         }
