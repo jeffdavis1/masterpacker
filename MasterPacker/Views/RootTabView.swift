@@ -1,11 +1,15 @@
 import SwiftUI
 
 /// The app's top-level navigation shell — five tabs covering the core
-/// trip-packing workflow (My Trips, Shared With Me, My Bag, Saved
-/// Travelers) plus a Profile tab for secondary, less-frequent features.
-/// Replaces the old single-screen-plus-"More"-menu structure, which
-/// buried quick-access features like My Bag and Saved Travelers a menu
-/// tap deeper than a first-time user should have to dig.
+/// trip-packing workflow (My Trips, Shared, My Bag, Travelers) plus a
+/// More tab for secondary, less-frequent features. Replaces the old
+/// single-screen-plus-"More"-menu structure, which buried quick-access
+/// features like My Bag and Saved Travelers a menu tap deeper than a
+/// first-time user should have to dig.
+///
+/// Tab labels were trimmed from their original longer form ("Shared
+/// With Me" → "Shared", "Saved Travelers" → "Travelers", "Profile" →
+/// "More") once the actual 5-item bar shipped and read as cramped.
 ///
 /// Each tab's root view (TripListView, SharedTripsListView,
 /// TemplateListView, ProfileListView) already owns its own NavigationStack
@@ -33,7 +37,11 @@ struct RootTabView: View {
                     .tag(Tab.myTrips)
                 SharedTripsListView()
                     .tabItem {
-                        Label("Shared With Me", systemImage: "person.2.fill")
+                        // person.2.fill (people, no context of "shared
+                        // between devices/apps") moved to Travelers below,
+                        // where it fits just as well — this tab gets its
+                        // own distinct icon instead of reusing it.
+                        Label("Shared", systemImage: "person.line.dotted.person.fill")
                     }
                     .tag(Tab.shared)
                 TemplateListView()
@@ -43,12 +51,15 @@ struct RootTabView: View {
                     .tag(Tab.myBag)
                 ProfileListView()
                     .tabItem {
-                        Label("Saved Travelers", systemImage: "person.crop.circle")
+                        Label("Travelers", systemImage: "person.2.fill")
                     }
                     .tag(Tab.travelers)
                 ProfileMenuView()
                     .tabItem {
-                        Label("Profile", systemImage: "person.circle.fill")
+                        // Back to the exact icon the old "More" toolbar
+                        // menu used, since this tab replaced it and is
+                        // now labeled the same way.
+                        Label("More", systemImage: "ellipsis.circle")
                     }
                     .tag(Tab.profile)
             }

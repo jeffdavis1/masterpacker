@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// The "Profile" tab in RootTabView — a menu of secondary features that
-/// don't need their own top-level tab: archived trips, managing the
-/// custom categories/activities users create elsewhere in the app, and
-/// the trip map.
+/// The "More" tab in RootTabView (labeled "Profile" until the tab names
+/// got trimmed down) — a menu of secondary features that don't need
+/// their own top-level tab: archived trips, managing the custom
+/// categories/activities users create elsewhere in the app, and the
+/// trip map.
 ///
 /// Settings and Logout aren't listed here yet, even though the original
 /// nav-redesign spec called for them — neither has anything real behind
@@ -51,7 +52,7 @@ struct ProfileMenuView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("Profile")
+            .navigationTitle("More")
         }
         .sheet(isPresented: $isPresentingArchived) {
             ArchivedTripsView()
