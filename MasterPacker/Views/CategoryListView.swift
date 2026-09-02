@@ -14,16 +14,20 @@ struct CategoryListView: View {
     @State private var renamingCategory: CustomCategory?
     @State private var renameText = ""
     @State private var deletingCategory: CustomCategory?
+    @State private var isAddingCategory = false
+    @State private var newCategoryName = ""
 
     var body: some View {
         NavigationStack {
             Group {
                 if customCategories.isEmpty {
-                    ContentUnavailableView(
-                        "No custom categories yet",
-                        systemImage: "tag",
-                        description: Text("Categories you create while adding an item show up here.")
-                    )
+                    ContentUnavailableView {
+                        Label("No custom categories yet", systemImage: "tag")
+                    } description: {
+                        Text("Categories you create while adding an item show up here, or add one directly below.")
+                    } actions: {
+                        Button("Add Category") { isAddingCategory = true }
+                    }
                 } else {
                     List {
                         ForEach(customCategories) { category in
@@ -60,6 +64,20 @@ struct CategoryListView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddingCategory = true
+                    } label: {
+                        Label("Add Category", systemImage: "plus")
+                    }
+                }
+            }
+            .alert("New Category", isPresented: $isAddingCategory) {
+                TextField("Category name", text: $newCategoryName)
+                Button("Cancel", role: .cancel) { newCategoryName = "" }
+                Button("Add") { addCategory() }
+            } message: {
+                Text("Shows up as a category the next time you're adding an item.")
             }
             .alert("Rename Category", isPresented: renameAlertBinding) {
                 TextField("Category name", text: $renameText)
@@ -92,6 +110,25 @@ struct CategoryListView: View {
             get: { deletingCategory != nil },
             set: { isPresented in if !isPresented { deletingCategory = nil } }
         )
+    }
+
+    /// Same collision rule as the inline "Add custom category" flow on
+    /// AddItemView/AddTemplateItemView/AddProfileItemView — case-
+    /// insensitive against both built-in categories and existing custom
+    /// ones. A collision here just quietly does nothing (there's no item
+    /// being added to fall back to selecting, unlike those flows).
+    private func addCategory() {
+        let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
+        newCategoryName = ""
+        guard !trimmed.isEmpty else { return }
+
+        let existingNames = Set(
+            PackingCategory.allCases.map { $0.rawValue.lowercased() } + customCategories.map { $0.name.lowercased() }
+        )
+        guard !existingNames.contains(trimmed.lowercased()) else { return }
+
+        modelContext.insert(CustomCategory(name: trimmed))
+        AnalyticsService.customCategoryCreated()
     }
 
     private func beginRename(_ category: CustomCategory) {

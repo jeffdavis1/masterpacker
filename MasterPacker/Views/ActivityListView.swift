@@ -13,16 +13,20 @@ struct ActivityListView: View {
     @State private var renamingActivity: CustomActivity?
     @State private var renameText = ""
     @State private var deletingActivity: CustomActivity?
+    @State private var isAddingActivity = false
+    @State private var newActivityName = ""
 
     var body: some View {
         NavigationStack {
             Group {
                 if customActivities.isEmpty {
-                    ContentUnavailableView(
-                        "No custom activities yet",
-                        systemImage: "star",
-                        description: Text("Activities you create while picking a trip's activities show up here.")
-                    )
+                    ContentUnavailableView {
+                        Label("No custom activities yet", systemImage: "star")
+                    } description: {
+                        Text("Activities you create while picking a trip's activities show up here, or add one directly below.")
+                    } actions: {
+                        Button("Add Activity") { isAddingActivity = true }
+                    }
                 } else {
                     List {
                         ForEach(customActivities) { activity in
@@ -59,6 +63,20 @@ struct ActivityListView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        isAddingActivity = true
+                    } label: {
+                        Label("Add Activity", systemImage: "plus")
+                    }
+                }
+            }
+            .alert("New Activity", isPresented: $isAddingActivity) {
+                TextField("Activity name", text: $newActivityName)
+                Button("Cancel", role: .cancel) { newActivityName = "" }
+                Button("Add") { addActivity() }
+            } message: {
+                Text("Shows up as an activity chip the next time you're planning a trip.")
             }
             .alert("Rename Activity", isPresented: renameAlertBinding) {
                 TextField("Activity name", text: $renameText)
@@ -91,6 +109,24 @@ struct ActivityListView: View {
             get: { deletingActivity != nil },
             set: { isPresented in if !isPresented { deletingActivity = nil } }
         )
+    }
+
+    /// Same collision rule as the inline "Custom" chip on ActivityChipGrid
+    /// — case-insensitive against both built-in activities and existing
+    /// custom ones. A collision here just quietly does nothing (there's
+    /// no trip being edited to fall back to selecting on, unlike there).
+    private func addActivity() {
+        let trimmed = newActivityName.trimmingCharacters(in: .whitespaces)
+        newActivityName = ""
+        guard !trimmed.isEmpty else { return }
+
+        let existingNames = Set(
+            Activity.allCases.map { $0.rawValue.lowercased() } + customActivities.map { $0.name.lowercased() }
+        )
+        guard !existingNames.contains(trimmed.lowercased()) else { return }
+
+        modelContext.insert(CustomActivity(name: trimmed))
+        AnalyticsService.customActivityCreated()
     }
 
     private func beginRename(_ activity: CustomActivity) {
