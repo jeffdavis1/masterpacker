@@ -2,6 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct AddTripView: View {
+    /// Called with the newly created trip right before this sheet
+    /// dismisses — lets the presenter (TripListView) navigate straight
+    /// into it instead of just landing back on My Trips.
+    var onCreate: (Trip) -> Void = { _ in }
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \PackingTemplate.name) private var savedTemplates: [PackingTemplate]
@@ -56,9 +61,9 @@ struct AddTripView: View {
                         Label("Add traveler", systemImage: "plus")
                     }
                 } header: {
-                    Text("Travelers")
+                    Text("Travelers *")
                 } footer: {
-                    Text("Their always-pack items come along automatically.")
+                    Text("Their always-pack items come along automatically. At least one traveler is required to save this trip.")
                 }
 
                 Section("Activities") {
@@ -96,13 +101,13 @@ struct AddTripView: View {
                     Text("Their always-pack items come along automatically.")
                 }
 
-                if !savedTemplates.isEmpty {
+                if !availableTemplates.isEmpty {
                     Section {
-                        TemplateChipGrid(templates: savedTemplates, selected: $selectedTemplates)
+                        TemplateChipGrid(templates: availableTemplates, selected: $selectedTemplates)
                     } header: {
                         Text("From My Bag")
                     } footer: {
-                        Text("Adds each selected bag's items to this trip's shared list.")
+                        Text("Adds each selected bag's items to this trip's shared list. Only bags with no assigned owner, or owned by a traveler on this trip, are offered here.")
                     }
                 }
 
@@ -134,11 +139,31 @@ struct AddTripView: View {
             .sheet(isPresented: $isPresentingPetChooser) {
                 PetChooserView(selectedProfiles: $selectedPetProfiles)
             }
+            // A bag can drop out of availableTemplates (below) when its
+            // owning traveler gets removed after already being selected
+            // here — prune it rather than silently keep applying a bag
+            // that's no longer even shown as an option.
+            .onChange(of: selectedProfiles.map(\.id)) {
+                let availableIDs = Set(availableTemplates.map(\.id))
+                selectedTemplates.removeAll { !availableIDs.contains($0.id) }
+            }
         }
     }
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !selectedProfiles.isEmpty
+    }
+
+    /// Bags offered in "From My Bag" — an unowned bag (no travelers
+    /// assigned) is available for any trip, same as every bag was before
+    /// ownership existed; an owned one only shows up once at least one of
+    /// its owners is among the travelers actually being added here.
+    private var availableTemplates: [PackingTemplate] {
+        savedTemplates.filter { template in
+            template.owners.isEmpty || template.owners.contains { owner in
+                selectedProfiles.contains { $0.id == owner.id }
+            }
+        }
     }
 
     private func save() async {
@@ -262,6 +287,7 @@ struct AddTripView: View {
             AnalyticsService.bagAppliedToTrip()
         }
 
+        onCreate(trip)
         dismiss()
     }
 }

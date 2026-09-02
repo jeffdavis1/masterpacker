@@ -117,7 +117,11 @@ struct TripListView: View {
                 }
             }
             .sheet(isPresented: $isPresentingAddTrip) {
-                AddTripView()
+                // Go straight into the new trip once it's created,
+                // instead of dropping the user back on this list.
+                AddTripView { trip in
+                    path.append(trip)
+                }
             }
             .sheet(item: $selectedSharedTrip) { trip in
                 NavigationStack {

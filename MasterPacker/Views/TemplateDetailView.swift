@@ -4,6 +4,7 @@ import SwiftData
 struct TemplateDetailView: View {
     @Bindable var template: PackingTemplate
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \TravelerProfile.name) private var travelerProfiles: [TravelerProfile]
     @State private var isAddingItem = false
 
     /// Suggestion chips tapped but not yet saved — tapping toggles the
@@ -96,6 +97,17 @@ struct TemplateDetailView: View {
                     Text("Suggested items")
                 } footer: {
                     Text("Tap a category to see items, then tap to select, then Save.")
+                }
+            }
+
+            if !travelerProfiles.isEmpty {
+                Section {
+                    OwnerChipGrid(profiles: travelerProfiles, owners: $template.owners)
+                        .listRowBackground(AppTheme.cardSurface)
+                } header: {
+                    Text("Owners")
+                } footer: {
+                    Text("Leave empty to offer this bag on every trip. Assign it to specific travelers to only offer it when they're on the trip.")
                 }
             }
         }
@@ -215,10 +227,48 @@ struct TemplateDetailView: View {
     }
 }
 
+/// Tap-to-toggle chips for assigning this bag's owners — same capsule
+/// style as ActivityChipGrid/SuggestionChipGrid. Single-use, so it lives
+/// here rather than as its own file.
+private struct OwnerChipGrid: View {
+    let profiles: [TravelerProfile]
+    @Binding var owners: [TravelerProfile]
+
+    private let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
+
+    var body: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            ForEach(profiles) { profile in
+                let isOwner = owners.contains { $0.id == profile.id }
+                Button {
+                    if isOwner {
+                        owners.removeAll { $0.id == profile.id }
+                    } else {
+                        owners.append(profile)
+                    }
+                } label: {
+                    Text(profile.name)
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(isOwner ? Color.accentColor : Color.secondary.opacity(0.15))
+                        .foregroundStyle(isOwner ? .white : .primary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 #Preview {
     let template = PackingTemplate(name: "Preview")
     return NavigationStack {
         TemplateDetailView(template: template)
     }
-    .modelContainer(for: [PackingTemplate.self, TemplateItem.self], inMemory: true)
+    .modelContainer(
+        for: [PackingTemplate.self, TemplateItem.self, TravelerProfile.self, ProfileItem.self],
+        inMemory: true
+    )
 }

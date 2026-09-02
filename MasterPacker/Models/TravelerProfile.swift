@@ -17,6 +17,13 @@ final class TravelerProfile {
     @Relationship(deleteRule: .cascade, inverse: \ProfileItem.profile)
     private var alwaysItemsStorage: [ProfileItem]? = []
 
+    // Many-to-many with PackingTemplate — a bag can belong to more than
+    // one traveler, and a traveler can own more than one bag. .nullify
+    // (the default) rather than .cascade: deleting a traveler profile
+    // shouldn't take their bags down with them, just unassign them.
+    @Relationship(inverse: \PackingTemplate.ownersStorage)
+    private var ownedTemplatesStorage: [PackingTemplate]? = []
+
     init(name: String, ageBracket: AgeBracket = .adult) {
         self.name = name
         self.ageBracket = ageBracket
@@ -25,5 +32,12 @@ final class TravelerProfile {
     var alwaysItems: [ProfileItem] {
         get { alwaysItemsStorage ?? [] }
         set { alwaysItemsStorage = newValue }
+    }
+
+    /// Bags (My Bag templates) assigned to this traveler — see
+    /// PackingTemplate.owners for what an empty assignment means.
+    var ownedTemplates: [PackingTemplate] {
+        get { ownedTemplatesStorage ?? [] }
+        set { ownedTemplatesStorage = newValue }
     }
 }
