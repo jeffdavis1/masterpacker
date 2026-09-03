@@ -1,6 +1,7 @@
 import UIKit
 import CloudKit
 import FirebaseCore
+import FirebaseCrashlytics
 import UserNotifications
 
 /// Small UIKit bridge for things SwiftUI's App lifecycle has no direct
@@ -21,6 +22,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // possible, and before any other Firebase API (Analytics
         // included) is touched. Reads GoogleService-Info.plist out of
         // the app bundle automatically.
+        //
+        // FirebaseCrashlytics is linked (see project package product
+        // dependencies) and needs no separate setup call — it registers
+        // its own uncaught-exception/signal handlers as soon as it's
+        // linked and this configure() call runs, capturing crashes from
+        // here on. One manual, one-time Xcode step still required before
+        // crash reports are symbolicated: add a Run Script build phase
+        // that uploads dSYMs, per Firebase's Crashlytics + SPM setup
+        // guide (Target → Build Phases → + → New Run Script Phase) —
+        // that's an Xcode-project action, not something safe to hand-edit
+        // into the .pbxproj blind.
         FirebaseApp.configure()
 
         // Needed for CloudKit's zone-change subscriptions (see
@@ -69,11 +81,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     /// silent-push subscription picks up the registered token automatically,
     /// with no explicit handoff required.
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        #if DEBUG
         let tokenHex = deviceToken.map { String(format: "%02x", $0) }.joined()
         print("📱 APNs device token: \(tokenHex)")
+        #endif
     }
 
+    /// Push registration failing means CloudKit sharing sync silently
+    /// stops working for this device — worth knowing about in production,
+    /// not just a console line only a developer watching Xcode would see.
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        Crashlytics.crashlytics().record(error: error)
+        #if DEBUG
         print("⚠️ Failed to register for remote notifications: \(error)")
+        #endif
     }
 }

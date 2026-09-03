@@ -90,6 +90,7 @@ struct EditTripView: View {
                                 Image(systemName: "minus.circle.fill")
                                     .foregroundStyle(.red)
                             }
+                            .accessibilityLabel("Remove \(traveler.name)")
                             .buttonStyle(.plain)
                         }
                     }
@@ -116,6 +117,7 @@ struct EditTripView: View {
                                 Image(systemName: "minus.circle.fill")
                                     .foregroundStyle(.red)
                             }
+                            .accessibilityLabel("Remove \(pet.name)")
                             .buttonStyle(.plain)
                         }
                     }

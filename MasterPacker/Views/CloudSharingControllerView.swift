@@ -19,6 +19,12 @@ import CloudKit
 struct CloudSharingPresenter: UIViewControllerRepresentable {
     let trip: Trip
     @Binding var isPresented: Bool
+    /// Fires when the share fails to save *after* the preparation handler
+    /// already succeeded — see Coordinator.cloudSharingController(_:failedToSaveShareWithError:).
+    /// A preparation failure (e.g. not signed into iCloud) is already
+    /// handled by UICloudSharingController's own native error UI; this is
+    /// the one failure mode that otherwise reaches no one.
+    var onSaveFailed: (String) -> Void = { _ in }
 
     func makeUIViewController(context: Context) -> UIViewController {
         UIViewController()
@@ -49,20 +55,29 @@ struct CloudSharingPresenter: UIViewControllerRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(isPresented: $isPresented)
+        Coordinator(isPresented: $isPresented, onSaveFailed: onSaveFailed)
     }
 
     final class Coordinator: NSObject, UICloudSharingControllerDelegate, UIAdaptivePresentationControllerDelegate {
         @Binding var isPresented: Bool
+        let onSaveFailed: (String) -> Void
 
-        init(isPresented: Binding<Bool>) {
+        init(isPresented: Binding<Bool>, onSaveFailed: @escaping (String) -> Void) {
             _isPresented = isPresented
+            self.onSaveFailed = onSaveFailed
         }
 
+        /// Can fire even after the preparationHandler already succeeded,
+        /// if something later in the save/publish flow fails (dropped
+        /// connection, iCloud quota, etc.) — by then the sharing sheet has
+        /// often already dismissed itself, so without this the user is
+        /// left believing the trip is shared when it isn't. Reset
+        /// isPresented too so a retry tap re-presents cleanly instead of
+        /// silently no-op'ing (updateUIViewController only presents when
+        /// nothing's already presented).
         func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: Error) {
-            // Not surfaced to the UI — this can fire even after the
-            // preparationHandler already succeeded, if something later in
-            // the save/publish flow fails.
+            isPresented = false
+            onSaveFailed(error.localizedDescription)
         }
 
         func itemTitle(for csc: UICloudSharingController) -> String? {

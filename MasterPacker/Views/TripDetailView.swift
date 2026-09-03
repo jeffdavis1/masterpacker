@@ -10,6 +10,7 @@ struct TripDetailView: View {
     @State private var isPresentingApplyTemplate = false
     @State private var collapsedSections: Set<String> = []
     @State private var isPresentingShareSheet = false
+    @State private var shareSaveErrorMessage: String?
     @State private var groupingMode: GroupingMode = .people
     /// Only meaningful in Luggage grouping — lets picking a bag apply to
     /// every checked item at once instead of one menu tap per item. Keyed
@@ -128,7 +129,7 @@ struct TripDetailView: View {
                 CategoryGroup(
                     label: categoryName.uppercased(),
                     symbol: PackingCategory(rawValue: categoryName)?.symbol ?? "tag",
-                    items: grouped[categoryName]!.sorted { $0.name < $1.name }
+                    items: (grouped[categoryName] ?? []).sorted { $0.name < $1.name }
                 )
             }
     }
@@ -161,7 +162,7 @@ struct TripDetailView: View {
                 CategoryGroup(
                     label: group.uppercased(),
                     symbol: ItemDisplayGroup.symbol(for: group),
-                    items: grouped[group]!.sorted { $0.name < $1.name }
+                    items: (grouped[group] ?? []).sorted { $0.name < $1.name }
                 )
             }
         return fixedGroups + customGroups
@@ -275,8 +276,11 @@ struct TripDetailView: View {
             // pendingNotificationTripID), so printing it here is the
             // simplest way to grab one for manually testing that deep link
             // (e.g. via `xcrun simctl push`) without waiting for a real
-            // reminder to fire.
+            // reminder to fire. Debug-only — no reason to spend a
+            // print() on every trip view in a release build.
+            #if DEBUG
             print("🔗 \(trip.name) trip ID: \(trip.id.uuidString)")
+            #endif
         }
         .refreshable {
             // Pulls a participant's edits (item packed state) into this
@@ -345,7 +349,20 @@ struct TripDetailView: View {
         .sheet(isPresented: $isPresentingApplyTemplate) {
             ApplyTemplateView(trip: trip)
         }
-        .background(CloudSharingPresenter(trip: trip, isPresented: $isPresentingShareSheet))
+        .background(CloudSharingPresenter(trip: trip, isPresented: $isPresentingShareSheet) { message in
+            shareSaveErrorMessage = message
+        })
+        .alert(
+            "Couldn't Share Trip",
+            isPresented: Binding(
+                get: { shareSaveErrorMessage != nil },
+                set: { isPresented in if !isPresented { shareSaveErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(shareSaveErrorMessage ?? "Something went wrong while sharing this trip. Please try again.")
+        }
     }
 
     private func deleteItems(_ items: [PackingItem], at offsets: IndexSet) {

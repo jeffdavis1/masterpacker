@@ -52,6 +52,7 @@ struct AddTripView: View {
                                 Image(systemName: "minus.circle.fill")
                                     .foregroundStyle(.red)
                             }
+                            .accessibilityLabel("Remove \(profile.name)")
                             .buttonStyle(.plain)
                         }
                     }
@@ -87,6 +88,7 @@ struct AddTripView: View {
                                 Image(systemName: "minus.circle.fill")
                                     .foregroundStyle(.red)
                             }
+                            .accessibilityLabel("Remove \(profile.name)")
                             .buttonStyle(.plain)
                         }
                     }

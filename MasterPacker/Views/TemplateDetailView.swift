@@ -62,6 +62,7 @@ struct TemplateDetailView: View {
                                         Image(systemName: "trash")
                                             .foregroundStyle(.red)
                                     }
+                                    .accessibilityLabel("Delete \(item.name)")
                                     .buttonStyle(.plain)
                                     .padding(.leading, 8)
                                 }
@@ -127,6 +128,7 @@ struct TemplateDetailView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                 }
+                .accessibilityLabel("Add Item")
             }
             // Two adjacent ToolbarItems still fuse into one glass pill
             // under the Liquid Glass toolbar style — a plain second
@@ -188,7 +190,7 @@ struct TemplateDetailView: View {
                 CategoryGroup(
                     label: group,
                     symbol: ItemDisplayGroup.symbol(for: group),
-                    items: grouped[group]!.sorted { $0.name < $1.name }
+                    items: (grouped[group] ?? []).sorted { $0.name < $1.name }
                 )
             }
         return builtIn + custom

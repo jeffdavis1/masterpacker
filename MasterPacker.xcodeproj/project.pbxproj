@@ -33,6 +33,7 @@
 		39207A7ABA2C26B909B65C6E /* TripMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD74BC942C877E1C923E9E0 /* TripMapView.swift */; };
 		27E0E6E98DB070F3BD949356 /* NewProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00C095BF080504A31FEA5E /* NewProfileView.swift */; };
 		2E3AA606304229F500360261 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 2E3AA605304229F500360261 /* FirebaseAnalytics */; };
+		292B86EAAEC284E5CDF873C1 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 48D82F74E3FC13F8C259477C /* FirebaseCrashlytics */; };
 		3EB588070026919A8237C6F1 /* ProfileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D135F12360FCD9616ED012 /* ProfileDetailView.swift */; };
 		4CA8F2662805991A052B5B1A /* PackingTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78407A25CF548D158C9BFB2D /* PackingTemplate.swift */; };
 		4E94D9F7257212ED1C400522 /* AddProfileItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB590586804C729A187E3D3 /* AddProfileItemView.swift */; };
@@ -149,6 +150,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2E3AA606304229F500360261 /* FirebaseAnalytics in Frameworks */,
+				292B86EAAEC284E5CDF873C1 /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,6 +296,7 @@
 			name = MasterPacker;
 			packageProductDependencies = (
 				2E3AA605304229F500360261 /* FirebaseAnalytics */,
+				48D82F74E3FC13F8C259477C /* FirebaseCrashlytics */,
 			);
 			productName = MasterPacker;
 			productReference = 8E186E08EC962C6824D4940F /* MasterPacker.app */;
@@ -639,6 +642,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2E3AA603304226B900360261 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
+		};
+		48D82F74E3FC13F8C259477C /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2E3AA603304226B900360261 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

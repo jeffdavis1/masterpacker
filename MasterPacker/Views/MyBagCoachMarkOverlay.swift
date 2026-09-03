@@ -50,6 +50,7 @@ struct MyBagCoachMarkOverlay: View {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.white.opacity(0.8))
                 }
+                .accessibilityLabel("Dismiss")
                 .buttonStyle(.plain)
             }
             .padding(14)

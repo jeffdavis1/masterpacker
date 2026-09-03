@@ -103,6 +103,7 @@ struct SharedTripDetailView: View {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityLabel("Close")
             }
         }
     }
@@ -130,7 +131,7 @@ struct SharedTripDetailView: View {
                     CategoryGroup(
                         label: categoryName.uppercased(),
                         symbol: PackingCategory(rawValue: categoryName)?.symbol ?? "tag",
-                        items: grouped[categoryName]!.sorted { $0.name < $1.name }
+                        items: (grouped[categoryName] ?? []).sorted { $0.name < $1.name }
                     )
                 }
             result.append((label, groups))
