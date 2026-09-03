@@ -179,8 +179,15 @@ enum PackingRulesEngine {
             ]
         case .business:
             guard isOldEnoughForFormalWear else { return [] }
+            // Unlike everyday clothing, business attire gets re-worn and
+            // mixed-and-matched rather than needing a fresh outfit every
+            // single day — 1-per-day (the old formula) meant 5 suits for
+            // a 5-day trip. Scales gently instead: 2 for a short trip,
+            // capped at 4 even for a long one. Still just a starting
+            // point — quantity is editable on the packing list itself
+            // (tap the ×N badge) for whatever actually fits the trip.
             return [
-                item("Business attire", .clothing, days),
+                item("Business attire", .clothing, min(4, max(2, days / 2))),
                 item("Laptop & charger", .electronics, 1),
             ]
         case .formalEvent:

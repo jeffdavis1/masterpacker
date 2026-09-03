@@ -703,6 +703,7 @@ private struct ItemRow: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isPresentingAddLuggage = false
     @State private var newLuggageName = ""
+    @State private var isEditingQuantity = false
 
     var body: some View {
         Group {
@@ -743,15 +744,39 @@ private struct ItemRow: View {
                     Text(item.name)
                         .strikethrough(item.isPacked)
                         .foregroundStyle(item.isPacked ? .secondary : .primary)
-                    Spacer()
-                    if item.quantity > 1 {
-                        Text("×\(item.quantity)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            Spacer()
+
+            // Pulled out of the packed-toggle button above so it's its own
+            // tap target — suggested quantities (e.g. "Business attire"
+            // scaling 1-per-day) are a starting point, not gospel, and
+            // this is how a user corrects one without deleting and
+            // re-adding the item. Still only shown above 1, same as
+            // before, to keep the common case (most items) uncluttered —
+            // an item sitting at 1 has no visible badge to tap yet.
+            if item.quantity > 1 {
+                Button {
+                    isEditingQuantity = true
+                } label: {
+                    Text("×\(item.quantity)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $isEditingQuantity) {
+                    VStack(spacing: 12) {
+                        Text(item.name)
+                            .font(.headline)
+                        Stepper("Quantity: \(item.quantity)", value: $item.quantity, in: 1...20)
+                    }
+                    .padding()
+                    .presentationCompactAdaptation(.popover)
+                }
+            }
 
             if let trip {
                 luggageMenu(trip: trip)
