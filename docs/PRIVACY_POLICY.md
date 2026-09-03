@@ -10,6 +10,7 @@ J Warren Group, LLC ("we," "us," or "our") built MasterPacker (the "App") to hel
 - Authentication is silent: if you're signed into iCloud on your device, the App automatically uses your Apple ID for authentication and data sync. iCloud isn't required to use the App — without it, your data just stays local to that device and doesn't sync.
 - Your trips, packing lists, travelers, pets, and saved bags are stored in **your own private iCloud account** (via Apple's CloudKit), not on our servers. We don't operate a database of your content and can't see it.
 - We use Firebase Analytics to understand how the App is used, in the aggregate — not to identify you personally.
+- You can send us feedback from the More tab — the form never asks for your name or email, and we have no way to reply to it or trace it back to you.
 - We don't collect your precise location. Ever.
 - We don't sell your data, and we don't use it for advertising.
 
@@ -49,6 +50,12 @@ Packing reminders (e.g., "start packing" or "you haven't finished packing") are 
 ### Usage analytics
 
 We use Firebase Analytics (a Google service) to understand how people use the App in aggregate — for example, that trips are being created, that packing lists are being completed, or that a particular feature is being used — so we can improve it. This is limited to named product events (like "trip created" or "item packed") and does not include the content of your trips, packing lists, or personal data. Firebase manages its own anonymized installation and session identifiers for this purpose; we do not generate, store, or transmit any device identifier of our own. For more information, see [Firebase's Privacy Policy](https://firebase.google.com/support/privacy).
+
+### Feedback
+
+If you use **Send Feedback** (in the More tab), your message is saved using Apple's CloudKit — the same infrastructure the App already uses, but a separate, shared part of it, not our own server. The form never asks for your name, email, or any other identifying information.
+
+One technical note in the interest of accuracy: CloudKit automatically attaches an opaque, app-scoped identifier to anything it saves, feedback included — this is not your name, email, or Apple ID, and there's no way for us to connect it back to your real identity. Because nothing identifying or contactable is attached to your feedback, we also have no way to reply to it directly.
 
 ## What we don't do
 

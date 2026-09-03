@@ -17,9 +17,11 @@
 		5DCF9A4D2223123201C9A438 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC6629E1BC017F7D1A0506E /* AddItemView.swift */; };
 		EF1E2DA5CEC7F7F359DB3ABA /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B91A9DD3FF6A5590DF8E2EB /* SplashScreenView.swift */; };
 		0352E66B56A0BB8F85457871 /* CloudSharingControllerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */; };
+		047C399AE92ED2912AD92A0B /* SendFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BDD66EE5B62D0529C474B7 /* SendFeedbackView.swift */; };
 		0544AEB5F91100A168364E41 /* TemplateItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D8091FDE99682428E6578CE /* TemplateItem.swift */; };
 		074ACA1044236520B57A0A55 /* Pet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE87966B57A366920A15FF0 /* Pet.swift */; };
 		07F61C49BAB508171B43D1C3 /* TripSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103DAD5C7D76416917811B57 /* TripSharingService.swift */; };
+		C8A09AC5A3F92B44A15EB3E9 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05012E2B78184A1318C5430F /* FeedbackService.swift */; };
 		0A1C0191A5E78EAB16D3E28B /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF19A8569A446A0A2FD38B4 /* DesignSystem.swift */; };
 		181C1577AC6EEC784416A864 /* MasterPackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D76C12613F60BADD41492E /* MasterPackerApp.swift */; };
 		1D462128AAAB5F6510333E94 /* PackingItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BD4940700936872CE97FF4 /* PackingItem.swift */; };
@@ -84,6 +86,7 @@
 		07E321AF525F903CB2AA1905 /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
 		0F1B318C863261EEAA8FE43F /* TemplateListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateListView.swift; sourceTree = "<group>"; };
 		103DAD5C7D76416917811B57 /* TripSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSharingService.swift; sourceTree = "<group>"; };
+		05012E2B78184A1318C5430F /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		16BD4940700936872CE97FF4 /* PackingItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackingItem.swift; sourceTree = "<group>"; };
 		1AA9CCA06D61EF382938C70B /* PackingRulesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackingRulesEngine.swift; sourceTree = "<group>"; };
 		1CE331B6F285C7CACF7A3785 /* CustomCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCategory.swift; sourceTree = "<group>"; };
@@ -129,6 +132,7 @@
 		AD705FC539CD70F839E29A9F /* NewTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTemplateView.swift; sourceTree = "<group>"; };
 		B9ACBE4821F48738058145AA /* TravelMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelMethod.swift; sourceTree = "<group>"; };
 		BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSharingControllerView.swift; sourceTree = "<group>"; };
+		03BDD66EE5B62D0529C474B7 /* SendFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendFeedbackView.swift; sourceTree = "<group>"; };
 		BEFDDFB630D169341E45AC3B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C25AA24A6A64E0E2D5EC5DB6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C7D7BAF7AC6E0B33ADF1236F /* RemoteTrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteTrip.swift; sourceTree = "<group>"; };
@@ -187,6 +191,7 @@
 				7277AD1098A99EF4F33AA3A9 /* SharedTripsListView.swift */,
 				F137B16996BEC3610ADA3689 /* SharedTripDetailView.swift */,
 				BAE3EE2DD05EEE3E419A3509 /* CloudSharingControllerView.swift */,
+				03BDD66EE5B62D0529C474B7 /* SendFeedbackView.swift */,
 				A14A25B88D1E62128D23E974 /* ArchivedTripsView.swift */,
 			);
 			path = Views;
@@ -218,6 +223,7 @@
 				C7D7BAF7AC6E0B33ADF1236F /* RemoteTrip.swift */,
 				1D323752A0A3BC0D691396FF /* CloudSharingRecords.swift */,
 				103DAD5C7D76416917811B57 /* TripSharingService.swift */,
+				05012E2B78184A1318C5430F /* FeedbackService.swift */,
 				4336701D9576990AA209D485 /* DestinationSearchCompleter.swift */,
 				0B416DF383594DAD3A4C44C6 /* TripArchiver.swift */,
 				7F13D1E5304A65251A6514EB /* Luggage.swift */,
@@ -387,6 +393,8 @@
 				B6BB222ED03CCAA18EA3542C /* CloudSharingRecords.swift in Sources */,
 				07F61C49BAB508171B43D1C3 /* TripSharingService.swift in Sources */,
 				0352E66B56A0BB8F85457871 /* CloudSharingControllerView.swift in Sources */,
+				C8A09AC5A3F92B44A15EB3E9 /* FeedbackService.swift in Sources */,
+				047C399AE92ED2912AD92A0B /* SendFeedbackView.swift in Sources */,
 				868B5CBD8BA4FA16F6E46AEF /* DestinationSearchCompleter.swift in Sources */,
 				6410D3586841C6A9B6BE3B78 /* TripListView.swift in Sources */,
 				E8AE0017D039B5510820EE2E /* AddTripView.swift in Sources */,

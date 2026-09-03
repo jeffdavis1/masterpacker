@@ -219,6 +219,12 @@ enum AnalyticsService {
         Analytics.logEvent("custom_activity_deleted", parameters: nil)
     }
 
+    // MARK: - Feedback
+
+    static func feedbackSubmitted() {
+        Analytics.logEvent("feedback_submitted", parameters: nil)
+    }
+
     // MARK: - Notifications
 
     static func notificationPermissionResult(granted: Bool) {
