@@ -125,6 +125,24 @@ final class Trip {
         return max(1, days + 1)
     }
 
+    /// Case-insensitive, assignee-scoped duplicate check. Items can land
+    /// on a trip from more than one independent source in the same flow
+    /// — PackingRulesEngine's suggested list, a traveler's/pet's saved
+    /// Essentials, a My Bag's items — none of which know about each
+    /// other. Without this, the same staple (e.g. "Toothbrush" or
+    /// "Phone charger") showing up in both the suggestion engine's base
+    /// list and someone's saved Essentials would land on the trip twice.
+    /// Every insertion site that pulls from more than one such source
+    /// should check this before inserting.
+    func hasItem(named name: String, traveler: Traveler?, pet: Pet?) -> Bool {
+        let target = name.trimmingCharacters(in: .whitespaces).lowercased()
+        return items.contains {
+            $0.name.trimmingCharacters(in: .whitespaces).lowercased() == target
+                && $0.traveler == traveler
+                && $0.pet == pet
+        }
+    }
+
     var packedCount: Int {
         items.filter(\.isPacked).count
     }

@@ -89,6 +89,7 @@ struct ApplyTemplateView: View {
             trip.travelers.first { $0.name == owner.name }
         }
         for templateItem in template.items {
+            guard !trip.hasItem(named: templateItem.name, traveler: owningTraveler, pet: nil) else { continue }
             let item = PackingItem(
                 name: templateItem.name,
                 categoryName: templateItem.categoryName,

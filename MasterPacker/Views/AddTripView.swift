@@ -221,6 +221,7 @@ struct AddTripView: View {
                     traveler = nil
                     pet = p
                 }
+                guard !trip.hasItem(named: generated.name, traveler: traveler, pet: pet) else { continue }
                 let item = PackingItem(
                     name: generated.name,
                     categoryName: generated.category.rawValue,
@@ -235,9 +236,14 @@ struct AddTripView: View {
 
         // Always-pack items from each traveler's/pet's saved profile aren't
         // gated by the "generate suggested packing list" toggle above — the
-        // whole point of saving them is that you always want them.
+        // whole point of saving them is that you always want them. Still
+        // checked against what's already on the trip, though — a staple
+        // like "Toothbrush" or "Phone charger" showing up in both the
+        // suggestion engine's base list and someone's saved Essentials
+        // shouldn't land on the trip twice.
         for (profile, traveler) in zip(selectedProfiles, travelerModels) {
             for profileItem in profile.alwaysItems {
+                guard !trip.hasItem(named: profileItem.name, traveler: traveler, pet: nil) else { continue }
                 let item = PackingItem(
                     name: profileItem.name,
                     categoryName: profileItem.categoryName,
@@ -251,6 +257,7 @@ struct AddTripView: View {
 
         for (profile, pet) in zip(selectedPetProfiles, petModels) {
             for profileItem in profile.alwaysItems {
+                guard !trip.hasItem(named: profileItem.name, traveler: nil, pet: pet) else { continue }
                 let item = PackingItem(
                     name: profileItem.name,
                     categoryName: profileItem.categoryName,
@@ -272,6 +279,7 @@ struct AddTripView: View {
         for template in selectedTemplates {
             let owningTraveler = template.owner.flatMap { travelerByProfileID[$0.id] }
             for templateItem in template.items {
+                guard !trip.hasItem(named: templateItem.name, traveler: owningTraveler, pet: nil) else { continue }
                 let item = PackingItem(
                     name: templateItem.name,
                     categoryName: templateItem.categoryName,
