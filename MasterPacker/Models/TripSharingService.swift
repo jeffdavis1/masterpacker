@@ -346,7 +346,16 @@ final class TripSharingService: ObservableObject {
         do {
             _ = try await shareContainer.accept(metadata)
             await refreshSharedTrips()
-            justAcceptedTripID = metadata.rootRecordID.recordName
+            // hierarchicalRootRecordID replaces the deprecated
+            // rootRecordID (iOS 16) — optional now, to support multi-
+            // level share hierarchies, but every share this app creates
+            // has exactly one root record (the SharedTrip record itself),
+            // so this is always present in practice. A nil here just
+            // means the deep-link doesn't fire — same as any other
+            // failure in this method, per the catch below.
+            if let rootRecordID = metadata.hierarchicalRootRecordID {
+                justAcceptedTripID = rootRecordID.recordName
+            }
             AnalyticsService.shareAccepted()
         } catch {
             // Nothing further to do — the share simply won't show up.
