@@ -2,7 +2,7 @@
 
 **Effective date:** September 3, 2026
 
-[Company Name] ("we," "us," or "our") built MasterPacker (the "App") to help you plan and pack for trips. This policy explains what data the App handles, how it's stored, and what choices you have. We wrote it to describe exactly what the App does — not more, not less.
+J Warren Group, LLC ("we," "us," or "our") built MasterPacker (the "App") to help you plan and pack for trips. This policy explains what data the App handles, how it's stored, and what choices you have. We wrote it to describe exactly what the App does — not more, not less.
 
 ## The short version
 
@@ -74,7 +74,7 @@ If we make material changes to this policy, we'll update the effective date abov
 
 ## Contact us
 
-Questions about this policy or how MasterPacker handles data? Reach us at [privacy@yourdomain.com].
+Questions about this policy or how MasterPacker handles data? Reach us at privacy@jwarrengroup.com.
 
 ---
 
