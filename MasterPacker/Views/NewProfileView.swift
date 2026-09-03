@@ -62,6 +62,7 @@ struct NewProfileView: View {
         // by PackingRulesEngine's suggestion logic.
         let profile = TravelerProfile(name: trimmedName)
         modelContext.insert(profile)
+        AnalyticsService.travelerProfileCreated()
         onCreate(profile)
         dismiss()
     }

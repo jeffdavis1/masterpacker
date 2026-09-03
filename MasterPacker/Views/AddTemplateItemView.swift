@@ -72,6 +72,7 @@ struct AddTemplateItemView: View {
     private func save() {
         let item = TemplateItem(name: name, categoryName: categoryName, quantity: quantity, template: template)
         modelContext.insert(item)
+        AnalyticsService.bagItemAdded()
         dismiss()
     }
 }

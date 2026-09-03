@@ -38,6 +38,7 @@ struct NewPetProfileView: View {
     private func save() {
         let profile = PetProfile(name: name, species: species)
         modelContext.insert(profile)
+        AnalyticsService.petProfileCreated()
         onCreate(profile)
         dismiss()
     }

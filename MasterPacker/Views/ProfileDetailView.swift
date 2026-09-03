@@ -110,6 +110,7 @@ struct ProfileDetailView: View {
         for index in offsets {
             modelContext.delete(items[index])
         }
+        AnalyticsService.essentialItemsDeleted(count: offsets.count)
     }
 
     private func togglePending(_ suggestion: CommonProfileItems.Suggestion) {
@@ -121,6 +122,7 @@ struct ProfileDetailView: View {
     }
 
     private func commitPending() {
+        AnalyticsService.essentialSuggestionsCommitted(count: pendingSuggestions.count)
         for suggestion in pendingSuggestions {
             let item = ProfileItem(name: suggestion.name, categoryName: suggestion.category.rawValue, profile: profile)
             modelContext.insert(item)

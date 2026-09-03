@@ -39,7 +39,8 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .notDetermined else { return }
-        _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        AnalyticsService.notificationPermissionResult(granted: granted)
     }
 
     private func isAuthorized() async -> Bool {
@@ -286,6 +287,11 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
     /// deep-link into.
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         guard let tripID = response.notification.request.content.userInfo["tripID"] as? String else { return }
+        // Identifiers are "trip.<key>.<kind>" (see scheduleTripReminders/
+        // sendWeatherAlert) — only the fixed kind suffix is ever logged,
+        // never the trip-specific key portion.
+        let kind = response.notification.request.identifier.split(separator: ".").last.map(String.init) ?? "unknown"
+        AnalyticsService.notificationTapped(kind: kind)
         pendingNotificationTripID = tripID
     }
 }

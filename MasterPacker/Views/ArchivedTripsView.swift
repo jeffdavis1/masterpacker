@@ -70,6 +70,7 @@ struct ArchivedTripsView: View {
                                         .swipeActions(edge: .leading) {
                                             Button {
                                                 trip.isArchived = false
+                                                AnalyticsService.tripRestoredFromArchive()
                                             } label: {
                                                 Label("Restore", systemImage: "arrow.uturn.backward")
                                             }

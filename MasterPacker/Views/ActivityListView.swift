@@ -159,6 +159,7 @@ struct ActivityListView: View {
         deletingActivity = nil
         reassignActivityUsages(from: activity.name, to: nil)
         modelContext.delete(activity)
+        AnalyticsService.customActivityDeleted()
     }
 
     /// Sweeps every trip's activity selection and either renames or

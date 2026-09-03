@@ -110,12 +110,14 @@ struct ProfileListView: View {
         for index in offsets {
             modelContext.delete(travelerProfiles[index])
         }
+        AnalyticsService.profileDeleted(profileType: "traveler")
     }
 
     private func deletePetProfiles(at offsets: IndexSet) {
         for index in offsets {
             modelContext.delete(petProfiles[index])
         }
+        AnalyticsService.profileDeleted(profileType: "pet")
     }
 }
 

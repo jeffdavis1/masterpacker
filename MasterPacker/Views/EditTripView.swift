@@ -344,6 +344,7 @@ struct EditTripView: View {
             await NotificationManager.shared.scheduleTripReminders(for: trip)
             await TripSharingService.shared.resyncIfShared(trip)
         }
+        AnalyticsService.tripUpdated()
 
         dismiss()
     }

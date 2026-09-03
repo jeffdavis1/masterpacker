@@ -690,6 +690,7 @@ final class TripSharingService: ObservableObject {
         archivedSharedTripIDs.remove(trip.id)
         autoArchivedSharedTripIDs.remove(trip.id)
         persistArchivedSharedTripIDs()
+        AnalyticsService.sharedTripRemovedFromMyTrips()
     }
 
     // MARK: - Archiving pinned shared trips
@@ -705,6 +706,7 @@ final class TripSharingService: ObservableObject {
     func restoreFromArchive(_ trip: RemoteTrip) {
         archivedSharedTripIDs.remove(trip.id)
         persistArchivedSharedTripIDs()
+        AnalyticsService.tripRestoredFromArchive()
     }
 
     /// The shared-trip half of TripArchiver's scan — archives every

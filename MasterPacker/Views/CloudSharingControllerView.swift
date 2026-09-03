@@ -77,6 +77,7 @@ struct CloudSharingPresenter: UIViewControllerRepresentable {
         /// nothing's already presented).
         func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: Error) {
             isPresented = false
+            AnalyticsService.shareSaveFailed()
             onSaveFailed(error.localizedDescription)
         }
 

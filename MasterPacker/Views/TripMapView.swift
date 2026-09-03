@@ -60,6 +60,9 @@ struct TripMapView: View {
             .task {
                 await loadPins()
             }
+            .onAppear {
+                AnalyticsService.tripMapViewed()
+            }
         }
     }
 

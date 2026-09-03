@@ -174,6 +174,7 @@ struct CategoryListView: View {
         deletingCategory = nil
         reassignCategoryUsages(from: category.name, to: PackingCategory.misc.rawValue)
         modelContext.delete(category)
+        AnalyticsService.customCategoryDeleted()
     }
 
     /// Sweeps every item type that can hold a free-form category name

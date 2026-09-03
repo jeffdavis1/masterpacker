@@ -302,6 +302,7 @@ struct TripDetailView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
                     isPresentingShareSheet = true
+                    AnalyticsService.shareSheetOpened()
                 } label: {
                     Label("Share Trip", systemImage: "square.and.arrow.up")
                 }
@@ -369,6 +370,7 @@ struct TripDetailView: View {
         for index in offsets {
             modelContext.delete(items[index])
         }
+        AnalyticsService.itemsDeleted(count: offsets.count)
         Task { await TripSharingService.shared.resyncIfShared(trip) }
     }
 
@@ -384,9 +386,12 @@ struct TripDetailView: View {
     /// Unassigned) in one shot, then exits selection mode — the whole
     /// point of bulk-select is not needing to reopen a menu per item.
     private func assignSelection(to bag: Luggage?) {
+        var assignedCount = 0
         for item in trip.items where selectedItemIDs.contains(item.id) {
             item.luggage = bag
+            assignedCount += 1
         }
+        AnalyticsService.itemsBulkAssignedToLuggage(count: assignedCount)
         isSelectingForBulkAssign = false
         selectedItemIDs.removeAll()
     }
@@ -772,11 +777,17 @@ private struct ItemRow: View {
     @ViewBuilder
     private func luggageMenu(trip: Trip) -> some View {
         Menu {
-            Button("Unassigned") { item.luggage = nil }
+            Button("Unassigned") {
+                item.luggage = nil
+                AnalyticsService.itemLuggageChanged()
+            }
             if !trip.luggage.isEmpty {
                 Divider()
                 ForEach(trip.luggage) { bag in
-                    Button(bag.name) { item.luggage = bag }
+                    Button(bag.name) {
+                        item.luggage = bag
+                        AnalyticsService.itemLuggageChanged()
+                    }
                 }
             }
             Divider()
@@ -807,5 +818,6 @@ private struct ItemRow: View {
         let bag = Luggage(name: trimmed, trip: trip)
         modelContext.insert(bag)
         item.luggage = bag
+        AnalyticsService.itemLuggageChanged()
     }
 }

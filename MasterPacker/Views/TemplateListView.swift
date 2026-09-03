@@ -33,6 +33,7 @@ struct TemplateListView: View {
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     modelContext.delete(template)
+                                    AnalyticsService.bagDeleted()
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -101,6 +102,7 @@ struct TemplateListView: View {
         let trimmed = renameText.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         template.name = trimmed
+        AnalyticsService.bagRenamed()
     }
 }
 

@@ -73,9 +73,13 @@ struct MyBagCoachMarkOverlay: View {
         .padding(.bottom, 74)
         .transition(.opacity.combined(with: .move(edge: .bottom)))
         .animation(.easeOut(duration: 0.3), value: isVisible)
+        .onAppear {
+            AnalyticsService.myBagCoachMarkShown()
+        }
     }
 
     private func navigateToMyBag() {
+        AnalyticsService.myBagCoachMarkTapped()
         selectedTab = .myBag
         // The onChange handler above also catches this, but setting it
         // here too means the bubble disappears immediately on tap
@@ -84,6 +88,7 @@ struct MyBagCoachMarkOverlay: View {
     }
 
     private func dismiss() {
+        AnalyticsService.myBagCoachMarkDismissed()
         CoachMarkStore.recordMyBagCoachMarkDismissal()
         isVisible = false
     }

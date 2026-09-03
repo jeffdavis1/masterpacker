@@ -96,6 +96,13 @@ struct AddItemView: View {
 
         let item = PackingItem(name: name, categoryName: categoryName, quantity: quantity, trip: trip, traveler: traveler, pet: pet)
         modelContext.insert(item)
+        let assigneeType: String
+        switch assignee {
+        case .shared: assigneeType = "everyone"
+        case .traveler: assigneeType = "traveler"
+        case .pet: assigneeType = "pet"
+        }
+        AnalyticsService.itemAdded(assigneeType: assigneeType)
         Task { await TripSharingService.shared.resyncIfShared(trip) }
         dismiss()
     }

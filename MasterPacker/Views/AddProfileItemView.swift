@@ -67,6 +67,7 @@ struct AddProfileItemView: View {
             petProfile: petProfile
         )
         modelContext.insert(item)
+        AnalyticsService.essentialItemAdded()
         dismiss()
     }
 

@@ -153,6 +153,7 @@ struct TemplateDetailView: View {
         for index in offsets {
             modelContext.delete(group.items[index])
         }
+        AnalyticsService.bagItemsDeleted(count: offsets.count)
     }
 
     /// One category's items within the bag — same label/symbol/custom-
@@ -221,6 +222,7 @@ struct TemplateDetailView: View {
     }
 
     private func commitPendingSuggestions() {
+        AnalyticsService.bagSuggestionsCommitted(count: pendingSuggestions.count)
         for suggestion in pendingSuggestions {
             let item = TemplateItem(name: suggestion.name, categoryName: suggestion.category.rawValue, template: template)
             modelContext.insert(item)
@@ -246,6 +248,7 @@ private struct OwnerChipGrid: View {
                 let isOwner = owner?.id == profile.id
                 Button {
                     owner = isOwner ? nil : profile
+                    AnalyticsService.bagOwnerChanged(isNowOwned: !isOwner)
                 } label: {
                     Text(profile.name)
                         .font(.caption)
