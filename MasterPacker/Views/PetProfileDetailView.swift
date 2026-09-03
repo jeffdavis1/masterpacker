@@ -12,6 +12,11 @@ struct PetProfileDetailView: View {
     @State private var isAddingCustomItem = false
     @State private var pendingSuggestions: Set<CommonProfileItems.Suggestion> = []
 
+    /// Collapsed by default — mirrors ProfileDetailView's own Essentials
+    /// section, so a long list doesn't push the suggestion sections below
+    /// it out of easy reach.
+    @State private var isEssentialsExpanded = false
+
     var body: some View {
         List {
             Section {
@@ -30,22 +35,27 @@ struct PetProfileDetailView: View {
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
                 } else {
-                    ForEach(profile.alwaysItems) { item in
-                        HStack {
-                            PackingIconView(icon: item.displaySymbol)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                            Text(item.name)
-                            if item.quantity > 1 {
-                                Spacer()
-                                Text("×\(item.quantity)")
-                                    .font(.caption)
+                    DisclosureGroup(isExpanded: $isEssentialsExpanded) {
+                        ForEach(profile.alwaysItems) { item in
+                            HStack {
+                                PackingIconView(icon: item.displaySymbol)
                                     .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                Text(item.name)
+                                if item.quantity > 1 {
+                                    Spacer()
+                                    Text("×\(item.quantity)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
-                        .listRowBackground(AppTheme.cardSurface)
+                        .onDelete(perform: deleteItems)
+                        .padding(.top, 4)
+                    } label: {
+                        Text("\(profile.alwaysItems.count) item\(profile.alwaysItems.count == 1 ? "" : "s")")
                     }
-                    .onDelete(perform: deleteItems)
+                    .listRowBackground(AppTheme.cardSurface)
                 }
 
                 Button {

@@ -18,7 +18,7 @@ struct ApplyTemplateView: View {
                     ContentUnavailableView(
                         "No bags yet",
                         systemImage: "bag",
-                        description: Text("Save a reusable packing list from My Bag first.")
+                        description: Text("Save a reusable packing list from My Bags first.")
                     )
                 } else if availableTemplates.isEmpty {
                     // Distinct from the "no bags at all" case above —
@@ -27,7 +27,7 @@ struct ApplyTemplateView: View {
                     ContentUnavailableView(
                         "No bags for this trip's travelers",
                         systemImage: "bag",
-                        description: Text("Your saved bags are each assigned to a traveler who isn't on this trip. Unassign a bag's owner in My Bag to make it available everywhere again.")
+                        description: Text("Your saved bags are each assigned to a traveler who isn't on this trip. Unassign a bag's owner in My Bags to make it available everywhere again.")
                     )
                 } else {
                     List {
@@ -57,7 +57,7 @@ struct ApplyTemplateView: View {
                 }
             }
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("Add from My Bag")
+            .navigationTitle("Add from My Bags")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

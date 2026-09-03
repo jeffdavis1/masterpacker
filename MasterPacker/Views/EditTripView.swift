@@ -135,12 +135,12 @@ struct EditTripView: View {
                 // equivalent here, so a bag whose owner only got added to
                 // the trip after the fact (via the Travelers section
                 // above) had nowhere obvious to then get applied short of
-                // TripDetailView's own "Add from My Bag" menu action.
+                // TripDetailView's own "Add from My Bags" menu action.
                 if !availableTemplates.isEmpty {
                     Section {
                         TemplateChipGrid(templates: availableTemplates, selected: $selectedTemplates)
                     } header: {
-                        Text("From My Bag")
+                        Text("From My Bags")
                     } footer: {
                         Text("Adds each selected bag's items to this trip's shared list on Save. Only bags with no assigned owner, or owned by a traveler on this trip, are offered here.")
                     }

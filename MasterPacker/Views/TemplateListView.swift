@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Entry point for saved packing templates — the "My Bag" tab in
+/// Entry point for saved packing templates — the "My Bags" tab in
 /// RootTabView.
 struct TemplateListView: View {
     @Environment(\.modelContext) private var modelContext
@@ -54,7 +54,7 @@ struct TemplateListView: View {
                 }
             }
             .background(AppTheme.screenGradient.ignoresSafeArea())
-            .navigationTitle("My Bag")
+            .navigationTitle("My Bags")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: PackingTemplate.self) { template in
                 TemplateDetailView(template: template)

@@ -135,7 +135,7 @@ private struct ProfileRow: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("\(itemCount) essential\(itemCount == 1 ? "" : "s")")
+                Text("\(itemCount) Essential\(itemCount == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundStyle(.secondary.opacity(0.85))
             }

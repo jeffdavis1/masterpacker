@@ -312,7 +312,7 @@ struct TripDetailView: View {
                     Button {
                         isPresentingApplyTemplate = true
                     } label: {
-                        Label("Add from My Bag", systemImage: "bag")
+                        Label("Add from My Bags", systemImage: "bag")
                     }
                     if !trip.notes.isEmpty {
                         Button {

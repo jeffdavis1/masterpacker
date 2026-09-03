@@ -5,7 +5,7 @@ import SwiftData
 /// "Carry-on", "Checked Bag", "Personal Item", or a custom name the user
 /// adds. Scoped to one trip, not shared across trips (what goes in the
 /// carry-on is different every time). Deliberately called "Luggage"
-/// everywhere in the UI, never "Bag" — "My Bag" already means something
+/// everywhere in the UI, never "Bag" — "My Bags" already means something
 /// else entirely in this app (the reusable PackingTemplate list), and
 /// this is a completely unrelated, per-trip concept.
 ///

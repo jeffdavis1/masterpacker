@@ -105,7 +105,7 @@ struct AddTripView: View {
                     Section {
                         TemplateChipGrid(templates: availableTemplates, selected: $selectedTemplates)
                     } header: {
-                        Text("From My Bag")
+                        Text("From My Bags")
                     } footer: {
                         Text("Adds each selected bag's items to this trip's shared list. Only bags with no assigned owner, or owned by a traveler on this trip, are offered here.")
                     }

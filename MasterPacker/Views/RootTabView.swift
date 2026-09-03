@@ -46,7 +46,7 @@ struct RootTabView: View {
                     .tag(Tab.shared)
                 TemplateListView()
                     .tabItem {
-                        Label("My Bag", systemImage: "bag.fill")
+                        Label("My Bags", systemImage: "bag.fill")
                     }
                     .tag(Tab.myBag)
                 ProfileListView()
