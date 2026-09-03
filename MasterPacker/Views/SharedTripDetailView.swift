@@ -115,10 +115,13 @@ struct SharedTripDetailView: View {
         let items: [RemoteItem]
     }
 
-    /// Same shared/traveler/pet-then-category grouping as TripDetailView's
-    /// own categoryGroups(for:), applied to RemoteItem instead of
-    /// PackingItem — a custom category still gets its own section, named
-    /// after whatever the owner typed.
+    /// Same traveler/For-Everyone/pet-then-category grouping as
+    /// TripDetailView's own peopleSections/categoryGroups(for:), applied
+    /// to RemoteItem instead of PackingItem — a custom category still
+    /// gets its own section, named after whatever the owner typed.
+    /// "For Everyone" is last (not first) and folds into a solo
+    /// traveler's own section rather than getting a redundant heading —
+    /// see TripDetailView.peopleSections' doc comment for why.
     private func sections(for trip: RemoteTrip) -> [(label: String, categoryGroups: [CategoryGroup])] {
         var result: [(String, [CategoryGroup])] = []
 
@@ -137,10 +140,17 @@ struct SharedTripDetailView: View {
             result.append((label, groups))
         }
 
-        addSection("For Everyone", trip.items.filter { $0.travelerRecordName == nil && $0.petRecordName == nil })
-        for traveler in trip.travelers {
-            addSection(traveler.name, trip.items.filter { $0.travelerRecordName == traveler.id })
+        let sharedItems = trip.items.filter { $0.travelerRecordName == nil && $0.petRecordName == nil }
+
+        if trip.travelers.count == 1, let soloTraveler = trip.travelers.first {
+            addSection(soloTraveler.name, sharedItems + trip.items.filter { $0.travelerRecordName == soloTraveler.id })
+        } else {
+            for traveler in trip.travelers {
+                addSection(traveler.name, trip.items.filter { $0.travelerRecordName == traveler.id })
+            }
+            addSection("For Everyone", sharedItems)
         }
+
         for pet in trip.pets {
             addSection("\(pet.name) (pet)", trip.items.filter { $0.petRecordName == pet.id })
         }

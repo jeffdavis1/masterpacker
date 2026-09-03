@@ -63,12 +63,19 @@ struct TripDetailView: View {
         }
     }
 
-    /// Shared/household items first, then one group per traveler (trip
-    /// order), then one group per pet — each broken down further into
-    /// sub-groups so e.g. a traveler's electronics sit together, separate
-    /// from their toiletries. Pet sections use displayGroups: false — see
-    /// its doc comment for why pets stay on the plain PackingCategory
-    /// grouping instead of the 9-group system everything else uses.
+    /// One group per traveler (trip order), then "For Everyone" last, then
+    /// one group per pet — each broken down further into sub-groups so
+    /// e.g. a traveler's electronics sit together, separate from their
+    /// toiletries. Pet sections use displayGroups: false — see its doc
+    /// comment for why pets stay on the plain PackingCategory grouping
+    /// instead of the 9-group system everything else uses.
+    ///
+    /// With exactly one traveler, "For Everyone" is meaningless — there's
+    /// no one else to distinguish a shared item from that traveler's own
+    /// — so shared items get folded straight into that traveler's section
+    /// instead of getting their own redundant heading. AddTripView already
+    /// requires at least one traveler to save a trip, so trip.travelers
+    /// is never empty here.
     private var peopleSections: [TripSection] {
         var result: [TripSection] = []
 
@@ -78,10 +85,17 @@ struct TripDetailView: View {
             result.append(TripSection(label: label, categoryGroups: groups, items: items))
         }
 
-        addSection("For Everyone", trip.items.filter { $0.traveler == nil && $0.pet == nil }, useDisplayGroups: true)
-        for traveler in trip.travelers {
-            addSection(traveler.name, trip.items.filter { $0.traveler == traveler }, useDisplayGroups: true)
+        let sharedItems = trip.items.filter { $0.traveler == nil && $0.pet == nil }
+
+        if trip.travelers.count == 1, let soloTraveler = trip.travelers.first {
+            addSection(soloTraveler.name, sharedItems + trip.items.filter { $0.traveler == soloTraveler }, useDisplayGroups: true)
+        } else {
+            for traveler in trip.travelers {
+                addSection(traveler.name, trip.items.filter { $0.traveler == traveler }, useDisplayGroups: true)
+            }
+            addSection("For Everyone", sharedItems, useDisplayGroups: true)
         }
+
         for pet in trip.pets {
             addSection("\(pet.name) (pet)", trip.items.filter { $0.pet == pet }, useDisplayGroups: false)
         }
