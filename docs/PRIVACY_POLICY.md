@@ -7,6 +7,7 @@ J Warren Group, LLC ("we," "us," or "our") built MasterPacker (the "App") to hel
 ## The short version
 
 - MasterPacker doesn't have user accounts, passwords, or logins of its own. There's nothing to sign up for.
+- Authentication is silent: if you're signed into iCloud on your device, the App automatically uses your Apple ID for authentication and data sync. iCloud isn't required to use the App — without it, your data just stays local to that device and doesn't sync.
 - Your trips, packing lists, travelers, pets, and saved bags are stored in **your own private iCloud account** (via Apple's CloudKit), not on our servers. We don't operate a database of your content and can't see it.
 - We use Firebase Analytics to understand how the App is used, in the aggregate — not to identify you personally.
 - We don't collect your precise location. Ever.
@@ -14,12 +15,15 @@ J Warren Group, LLC ("we," "us," or "our") built MasterPacker (the "App") to hel
 
 ## Data we store, and where
 
+### Authentication
+
+There is no separate MasterPacker login, account creation, or password. If you're signed into iCloud on your device, the App automatically uses your Apple ID to authenticate and sync your data — transparently, with no login screen or additional step required. If you're not signed into iCloud, the App still works; your data simply stays local to that device rather than syncing.
+
 ### Your trips and packing data
 
 Everything you create in the App — trips, travelers, pets, packing items, luggage, saved bags, and saved traveler/pet profiles — is stored using Apple's CloudKit, in the **private iCloud database tied to your Apple ID**. This is not a public or third-party database; it's part of your own iCloud account, the same way Apple stores your Notes or Reminders.
 
-- If you're signed into iCloud on your device, this data automatically syncs across your own devices signed into that same Apple ID.
-- If you're not signed into iCloud (or have turned off iCloud access for the App), your data stays local to that device only.
+- Your data automatically syncs across all your own devices signed into the same Apple ID.
 - We — the developers of MasterPacker — do not have access to this data. It lives in your iCloud account, governed by Apple's own iCloud terms and security, not ours.
 - This data does not appear in the Files app, iCloud Drive, or on iCloud.com — CloudKit's private database isn't a visible file store, it's only accessible through the App itself.
 
@@ -34,7 +38,7 @@ To keep a shared trip in sync promptly, the App registers for silent (invisible)
 When you set a trip's destination, the App looks up that place name (e.g., "Denver, CO") to show you a weather forecast and suggest weather-appropriate packing items. This uses:
 
 - Apple's own geocoding (`CLGeocoder`) to turn your typed destination into approximate coordinates.
-- [Open-Meteo](https://open-meteo.com), a free weather data service, which receives only those coordinates and a date range — no name, no device identifier, no account information of any kind. Open-Meteo does not require or receive an API key or user identity from us.
+- [Open-Meteo](https://open-meteo.com), a free weather data service, which receives only those coordinates and a date range — no name, no device identifier, no account information of any kind. Open-Meteo does not require or receive an API key or user identity from us. For more information, see [Open-Meteo's Privacy Policy](https://open-meteo.com/en/privacy).
 
 We do not request or use your device's actual location (GPS). The App has no location-permission prompt because it never asks for one — weather lookups are based entirely on the destination you type in.
 
@@ -44,11 +48,11 @@ Packing reminders (e.g., "start packing" or "you haven't finished packing") are 
 
 ### Usage analytics
 
-We use Firebase Analytics (a Google service) to understand how people use the App in aggregate — for example, that trips are being created, that packing lists are being completed, or that a particular feature is being used — so we can improve it. This is limited to named product events (like "trip created" or "item packed") and does not include the content of your trips, packing lists, or personal data. Firebase manages its own anonymized installation and session identifiers for this purpose; we do not generate, store, or transmit any device identifier of our own.
+We use Firebase Analytics (a Google service) to understand how people use the App in aggregate — for example, that trips are being created, that packing lists are being completed, or that a particular feature is being used — so we can improve it. This is limited to named product events (like "trip created" or "item packed") and does not include the content of your trips, packing lists, or personal data. Firebase manages its own anonymized installation and session identifiers for this purpose; we do not generate, store, or transmit any device identifier of our own. For more information, see [Firebase's Privacy Policy](https://firebase.google.com/support/privacy).
 
 ## What we don't do
 
-- We don't require an account, email address, or password.
+- We don't require an account, email address, or password (iCloud authentication is built-in).
 - We don't collect your precise location.
 - We don't run ads or use advertising-tracking SDKs.
 - We don't sell or share your data with data brokers or third parties for marketing.
