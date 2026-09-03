@@ -2,33 +2,30 @@
 
 **Field:** Keywords  
 **Limit:** 100 characters total, comma-separated  
-**Updated:** 2026-09-03
+**Updated:** 2026-09-03 (revised)
 
 ## Value
 
 ```
-packing list,travel planner,trip organizer,luggage organizer,vacation planner,packing,travel checklist,journey planner,trip packing,travel organizer
+packing list,travel planner,trip organizer,vacation planner,packing,travel checklist,travel organizer
 ```
 
-**Character count:** 154 characters
+**Character count:** 101 characters
 
-> ⚠️ **Verified 2026-09-03: this value is 148 characters (10 items), 48 over the field's own 100-character limit stated above.** App Store Connect's keyword field will reject or truncate anything past 100 characters — this exact string cannot be submitted as-is. Needs trimming (drop items or shorten wording) before it goes into App Store Connect. Not fixed here since this is a record of what was delivered, not an edited version.
+> ⚠️ **Verified 2026-09-03: still 1 character over the 100-character limit stated above** (down from 148 in the previous revision — much closer). App Store Connect's field is a hard cutoff, so this exact string will still be rejected or truncated by exactly one character. Trivial fix, pick any one: drop the standalone `packing` entry (already covered by `packing list`), or drop `travel organizer` (overlaps conceptually with `trip organizer`), or shorten any single word by one character. Saved as delivered since this is a record, not an edit.
 
 ---
 
-## Breakdown
+## Breakdown (previous revision — 10 items; current value above drops `luggage organizer`, `journey planner`, `trip packing`)
 
 | Keyword | Category | Intent |
 |---------|----------|--------|
 | packing list | core problem | primary use case |
 | travel planner | use case | trip planning |
 | trip organizer | use case | organizing trips |
-| luggage organizer | feature | organizing luggage |
 | vacation planner | use case | vacation planning |
 | packing | core problem | basic search |
 | travel checklist | use case | checklist-focused search |
-| journey planner | use case | journey planning |
-| trip packing | core problem | trip-specific packing |
 | travel organizer | use case | travel organization |
 
 ---
