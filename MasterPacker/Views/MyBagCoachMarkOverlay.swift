@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// One-time onboarding nudge toward the My Bag tab — see CoachMarkStore
 /// for exactly when it shows/hides. Lives inside RootTabView, layered
@@ -7,7 +8,22 @@ import SwiftUI
 /// at.
 struct MyBagCoachMarkOverlay: View {
     @Binding var selectedTab: RootTabView.Tab
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isVisible = CoachMarkStore.shouldShowMyBagCoachMark
+
+    /// True only when the tab bar is actually rendered at the TOP of the
+    /// screen — iPadOS's own adaptive behavior for a plain TabView once
+    /// the window is wide enough. Checking horizontalSizeClass alone
+    /// isn't enough: big iPhones (Plus/Max) also report `.regular` in
+    /// landscape, but their tab bar never leaves the bottom — the top
+    /// tab bar is an iPad-only windowing behavior. Requiring both means
+    /// this can never trigger on an iPhone, in any orientation, and
+    /// still correctly falls back to bottom-pointing on an iPad in a
+    /// narrow Split View/Slide Over, where the tab bar drops back down
+    /// to match iPhone.
+    private var tabBarIsOnTop: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular
+    }
 
     var body: some View {
         // Wrapped in Group so onChange below stays attached even once
@@ -33,6 +49,13 @@ struct MyBagCoachMarkOverlay: View {
 
     private var coachMark: some View {
         VStack(spacing: 0) {
+            if tabBarIsOnTop {
+                Image(systemName: "arrowtriangle.up.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.brand)
+                    .offset(y: 1)
+            }
+
             HStack(alignment: .top, spacing: 10) {
                 Text("Start here — Create a bag with items you always need and easily add it to any trip")
                     .font(.subheadline)
@@ -61,17 +84,29 @@ struct MyBagCoachMarkOverlay: View {
                 navigateToMyBag()
             }
 
-            // My Bag is the middle tab of five, so a centered pointer
-            // lines up with it without needing per-device tab-bar
-            // geometry.
-            Image(systemName: "arrowtriangle.down.fill")
-                .font(.system(size: 14))
-                .foregroundStyle(AppTheme.brand)
-                .offset(y: -1)
+            if !tabBarIsOnTop {
+                // My Bag is the middle tab of five, so a centered pointer
+                // lines up with it without needing per-device tab-bar
+                // geometry.
+                Image(systemName: "arrowtriangle.down.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppTheme.brand)
+                    .offset(y: -1)
+            }
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 74)
-        .transition(.opacity.combined(with: .move(edge: .bottom)))
+        // The exact clearance a top tab bar needs is a guess without a
+        // device to check it against (60pt — status bar plus iPadOS's
+        // floating tab bar) — same "verify by eye, adjust if it's off"
+        // as everything else in this feature. The bottom value (74) is
+        // unchanged and was already tuned against a real device.
+        .padding(tabBarIsOnTop ? .top : .bottom, tabBarIsOnTop ? 60 : 74)
+        // Fills the overlay's full space itself and aligns within that,
+        // rather than relying on RootTabView's ZStack alignment (fixed
+        // to .bottom, for the iPhone case) — lets this flip to the top
+        // on iPad without needing a matching change over there.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: tabBarIsOnTop ? .top : .bottom)
+        .transition(.opacity.combined(with: .move(edge: tabBarIsOnTop ? .top : .bottom)))
         .animation(.easeOut(duration: 0.3), value: isVisible)
         .onAppear {
             AnalyticsService.myBagCoachMarkShown()
