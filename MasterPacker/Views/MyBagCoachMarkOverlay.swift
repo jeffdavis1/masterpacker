@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -10,6 +11,16 @@ struct MyBagCoachMarkOverlay: View {
     @Binding var selectedTab: RootTabView.Tab
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isVisible = CoachMarkStore.shouldShowMyBagCoachMark
+
+    // CoachMarkStore's "first bag created" flag lives in UserDefaults,
+    // which is local to this install — it resets on reinstall even
+    // though the bags themselves come right back via CloudKit sync. Left
+    // unguarded, that means a returning user with existing bags sees
+    // "create your first bag" again. This @Query is the live check
+    // against that: whenever real bags actually exist, on this launch or
+    // whenever CloudKit sync catches up shortly after, retire the coach
+    // mark the same permanent way creating one normally would.
+    @Query private var templates: [PackingTemplate]
 
     /// True only when the tab bar is actually rendered at the TOP of the
     /// screen — iPadOS's own adaptive behavior for a plain TabView once
@@ -45,6 +56,20 @@ struct MyBagCoachMarkOverlay: View {
                 isVisible = false
             }
         }
+        // Covers reinstall: bags synced back from CloudKit are usually
+        // already present by the time this view first appears. Also
+        // reacts to the count changing afterward, since that sync can
+        // still be in flight at launch and finish a moment later.
+        // Either way, retire the coach mark the same permanent way a
+        // bag created on this install would — not just for this launch.
+        .onAppear { retireIfBagsExist() }
+        .onChange(of: templates.count) { _, _ in retireIfBagsExist() }
+    }
+
+    private func retireIfBagsExist() {
+        guard !templates.isEmpty else { return }
+        isVisible = false
+        CoachMarkStore.recordFirstBagCreated()
     }
 
     private var coachMark: some View {
