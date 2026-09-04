@@ -40,31 +40,8 @@ struct TemplateDetailView: View {
                     ForEach(allItemGroups) { group in
                         DisclosureGroup {
                             ForEach(group.items) { item in
-                                HStack {
-                                    PackingIconView(icon: item.displaySymbol)
-                                        .foregroundStyle(.secondary)
-                                        .frame(width: 20)
-                                    Text(item.name)
-                                    Spacer()
-                                    if item.quantity > 1 {
-                                        Text("×\(item.quantity)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    // A dedicated trash target — tapping
-                                    // anywhere else on the row does
-                                    // nothing, so browsing the list can't
-                                    // accidentally remove an item the way
-                                    // a whole-row tap did.
-                                    Button {
-                                        modelContext.delete(item)
-                                    } label: {
-                                        Image(systemName: "trash")
-                                            .foregroundStyle(.red)
-                                    }
-                                    .accessibilityLabel("Delete \(item.name)")
-                                    .buttonStyle(.plain)
-                                    .padding(.leading, 8)
+                                TemplateItemRow(item: item) {
+                                    modelContext.delete(item)
                                 }
                             }
                             .onDelete { offsets in deleteItems(in: group, at: offsets) }
@@ -262,6 +239,73 @@ private struct OwnerChipGrid: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+/// One item's row within a bag's "My Items" list. Tapping the row (the
+/// trash button is a separate, dedicated target) opens a category
+/// picker — items land in a category at add time (AddTemplateItemView)
+/// with no way to change it afterward otherwise, which is exactly what
+/// surfaced the Gear-category display bug: nothing to fix a
+/// miscategorized item except delete and re-add it.
+private struct TemplateItemRow: View {
+    @Bindable var item: TemplateItem
+    let onDelete: () -> Void
+    @Query(sort: \CustomCategory.name) private var customCategories: [CustomCategory]
+    @State private var isEditingCategory = false
+
+    var body: some View {
+        HStack {
+            // Everything but the trash button is one tappable region —
+            // grouped so the ×N badge (plain text here, not its own
+            // button the way TripDetailView's quantity editor is) opens
+            // the same category picker as tapping the icon or name.
+            HStack {
+                PackingIconView(icon: item.displaySymbol)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                Text(item.name)
+                Spacer()
+                if item.quantity > 1 {
+                    Text("×\(item.quantity)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isEditingCategory = true
+            }
+            .popover(isPresented: $isEditingCategory) {
+                VStack(spacing: 12) {
+                    Text(item.name)
+                        .font(.headline)
+                    Picker("Category", selection: $item.categoryName) {
+                        ForEach(PackingCategory.allCases) { category in
+                            Label(category.rawValue, systemImage: category.symbol).tag(category.rawValue)
+                        }
+                        ForEach(customCategories) { custom in
+                            Label(custom.name, systemImage: "tag").tag(custom.name)
+                        }
+                    }
+                }
+                .padding()
+                .presentationCompactAdaptation(.popover)
+            }
+
+            // A dedicated trash target — kept as its own HStack sibling
+            // (reserving its own space) rather than layered over the
+            // row, so it can't visually collide with the ×N badge.
+            Button {
+                onDelete()
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundStyle(.red)
+            }
+            .accessibilityLabel("Delete \(item.name)")
+            .buttonStyle(.plain)
+            .padding(.leading, 8)
+        }
     }
 }
 
