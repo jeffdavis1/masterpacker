@@ -61,6 +61,7 @@ enum ItemDisplayGroup {
         "Documents & Essentials": PackingCategory.documents.symbol,
         "Tech & Electronics": PackingCategory.electronics.symbol,
         "Bags & Organization": PackingCategory.gear.symbol,
+        "Gear": PackingCategory.gear.symbol,
         "Miscellaneous": PackingCategory.misc.symbol,
     ]
 
@@ -73,7 +74,14 @@ enum ItemDisplayGroup {
         .toiletries: "Toiletries & Personal Care",
         .electronics: "Tech & Electronics",
         .documents: "Documents & Essentials",
-        .gear: "Miscellaneous",
+        // Specific gear item names (backpack, tent, sleeping bag, …) still
+        // route to "Bags & Organization" via the keyword rules below —
+        // this default only covers a Gear-categorized item whose name
+        // doesn't match any of those. It used to fall through to
+        // "Miscellaneous" here, which silently hid the category the user
+        // actually picked; naming the default group after the category
+        // itself means picking Gear reliably shows a Gear section.
+        .gear: "Gear",
         .petSupplies: "Miscellaneous",
         .misc: "Miscellaneous",
     ]
