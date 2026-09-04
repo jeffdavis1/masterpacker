@@ -755,27 +755,34 @@ private struct ItemRow: View {
             // tap target — suggested quantities (e.g. "Business attire"
             // scaling 1-per-day) are a starting point, not gospel, and
             // this is how a user corrects one without deleting and
-            // re-adding the item. Still only shown above 1, same as
-            // before, to keep the common case (most items) uncluttered —
-            // an item sitting at 1 has no visible badge to tap yet.
-            if item.quantity > 1 {
-                Button {
-                    isEditingQuantity = true
-                } label: {
+            // re-adding the item. Always present now, not just above 1 —
+            // an item sitting at the default of 1 needs a way to be
+            // increased too, not just adjusted once it's already above
+            // 1. Kept quiet at 1 (a faint plus icon rather than "×1"
+            // text) so the common case still doesn't read as cluttered,
+            // while still being an actual, visible tap target.
+            Button {
+                isEditingQuantity = true
+            } label: {
+                if item.quantity > 1 {
                     Text("×\(item.quantity)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } else {
+                    Image(systemName: "plus.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary.opacity(0.5))
                 }
-                .buttonStyle(.plain)
-                .popover(isPresented: $isEditingQuantity) {
-                    VStack(spacing: 12) {
-                        Text(item.name)
-                            .font(.headline)
-                        Stepper("Quantity: \(item.quantity)", value: $item.quantity, in: 1...20)
-                    }
-                    .padding()
-                    .presentationCompactAdaptation(.popover)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $isEditingQuantity) {
+                VStack(spacing: 12) {
+                    Text(item.name)
+                        .font(.headline)
+                    Stepper("Quantity: \(item.quantity)", value: $item.quantity, in: 1...20)
                 }
+                .padding()
+                .presentationCompactAdaptation(.popover)
             }
 
             if let trip {
