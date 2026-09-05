@@ -67,12 +67,15 @@ struct TripDetailView: View {
         }
     }
 
-    /// trip.items, or just the not-yet-packed ones when the "show
-    /// unpacked only" filter is on — the single point both section
-    /// builders below read from, so the filter applies identically
-    /// regardless of grouping mode.
+    /// trip.items, minus anything marked Wearing/Carrying (that lives
+    /// exclusively in the "Before You Leave" card instead — see
+    /// BeforeYouLeaveCard), and further narrowed to just the not-yet-
+    /// packed ones when the "show unpacked only" filter is on. The
+    /// single point both section builders below read from, so both
+    /// exclusions apply identically regardless of grouping mode.
     private var filteredItems: [PackingItem] {
-        showUnpackedOnly ? trip.items.filter { !$0.isPacked } : trip.items
+        let notWearing = trip.items.filter { !$0.isWearingOrCarrying }
+        return showUnpackedOnly ? notWearing.filter { !$0.isPacked } : notWearing
     }
 
     /// One group per traveler (trip order), then "For Everyone" last, then
@@ -210,6 +213,11 @@ struct TripDetailView: View {
         List {
             Section {
                 TripProgressHeader(trip: trip)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
+                BeforeYouLeaveCard(trip: trip)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
@@ -616,6 +624,102 @@ private struct TripProgressHeader: View {
     }
 }
 
+/// Items you'll wear or carry on your person when you leave — sunglasses,
+/// wallet, keys — rather than pack into a bag. A small, always-visible
+/// checklist (even with nothing added yet, as an invitation to use it)
+/// separate from the per-traveler/luggage sections below: the point is a
+/// quick glance right before walking out the door, independent of
+/// however the rest of the list is organized. Checking one off here
+/// means the same thing checking off any other item does — it doesn't
+/// create a second kind of "packed."
+private struct BeforeYouLeaveCard: View {
+    @Bindable var trip: Trip
+    @Environment(\.modelContext) private var modelContext
+    @State private var isAddingItem = false
+    @State private var newItemName = ""
+
+    private var items: [PackingItem] {
+        trip.items.filter(\.isWearingOrCarrying).sorted { $0.name < $1.name }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Before You Leave", systemImage: "door.left.hand.open")
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button {
+                    isAddingItem = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                }
+                .accessibilityLabel("Add something you'll wear or carry")
+            }
+
+            if items.isEmpty {
+                Text("Things you'll wear or carry, not pack — sunglasses, wallet, keys.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(items) { item in
+                    HStack {
+                        Button {
+                            item.isPacked.toggle()
+                            AnalyticsService.itemPackedToggled(isPacked: item.isPacked)
+                            Task { await TripSharingService.shared.syncItemPackedIfShared(item) }
+                        } label: {
+                            HStack {
+                                Image(systemName: item.isPacked ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(item.isPacked ? AppTheme.sage : .secondary)
+                                Text(item.name)
+                                    .strikethrough(item.isPacked)
+                                    .foregroundStyle(item.isPacked ? .secondary : .primary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+
+                        Spacer()
+
+                        Button {
+                            modelContext.delete(item)
+                            AnalyticsService.itemsDeleted(count: 1)
+                            Task { await TripSharingService.shared.resyncIfShared(trip) }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary.opacity(0.6))
+                        }
+                        .accessibilityLabel("Remove \(item.name)")
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .floatingCard()
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .alert("Before You Leave", isPresented: $isAddingItem) {
+            TextField("e.g. Sunglasses", text: $newItemName)
+            Button("Cancel", role: .cancel) { newItemName = "" }
+            Button("Add") { addItem() }
+        } message: {
+            Text("Something you'll wear or carry, not pack.")
+        }
+    }
+
+    private func addItem() {
+        let trimmed = newItemName.trimmingCharacters(in: .whitespaces)
+        newItemName = ""
+        guard !trimmed.isEmpty else { return }
+        let item = PackingItem(name: trimmed, categoryName: PackingCategory.misc.rawValue, isWearingOrCarrying: true, trip: trip)
+        modelContext.insert(item)
+        AnalyticsService.itemAdded(assigneeType: "everyone")
+        Task { await TripSharingService.shared.resyncIfShared(trip) }
+    }
+}
+
 /// A quick "who's on this trip" summary — travelers and pets as chips,
 /// shown right below the progress header. Previously the only place
 /// travelers/pets showed up at all was as section headers buried further
@@ -754,6 +858,25 @@ private struct ItemRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
         .floatingCard(radius: AppTheme.cornerRadius - 2)
+        // Leading edge, separate from the ForEach's own trailing delete
+        // swipe, and only on the normal row (selection mode's whole row
+        // is already its own tap target for something else) — the
+        // escape hatch for an item typed into the normal list that turns
+        // out to be something you'll wear or carry instead. Moving it
+        // here removes it from luggage (never both at once) and it
+        // disappears from this list, living only in the "Before You
+        // Leave" card from then on.
+        .swipeActions(edge: .leading) {
+            if !isSelectionMode {
+                Button {
+                    item.isWearingOrCarrying = true
+                    item.luggage = nil
+                } label: {
+                    Label("Wearing/Carrying", systemImage: "door.left.hand.open")
+                }
+                .tint(AppTheme.brand)
+            }
+        }
         .alert("New Luggage", isPresented: $isPresentingAddLuggage) {
             TextField("Name", text: $newLuggageName)
             Button("Cancel", role: .cancel) { newLuggageName = "" }

@@ -19,6 +19,16 @@ final class PackingItem {
     var categoryName: String = PackingCategory.misc.rawValue
     var quantity: Int = 1
     var isPacked: Bool = false
+    /// Something you'll wear or carry on your person when you leave —
+    /// sunglasses, wallet, keys — rather than pack into a bag. Tracked
+    /// separately from `luggage` (never both at once — see
+    /// TripDetailView's "Before You Leave" card and its per-item swipe
+    /// action) so these items live in their own always-visible checklist
+    /// instead of cluttering the normal per-traveler/luggage sections.
+    /// Doesn't affect `isPacked` or trip-wide progress counting — an item
+    /// checked off here still means the same thing it always did:
+    /// "confirmed, I have it."
+    var isWearingOrCarrying: Bool = false
     var trip: Trip?
 
     /// Who this item is for. Both nil means it's a shared/household item.
@@ -35,6 +45,7 @@ final class PackingItem {
         categoryName: String,
         quantity: Int = 1,
         isPacked: Bool = false,
+        isWearingOrCarrying: Bool = false,
         trip: Trip? = nil,
         traveler: Traveler? = nil,
         pet: Pet? = nil,
@@ -44,6 +55,7 @@ final class PackingItem {
         self.categoryName = categoryName
         self.quantity = quantity
         self.isPacked = isPacked
+        self.isWearingOrCarrying = isWearingOrCarrying
         self.trip = trip
         self.traveler = traveler
         self.pet = pet
