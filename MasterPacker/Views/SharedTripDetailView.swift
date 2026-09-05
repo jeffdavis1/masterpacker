@@ -8,6 +8,9 @@ struct SharedTripDetailView: View {
     let tripID: String
     @ObservedObject private var service = TripSharingService.shared
     @Environment(\.dismiss) private var dismiss
+    /// Resets to off every time this view appears fresh (not persisted)
+    /// — same as TripDetailView's own version of this filter.
+    @State private var showUnpackedOnly = false
 
     init(trip: RemoteTrip) {
         tripID = trip.id
@@ -34,6 +37,16 @@ struct SharedTripDetailView: View {
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
+                    }
+
+                    if showUnpackedOnly && sections(for: trip).isEmpty && !trip.items.isEmpty {
+                        ContentUnavailableView(
+                            "All packed! 🎒",
+                            systemImage: "checkmark.circle.fill",
+                            description: Text("Turn off the filter to see everything again.")
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
 
                     ForEach(sections(for: trip), id: \.label) { section in
@@ -74,6 +87,16 @@ struct SharedTripDetailView: View {
                             } else {
                                 Label("Add to My Trips", systemImage: "plus.circle")
                             }
+                        }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showUnpackedOnly.toggle()
+                        } label: {
+                            Label(
+                                showUnpackedOnly ? "Showing Unpacked Only" : "Show Unpacked Only",
+                                systemImage: showUnpackedOnly ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
+                            )
                         }
                     }
                 }
@@ -140,19 +163,23 @@ struct SharedTripDetailView: View {
             result.append((label, groups))
         }
 
-        let sharedItems = trip.items.filter { $0.travelerRecordName == nil && $0.petRecordName == nil }
+        // trip.items, or just the not-yet-packed ones when the "show
+        // unpacked only" filter is on — see TripDetailView's own
+        // filteredItems for the same idea applied to the owner's view.
+        let filteredItems = showUnpackedOnly ? trip.items.filter { !$0.isPacked } : trip.items
+        let sharedItems = filteredItems.filter { $0.travelerRecordName == nil && $0.petRecordName == nil }
 
         if trip.travelers.count == 1, let soloTraveler = trip.travelers.first {
-            addSection(soloTraveler.name, sharedItems + trip.items.filter { $0.travelerRecordName == soloTraveler.id })
+            addSection(soloTraveler.name, sharedItems + filteredItems.filter { $0.travelerRecordName == soloTraveler.id })
         } else {
             for traveler in trip.travelers {
-                addSection(traveler.name, trip.items.filter { $0.travelerRecordName == traveler.id })
+                addSection(traveler.name, filteredItems.filter { $0.travelerRecordName == traveler.id })
             }
             addSection("For Everyone", sharedItems)
         }
 
         for pet in trip.pets {
-            addSection("\(pet.name) (pet)", trip.items.filter { $0.petRecordName == pet.id })
+            addSection("\(pet.name) (pet)", filteredItems.filter { $0.petRecordName == pet.id })
         }
         return result
     }

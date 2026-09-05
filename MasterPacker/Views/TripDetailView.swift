@@ -22,6 +22,10 @@ struct TripDetailView: View {
     /// to still match afterward.
     @State private var isSelectingForBulkAssign = false
     @State private var selectedItemIDs: Set<UUID> = []
+    /// Resets to off every time this view appears fresh (not persisted)
+    /// — a filter silently still on from a previous visit is exactly the
+    /// "wait, where did my items go?" confusion this should never cause.
+    @State private var showUnpackedOnly = false
 
     private enum GroupingMode: String, CaseIterable, Identifiable {
         case people = "People"
@@ -63,6 +67,14 @@ struct TripDetailView: View {
         }
     }
 
+    /// trip.items, or just the not-yet-packed ones when the "show
+    /// unpacked only" filter is on — the single point both section
+    /// builders below read from, so the filter applies identically
+    /// regardless of grouping mode.
+    private var filteredItems: [PackingItem] {
+        showUnpackedOnly ? trip.items.filter { !$0.isPacked } : trip.items
+    }
+
     /// One group per traveler (trip order), then "For Everyone" last, then
     /// one group per pet — each broken down further into sub-groups so
     /// e.g. a traveler's electronics sit together, separate from their
@@ -85,19 +97,19 @@ struct TripDetailView: View {
             result.append(TripSection(label: label, categoryGroups: groups, items: items))
         }
 
-        let sharedItems = trip.items.filter { $0.traveler == nil && $0.pet == nil }
+        let sharedItems = filteredItems.filter { $0.traveler == nil && $0.pet == nil }
 
         if trip.travelers.count == 1, let soloTraveler = trip.travelers.first {
-            addSection(soloTraveler.name, sharedItems + trip.items.filter { $0.traveler == soloTraveler }, useDisplayGroups: true)
+            addSection(soloTraveler.name, sharedItems + filteredItems.filter { $0.traveler == soloTraveler }, useDisplayGroups: true)
         } else {
             for traveler in trip.travelers {
-                addSection(traveler.name, trip.items.filter { $0.traveler == traveler }, useDisplayGroups: true)
+                addSection(traveler.name, filteredItems.filter { $0.traveler == traveler }, useDisplayGroups: true)
             }
             addSection("For Everyone", sharedItems, useDisplayGroups: true)
         }
 
         for pet in trip.pets {
-            addSection("\(pet.name) (pet)", trip.items.filter { $0.pet == pet }, useDisplayGroups: false)
+            addSection("\(pet.name) (pet)", filteredItems.filter { $0.pet == pet }, useDisplayGroups: false)
         }
         return result
     }
@@ -115,11 +127,17 @@ struct TripDetailView: View {
         var result: [TripSection] = []
 
         for bag in trip.luggage {
-            let items = trip.items.filter { $0.luggage?.id == bag.id }
+            let items = filteredItems.filter { $0.luggage?.id == bag.id }
+            // Normally shown even empty — a ready-to-fill destination is
+            // useful to see. But once showUnpackedOnly has hidden
+            // everything already packed, an empty bag here just means
+            // "nothing left in this one," same as any other section
+            // collapsing away rather than a real empty destination.
+            guard !items.isEmpty || !showUnpackedOnly else { continue }
             result.append(TripSection(label: bag.name, categoryGroups: displayGroups(for: items), items: items))
         }
 
-        let unassigned = trip.items.filter { $0.luggage == nil }
+        let unassigned = filteredItems.filter { $0.luggage == nil }
         if !unassigned.isEmpty {
             result.append(TripSection(label: "Unassigned", categoryGroups: displayGroups(for: unassigned), items: unassigned))
         }
@@ -228,6 +246,16 @@ struct TripDetailView: View {
                         selectedItemIDs.removeAll()
                     }
                 }
+            }
+
+            if showUnpackedOnly && sections.isEmpty && !trip.items.isEmpty {
+                ContentUnavailableView(
+                    "All packed! 🎒",
+                    systemImage: "checkmark.circle.fill",
+                    description: Text("Turn off the filter to see everything again.")
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
 
             ForEach(sections) { section in
@@ -342,6 +370,16 @@ struct TripDetailView: View {
                     }
                 } label: {
                     Label("Add", systemImage: "plus")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showUnpackedOnly.toggle()
+                } label: {
+                    Label(
+                        showUnpackedOnly ? "Showing Unpacked Only" : "Show Unpacked Only",
+                        systemImage: showUnpackedOnly ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
+                    )
                 }
             }
             if groupingMode == .luggage {
