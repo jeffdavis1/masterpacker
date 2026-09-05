@@ -658,7 +658,7 @@ private struct BeforeYouLeaveCard: View {
             }
 
             if items.isEmpty {
-                Text("Things you'll wear or carry, not pack — sunglasses, wallet, keys.")
+                Text("Things you'll wear or carry, not pack.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -701,7 +701,7 @@ private struct BeforeYouLeaveCard: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .alert("Before You Leave", isPresented: $isAddingItem) {
-            TextField("e.g. Sunglasses", text: $newItemName)
+            TextField("Item name", text: $newItemName)
             Button("Cancel", role: .cancel) { newItemName = "" }
             Button("Add") { addItem() }
         } message: {
@@ -860,12 +860,12 @@ private struct ItemRow: View {
         .floatingCard(radius: AppTheme.cornerRadius - 2)
         // Leading edge, separate from the ForEach's own trailing delete
         // swipe, and only on the normal row (selection mode's whole row
-        // is already its own tap target for something else) — the
-        // escape hatch for an item typed into the normal list that turns
-        // out to be something you'll wear or carry instead. Moving it
-        // here removes it from luggage (never both at once) and it
-        // disappears from this list, living only in the "Before You
-        // Leave" card from then on.
+        // is already its own tap target for something else) — a second,
+        // faster way to do the same thing the door icon button in the
+        // row itself does, for anyone who already knows the swipe
+        // gesture. Moving it here removes it from luggage (never both
+        // at once) and it disappears from this list, living only in the
+        // "Before You Leave" card from then on.
         .swipeActions(edge: .leading) {
             if !isSelectionMode {
                 Button {
@@ -945,6 +945,21 @@ private struct ItemRow: View {
                 .padding()
                 .presentationCompactAdaptation(.popover)
             }
+
+            // A visible, always-present alternative to the leading swipe
+            // action above — same "Wearing/Carrying" move, just
+            // discoverable without needing to know a swipe exists.
+            // Shown regardless of grouping mode, unlike luggageMenu below.
+            Button {
+                item.isWearingOrCarrying = true
+                item.luggage = nil
+            } label: {
+                Image(systemName: "door.left.hand.open")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Move to Before You Leave")
 
             if let trip {
                 luggageMenu(trip: trip)

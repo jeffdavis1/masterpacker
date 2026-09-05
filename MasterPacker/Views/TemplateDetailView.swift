@@ -256,10 +256,13 @@ private struct TemplateItemRow: View {
 
     var body: some View {
         HStack {
-            // Everything but the trash button is one tappable region —
-            // grouped so the ×N badge (plain text here, not its own
-            // button the way TripDetailView's quantity editor is) opens
-            // the same category picker as tapping the icon or name.
+            // Everything but the pencil/trash buttons is one tappable
+            // region — grouped so the ×N badge (plain text here, not
+            // its own button the way TripDetailView's quantity editor
+            // is) opens the same category picker as tapping the icon or
+            // name. Kept working even with the pencil button added
+            // below as a more discoverable way to trigger the same
+            // popover.
             HStack {
                 PackingIconView(icon: item.displaySymbol)
                     .foregroundStyle(.secondary)
@@ -292,6 +295,20 @@ private struct TemplateItemRow: View {
                 .padding()
                 .presentationCompactAdaptation(.popover)
             }
+
+            // A visible edit target, next to trash — the tap-anywhere-
+            // on-the-row gesture above still works, but had no visual
+            // hint it existed at all. This pencil is the discoverable
+            // version of the exact same action.
+            Button {
+                isEditingCategory = true
+            } label: {
+                Image(systemName: "pencil")
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Change category for \(item.name)")
+            .buttonStyle(.plain)
+            .padding(.leading, 8)
 
             // A dedicated trash target — kept as its own HStack sibling
             // (reserving its own space) rather than layered over the
