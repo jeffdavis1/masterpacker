@@ -660,7 +660,7 @@ private struct BeforeYouLeaveCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label("Before You Leave", systemImage: "door.left.hand.open")
+                Label("Before You Leave", systemImage: "figure.walk.departure")
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(.primary)
                 Spacer()
@@ -720,14 +720,21 @@ private struct BeforeYouLeaveCard: View {
                         Spacer()
 
                         Button {
-                            modelContext.delete(item)
-                            AnalyticsService.itemsDeleted(count: 1)
+                            // Sends it back rather than deleting it outright
+                            // — most items here arrived via the door
+                            // button/chip from somewhere else on the trip
+                            // (or match one that could have), so erasing it
+                            // entirely lost real packing-list data. It
+                            // reappears under Miscellaneous (or wherever it
+                            // came from) instead of just vanishing; a
+                            // genuine delete is still available from there.
+                            item.isWearingOrCarrying = false
                             Task { await TripSharingService.shared.resyncIfShared(trip) }
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary.opacity(0.6))
                         }
-                        .accessibilityLabel("Remove \(item.name)")
+                        .accessibilityLabel("Move \(item.name) back to the packing list")
                         .buttonStyle(.plain)
                     }
                 }
@@ -926,7 +933,7 @@ private struct ItemRow: View {
                     item.isWearingOrCarrying = true
                     item.luggage = nil
                 } label: {
-                    Label("Wearing/Carrying", systemImage: "door.left.hand.open")
+                    Label("Wearing/Carrying", systemImage: "figure.walk.departure")
                 }
                 .tint(AppTheme.brand)
             }
@@ -1008,7 +1015,7 @@ private struct ItemRow: View {
                 item.isWearingOrCarrying = true
                 item.luggage = nil
             } label: {
-                Image(systemName: "door.left.hand.open")
+                Image(systemName: "figure.walk.departure")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
