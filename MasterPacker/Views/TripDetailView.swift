@@ -637,9 +637,24 @@ private struct BeforeYouLeaveCard: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isAddingItem = false
     @State private var newItemName = ""
+    private let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
+
+    /// A small, fixed set of the most common carry-on-your-person items —
+    /// not meant to be exhaustive, just enough that this card doesn't
+    /// require typing for the obvious cases. Free text (the + button)
+    /// still covers everything else.
+    private static let commonSuggestions = ["Sunglasses", "Wallet", "Keys", "Phone", "Passport", "Boarding Pass", "Watch"]
 
     private var items: [PackingItem] {
         trip.items.filter(\.isWearingOrCarrying).sorted { $0.name < $1.name }
+    }
+
+    /// Suggestions not already sitting in the card — same "don't suggest
+    /// what's already there" filtering every other suggestion picker in
+    /// the app does.
+    private var availableSuggestions: [String] {
+        let existingNames = Set(items.map { $0.name.trimmingCharacters(in: .whitespaces).lowercased() })
+        return Self.commonSuggestions.filter { !existingNames.contains($0.lowercased()) }
     }
 
     var body: some View {
@@ -661,7 +676,29 @@ private struct BeforeYouLeaveCard: View {
                 Text("Things you'll wear or carry, not pack.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            } else {
+            }
+
+            if !availableSuggestions.isEmpty {
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                    ForEach(availableSuggestions, id: \.self) { suggestion in
+                        Button {
+                            addOrMove(name: suggestion)
+                        } label: {
+                            Text(suggestion)
+                                .font(.caption)
+                                .lineLimit(1)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(AppTheme.brand.opacity(0.1))
+                                .foregroundStyle(AppTheme.brand)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            if !items.isEmpty {
                 ForEach(items) { item in
                     HStack {
                         Button {
@@ -703,19 +740,36 @@ private struct BeforeYouLeaveCard: View {
         .alert("Before You Leave", isPresented: $isAddingItem) {
             TextField("Item name", text: $newItemName)
             Button("Cancel", role: .cancel) { newItemName = "" }
-            Button("Add") { addItem() }
+            Button("Add") {
+                let trimmed = newItemName
+                newItemName = ""
+                addOrMove(name: trimmed)
+            }
         } message: {
             Text("Something you'll wear or carry, not pack.")
         }
     }
 
-    private func addItem() {
-        let trimmed = newItemName.trimmingCharacters(in: .whitespaces)
-        newItemName = ""
+    /// Adds a new wear/carry item — unless the name matches one already on
+    /// the trip elsewhere, in which case that existing item is moved here
+    /// instead of creating a duplicate. Covers both entry points: typing a
+    /// name in the alert, and tapping a suggestion chip that happens to
+    /// match an item already packed somewhere else on the trip (e.g.
+    /// "Sunglasses" added earlier under Accessories).
+    private func addOrMove(name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        let item = PackingItem(name: trimmed, categoryName: PackingCategory.misc.rawValue, isWearingOrCarrying: true, trip: trip)
-        modelContext.insert(item)
-        AnalyticsService.itemAdded(assigneeType: "everyone")
+        let target = trimmed.lowercased()
+        if let existing = trip.items.first(where: {
+            $0.name.trimmingCharacters(in: .whitespaces).lowercased() == target && !$0.isWearingOrCarrying
+        }) {
+            existing.isWearingOrCarrying = true
+            existing.luggage = nil
+        } else {
+            let item = PackingItem(name: trimmed, categoryName: PackingCategory.misc.rawValue, isWearingOrCarrying: true, trip: trip)
+            modelContext.insert(item)
+            AnalyticsService.itemAdded(assigneeType: "everyone")
+        }
         Task { await TripSharingService.shared.resyncIfShared(trip) }
     }
 }
