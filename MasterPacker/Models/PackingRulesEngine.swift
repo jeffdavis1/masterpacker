@@ -109,7 +109,13 @@ enum PackingRulesEngine {
         case .child, .tween, .adult, .senior:
             add("Underwear", .clothing, days + 1)
             add("Socks", .clothing, days + 1)
-            add("T-shirts / tops", .clothing, max(2, days))
+            // Just "T-shirts" — matches CommonProfileItems' own naming
+            // (was "T-shirts / tops" here vs. "T-shirts / casual tops"
+            // there, two different strings for the same item that never
+            // deduped against each other). "Tops" is still its own
+            // separate suggestion in the curated list for anyone who
+            // wants a dressier top beyond a plain tee.
+            add("T-shirts", .clothing, max(2, days))
             // Pants and shorts used to be one combined "Pants / shorts"
             // item — split so each is its own trackable checklist row.
             // Quantities are each roughly half the old combined total,

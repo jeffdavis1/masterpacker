@@ -62,10 +62,21 @@ enum CommonProfileItems {
 
     static let all: [Suggestion] = [
         // MARK: Clothing Essentials
-        Suggestion(name: "T-shirts / casual tops", category: .clothing, group: "Clothing Essentials"),
+        // T-shirts and Tops used to be one combined "T-shirts / casual
+        // tops" suggestion here — split so each is its own trackable
+        // checklist row, and so the name matches exactly what
+        // PackingRulesEngine's auto-generated starter list uses (it used
+        // to say "T-shirts / tops", a different string that wouldn't
+        // dedupe against this one).
+        Suggestion(name: "T-shirts", category: .clothing, group: "Clothing Essentials"),
+        Suggestion(name: "Tops", category: .clothing, group: "Clothing Essentials"),
         Suggestion(name: "Long-sleeve shirt", category: .clothing, group: "Clothing Essentials"),
         Suggestion(name: "Shorts", category: .clothing, group: "Clothing Essentials"),
-        Suggestion(name: "Jeans / everyday pants", category: .clothing, group: "Clothing Essentials"),
+        // Same split for Jeans vs. everyday (non-denim) Pants — was one
+        // combined "Jeans / everyday pants" suggestion; now two, and
+        // "Pants" matches PackingRulesEngine's own generated item name.
+        Suggestion(name: "Jeans", category: .clothing, group: "Clothing Essentials"),
+        Suggestion(name: "Pants", category: .clothing, group: "Clothing Essentials"),
         Suggestion(name: "Underwear", category: .clothing, group: "Clothing Essentials"),
         Suggestion(name: "Socks", category: .clothing, group: "Clothing Essentials"),
         Suggestion(name: "Bra", category: .clothing, group: "Clothing Essentials"),
