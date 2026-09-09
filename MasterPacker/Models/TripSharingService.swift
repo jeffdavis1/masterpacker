@@ -81,6 +81,18 @@ final class TripSharingService: ObservableObject {
 
     // MARK: - Owner side: creating / re-syncing a share
 
+    /// Thrown by shareTrip(_:) when CloudKit's save succeeds overall but
+    /// the server-saved CKShare specifically can't be read back out of
+    /// the result — see the guard in shareTrip(_:) for why this can't
+    /// just fall back to the share we built locally (it has no .url yet).
+    enum ShareError: LocalizedError {
+        case savedShareUnavailable
+
+        var errorDescription: String? {
+            "Couldn't finish setting up sharing for this trip. Please try again."
+        }
+    }
+
     /// What's already been pushed to CloudKit for a shared trip — the
     /// zone/record names to reuse on a re-share, keyed off the trip's own
     /// SwiftData identifier so no schema change was needed to track this
@@ -194,11 +206,22 @@ final class TripSharingService: ObservableObject {
         // (this was the bug behind "tapped the link, app just opened with
         // no accept prompt, share never showed up"). Must return the
         // server-saved copy instead.
+        //
+        // This guard used to silently fall back to `return share` (the
+        // unsaved, URL-less copy) whenever the save result couldn't be
+        // read — which is exactly the broken case the comment above
+        // warns about, just reached a different way. That's what was
+        // behind "Mail/Messages opens but is broken": UICloudSharingController
+        // happily composed a message with a share that had no working
+        // link. Throwing here instead routes into the same failure path
+        // as any other save error — CloudSharingPresenter's preparationHandler
+        // surfaces it as a real, visible error rather than silently
+        // handing out a non-functional invite.
         guard let savedResult = saveResult.saveResults[share.recordID],
               let savedRecord = try? savedResult.get(),
               let savedShare = savedRecord as? CKShare
         else {
-            return share
+            throw ShareError.savedShareUnavailable
         }
         return savedShare
     }
